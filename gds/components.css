@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Gato Design System (GDS) — componentes v1.0.0
+   Gato Design System (GDS) — componentes v1.0.1
    Regla: este archivo solo usa tokens semánticos o de componente (--gds-color-*,
    --gds-space-*, --gds-font-*, ...). Nunca primitivos (--gds-p-*) ni valores hex.
    Excepción única: 1px en .gds-visually-hidden (patrón estándar de accesibilidad).
@@ -73,7 +73,13 @@ body.gds {
 .gds-button--ghost:hover:not(:disabled) { background: var(--gds-color-fill-neutral); color: var(--gds-color-text-primary); }
 .gds-button--danger { background: var(--gds-color-fill-danger); color: var(--gds-color-text-on-danger); }
 .gds-button--sm { min-height: var(--gds-button-height-sm); padding: 0 var(--gds-space-3); font: var(--gds-font-body-2); }
+/* Un botón puede ser <a>: le gana a ".gds a" (color de enlace) para conservar el color de su variante (1.0.1) */
+.gds a.gds-button { text-decoration: none; }
 .gds a.gds-button--primary { color: var(--gds-color-text-on-primary); }
+.gds a.gds-button--secondary { color: var(--gds-color-text-primary); }
+.gds a.gds-button--ghost { color: var(--gds-color-text-secondary); }
+.gds a.gds-button--ghost:hover { color: var(--gds-color-text-primary); }
+.gds a.gds-button--danger { color: var(--gds-color-text-on-danger); }
 
 /* ---------------------------------------------------------------- estado (badge) */
 /* Un estado SIEMPRE combina ícono + texto: nunca depende solo del color (WCAG 1.4.1) */
@@ -144,6 +150,7 @@ a.gds-card:hover { border-color: var(--gds-color-border-accent); }
 
 /* ---------------------------------------------------------------- métrica */
 .gds-metric { display: flex; flex-direction: column; gap: var(--gds-space-1); padding: var(--gds-space-4); border-radius: var(--gds-radius-md); background: var(--gds-color-surface-1); border: var(--gds-border-width) solid var(--gds-color-border-default); color: inherit; text-decoration: none; }
+.gds a.gds-metric { color: var(--gds-color-text-primary); }
 a.gds-metric:hover { border-color: var(--gds-color-border-accent); }
 .gds-metric__value { font: var(--gds-font-headline-2); }
 .gds-metric__label { font: var(--gds-font-body-2); color: var(--gds-color-text-secondary); }

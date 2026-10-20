@@ -27,8 +27,8 @@ export function commit(sha, iso, msg) {
   return { sha, commit: { message: msg, author: { name: 'Pablo Sanchez', date: iso }, committer: { date: iso } } };
 }
 
-/** fetch simulado. `apiDown` simula cuota agotada. */
-export function mockFetch(files, { apiDown = false, prodProtected = false } = {}) {
+/** fetch simulado. `apiDown` simula cuota agotada; `issues` = issues abiertos de DEV (canal de respuestas). */
+export function mockFetch(files, { apiDown = false, prodProtected = false, issues = [] } = {}) {
   const calls = [];
   const json = (data, status = 200) => ({
     ok: status >= 200 && status < 300, status,
@@ -48,6 +48,7 @@ export function mockFetch(files, { apiDown = false, prodProtected = false } = {}
       if (url.includes('/gw2-wallet-ligero/branches/main')) return json({ name: 'main', protected: prodProtected, commit: { sha: PROD_SHA, commit: { message: 'feat: Armería', committer: { date: '2026-10-03T23:59:13Z' } } } });
       if (url.includes('/git/trees/')) return json({ tree: Object.keys(files).map(p => ({ type: 'blob', path: 'ai-memory/' + p })) });
       if (url.includes('/compare/')) return json({ status: 'ahead', ahead_by: 3, behind_by: 0 });
+      if (url.includes('/gw2-factory-dev/issues?')) return issues === 'error' ? json({ message: 'boom' }, 500) : json(issues);
       return json({ message: 'not found' }, 404);
     }
     if (url.startsWith('https://raw.githubusercontent.com')) {
