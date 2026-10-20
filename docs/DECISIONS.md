@@ -83,6 +83,8 @@ Panel (Refrescar) → el pedido pasa a "Ya respondiste"
 - Sin secretos en el navegador: el panel solo arma un enlace; escribe GitHub con el `GITHUB_TOKEN` del workflow.
 - Seguridad del workflow: solo en `PabloSnchz/gw2-factory-dev`, solo issues del dueño con la marca, el cuerpo nunca se interpola en comandos, permisos `contents: write` + `issues: write`, ejecución en serie (`concurrency`).
 - Errores (pedido inexistente/cerrado, opción inválida, fecha pasada): comentario en el issue, sin escribir nada; editar el issue lo reprocesa.
+- **Errores visibles en el panel** (MC-5, BL-028): el loader lee los issues abiertos de Pablo con la marca (`model.channel`). Un issue abierto hace menos de 5 min es "Registrando tu respuesta"; más viejo es "no se pudo registrar". Se muestra dentro de la tarjeta del pedido (o arriba de la cola si el pedido no existe), en el veredicto de Hoy, en "Qué debería preocuparte" y en Salud (`channel:failed:N`).
+- Al volver de GitHub después de tocar un botón, el panel relee sin caché: la respuesta aparece enseguida como "Registrando" o en "Ya respondiste".
 - **Contrato espejo**: `buildResponseMarkdown` y el cuerpo del issue tienen el mismo texto dorado en `tests/respond.test.mjs` (panel) y `.github/scripts/decision-response.test.cjs` (dev). Cambiar el formato exige cambiar ambos.
 
 ## Ciclo de vida
@@ -119,6 +121,7 @@ Al iniciar cada sesión, después de leer `status.md`, `backlog.md` y `memory-in
 | `resp:unprocessed` | Atención | Respuesta de Pablo sin procesar hace más de 48 h |
 | `req:notclosed` | Atención | Respuesta procesada pero el pedido sigue ABIERTO |
 | `resp:orphan` / `resp:option` | Atención | Responde a un pedido u opción que no existe |
+| `channel:failed:N` | Atención | Una respuesta enviada desde el panel no se registró: el issue #N sigue abierto con el motivo |
 | `dec:noreq` | Atención | DEC PROPUESTA sin pedido (solo cuando ya hay pedidos) |
 | `req:due` | Info | Venció un plazo pospuesto: vuelve a la cola |
 | `req:measured` | Info | Acción verificada: la Factory debe cerrar el pedido |
@@ -128,4 +131,4 @@ Umbrales en `js/config.js` (`requestWaitDays`, `responseUnprocessedHours`).
 
 ## Costo
 
-Cero llamadas extra a la API de GitHub: el loader ya lee todos los `.md` de `ai-memory/` desde el árbol del commit. Limitación conocida: sin API (cuota agotada) el loader solo sigue los links del índice, así que los pedidos no se leen hasta la próxima lectura con API; el panel ya avisa que la lectura es parcial (`api:errors`).
+Pedidos y respuestas: cero llamadas extra a la API de GitHub (el loader ya lee todos los `.md` de `ai-memory/` desde el árbol del commit). El canal suma 1 llamada (issues abiertos del canal): 6 por carga en total, con caché de 10 min. Limitación conocida: sin API (cuota agotada) el loader solo sigue los links del índice, así que los pedidos no se leen hasta la próxima lectura con API; el panel ya avisa que la lectura es parcial (`api:errors`).
