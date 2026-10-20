@@ -2,6 +2,25 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionado SemVer.
 
+## [2.1.0] — 2026-10-20
+
+**Soberanía de decisiones** (FACTORY-DASHBOARD-REFINEMENT-001, DEC-018): a Pablo solo le llegan como decisiones las de producto, negocio o estrategia. Lo técnico lo decide la Factory. Es MINOR porque el contrato v4 es compatible con v3.
+
+### Added
+- Clases de pendientes: **decisión**, **acción**, **validación** e **información**, declaradas en `status.md` (`- [ID] Validación: …`) o deducidas del pedido y del motivo de bloqueo.
+- Sección **"Necesita tu mano"** para acciones y validaciones, separada de "Necesita tu decisión".
+- Sección **"Para tu información"**: avisos que no piden nada, más los riesgos aceptados con su fecha de revisión.
+- Tarjeta de decisión con **Contexto, Impacto, Por qué te lo pregunto y Recomendación**.
+- Chequeos de Salud: `req:unjustified` (pedido de decisión sin justificación), `sovereignty:noreq` (decisión sin pedido) y `status:noclass` (línea sin clase).
+- 8 tests nuevos (`tests/sovereignty.test.mjs`; 82 en total) y 9 mutaciones de la regla, todas detectadas.
+
+### Changed
+- El veredicto cuenta decisiones, no pendientes: "Hay 1 decisión esperándote" o "Nada que decidir: te esperan 2 validaciones".
+- Con pedidos en uso, una DEC PROPUESTA, una tarea "bloqueada por decisión de Pablo" o una línea "Decisión:" sin pedido justificado no se muestran a Pablo: quedan como aviso para la Factory.
+- Un riesgo aceptado por Pablo deja de mostrarse como problema crítico (Salud, "Qué debería preocuparte" y Entornos); se sigue midiendo.
+- En el detalle de una acción, la tarjeta dice "Qué necesitás hacer" en lugar de "Qué necesitás decidir".
+- Contrato de datos v4 (`docs/DATA-CONTRACT.md`).
+
 ## [2.0.0] — 2026-10-20
 
 El panel pasa de centro de observación a **Centro de Decisiones** (misión FACTORY-001B). Es MAJOR porque cambia el propósito y la estructura de la vista principal, el contrato de datos (v3) y el presupuesto de API.
