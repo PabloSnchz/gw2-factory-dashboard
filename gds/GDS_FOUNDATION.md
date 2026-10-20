@@ -1,7 +1,7 @@
 # Gato Design System (GDS) — Fundamentos
 
-- Versión: 1.0.0 (2026-10-20)
-- Estado: FUNDAMENTOS — tokens, componentes y reglas publicados; todavía no aplicados a ninguna interfaz.
+- Versión: 1.0.1 (2026-10-20)
+- Estado: EN USO — aplicado al Dashboard Factory desde FACTORY-001B MC-5.
 - Decisión: DEC-010 (gw2-factory-dev/ai-memory)
 - Primera aplicación: Dashboard Factory (FACTORY-001B, micro-ciclo MC-5). Después: la webapp Bóveda del Gato Negro.
 
@@ -332,6 +332,11 @@ El GDS también define cómo se habla:
 - **Agregar un componente**: solo con tokens semánticos; documentarlo en §8 (el test verifica que toda clase base figure en este documento).
 - **Decisiones**: todo cambio MAJOR o de identidad se registra como DEC en `gw2-factory-dev/ai-memory`.
 - **Dónde vive**: en `gw2-factory-dashboard/gds/` mientras tenga un solo consumidor. Cuando la webapp lo adopte, se extrae a un repositorio o paquete propio, y ambos productos lo consumen por versión.
+
+### Historial de versiones
+
+- **1.0.1** (2026-10-20, PATCH) — Botones y métricas usados como enlace (`<a class="gds-button…">`, `<a class="gds-metric">`) conservan el color de su variante: antes la regla `.gds a` (color de enlace) les ganaba por especificidad. Detectado al aplicar el GDS al panel (MC-5). Sin tokens nuevos ni pares de contraste nuevos.
+- **1.0.0** (2026-10-20) — Fundamentos: tokens en tres niveles, componentes, íconos, contraste calculado (DEC-010).
 
 ### Adopción en la webapp (futuro, no forma parte de MC-2)
 
