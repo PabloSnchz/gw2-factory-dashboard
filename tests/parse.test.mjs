@@ -98,6 +98,8 @@ test('markdown seguro: escapa HTML y bloquea javascript:', () => {
   assert.ok(html.includes('<strong>b</strong>'));
   assert.ok(html.includes('<code>c&lt;d&gt;</code>'));
   assert.ok(html.includes('<td>&lt;i&gt;</td>'));
+  assert.ok(html.includes('<div class="gds-table-wrap"><table><thead><tr><th scope="col">a</th>'), 'tabla con scroll propio y encabezados con scope');
+  assert.ok(html.includes('<h2>T</h2>'), 'el título del cuerpo queda bajo el h1 de la página');
   assert.equal(esc('"\'<>&'), '&quot;&#39;&lt;&gt;&amp;');
 });
 
