@@ -285,12 +285,12 @@ function buildConcerns({ risks, backlog, health }) {
         same.origen += ' · confirmado por medición';
         continue;
       }
-      out.push({ level: c.level, id: c.ref || null, titulo: c.title, origen: 'Salud · ' + c.source });
+      out.push({ level: c.level, id: c.ref || null, titulo: c.title, origen: c.source === 'medido' ? 'Medido en GitHub' : 'Declarado en la memoria' });
     }
   }
   for (const it of (backlog && backlog.BLOCKED) || []) {
     if (it.prioridad === 'CRÍTICO' && !out.some(o => o.id === it.id)) {
-      out.push({ level: 'critical', id: it.id, titulo: it.titulo, origen: 'Backlog bloqueado' });
+      out.push({ level: 'critical', id: it.id, titulo: it.titulo, origen: 'Tarea bloqueada' });
     }
   }
   return out.sort((a, b) => LEVEL_ORDER[a.level] - LEVEL_ORDER[b.level]);
@@ -371,8 +371,8 @@ function runHealthChecks(ctx) {
     if (!statusInfo.actualizado) add('warn', 'status:nodate', 'status.md sin fecha de última actualización', 'No se puede saber si el estado está vigente.', 'declarado');
     else if (hours > T.statusDeadHours) add('critical', 'status:dead', `status.md sin actualizar hace ${Math.round(hours / 24)} días`, 'La memoria dejó de reflejar la realidad.', 'medido');
     else if (enCurso && hours > T.statusStaleHours) add('warn', 'status:stale', `Trabajo "en curso" sin actualizar hace ${Math.round(hours)} h`, 'Puede estar detenido sin que status.md lo diga.', 'medido');
-    if (enCurso && backlog && backlog.IN_PROGRESS.length === 0) add('warn', 'status:noprogress', 'status.md dice EN_CURSO pero no hay ítems IN_PROGRESS en el backlog', 'Estado y backlog no coinciden.', 'declarado');
-    if (!enCurso && backlog && backlog.IN_PROGRESS.length > 0) add('info', 'status:idleprogress', `Hay ${backlog.IN_PROGRESS.length} ítem(s) IN_PROGRESS con la Factory en estado ${statusInfo.label}`, backlog.IN_PROGRESS.map(x => x.id).join(', '), 'declarado');
+    if (enCurso && backlog && backlog.IN_PROGRESS.length === 0) add('warn', 'status:noprogress', 'La Factory dice estar trabajando, pero no tiene ninguna tarea en curso', 'status.md (EN_CURSO) y backlog.md (sin IN_PROGRESS) no coinciden.', 'declarado');
+    if (!enCurso && backlog && backlog.IN_PROGRESS.length > 0) add('info', 'status:idleprogress', `Hay ${backlog.IN_PROGRESS.length} tarea(s) en curso mientras la Factory espera`, `Estado declarado: ${statusInfo.label}. Tareas: ${backlog.IN_PROGRESS.map(x => x.id).join(', ')}.`, 'declarado');
     const lastDev = commits.find(c => c.repo === 'dev');
     if (lastDev && statusInfo.actualizado && lastDev.date.getTime() - statusInfo.actualizado.getTime() > 12 * H) {
       add('warn', 'status:behind', 'Hay commits en DEV posteriores a la última actualización de status.md', `Último commit: ${lastDev.short} (${lastDev.date.toISOString().slice(0, 16)}Z).`, 'medido');
