@@ -147,6 +147,35 @@ test('accesibilidad: estados con ícono y texto, ids únicos, foco y nombres acc
   assert.match(views.home, /<span class="gds-visually-hidden"> pendientes<\/span>/, 'los contadores tienen texto para lector de pantalla');
 });
 
+test('accesibilidad: cada vista tiene un h1 y los niveles de título no se saltean (GDS §5)', async () => {
+  const m = await model(undefined, { issues: [issue(7, 30, respBody('REQ-002', 'DONE'))] });
+  const views = {
+    home: V.renderHome(m), work: V.renderWork(m), knowledge: V.renderKnowledge(m, 'dec'), risks: V.renderRisks(m),
+    activity: V.renderActivity(m, '7d'), health: V.renderHealth(m), req: V.renderItem(m, 'REQ-002'),
+    dec: V.renderItem(m, 'DEC-008'), bl: V.renderItem(m, 'BL-016'), rsk: V.renderItem(m, 'RSK-001'),
+  };
+  for (const [name, html] of Object.entries(views)) {
+    const levels = [...html.matchAll(/<h([1-6])\b/g)].map(x => Number(x[1]));
+    assert.equal(levels[0], 1, `${name}: el primer título es h1`);
+    assert.equal(levels.filter(l => l === 1).length, 1, `${name}: un solo h1`);
+    levels.forEach((l, i) => { if (i) assert.ok(l <= levels[i - 1] + 1, `${name}: h${levels[i - 1]} → h${l} saltea un nivel`); });
+  }
+  assert.match(views.req, /<h2 id="dq-REQ-002" class="gds-title-1">Qué necesitás decidir<\/h2>/, 'en el detalle, la tarjeta es un h2 bajo el h1 del pedido');
+});
+
+test('textos: la procedencia de una alerta se dice en palabras, no en códigos', async () => {
+  const m = await model();
+  for (const c of m.concerns) assert.doesNotMatch(c.origen, /Salud · |medido$|declarado$|Backlog/, c.origen);
+  const files = { ...mem, ...v3 };
+  files['status.md'] = files['status.md'].replace(/^Estado: .*$/m, 'Estado: EN_CURSO');
+  files['backlog.md'] = files['backlog.md'].replace(/## IN_PROGRESS\n[\s\S]*?(?=\n## )/, '## IN_PROGRESS\n');
+  const busy = await model(files);
+  const check = busy.health.checks.find(c => c.id === 'status:noprogress');
+  assert.ok(check, 'el chequeo se dispara');
+  assert.doesNotMatch(check.title, /IN_PROGRESS|EN_CURSO|status\.md/, 'el título no expone códigos internos');
+  assert.match(check.detail, /EN_CURSO/, 'el detalle técnico queda disponible');
+});
+
 test('accesibilidad: index.html con salto al contenido, región viva e idioma', () => {
   const html = read('index.html');
   assert.match(html, /<html lang="es">/);
