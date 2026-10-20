@@ -130,10 +130,6 @@ function na(reason) { return `<span class="gds-na">— <small>${esc(reason || 's
 
 function empty(text) { return `<p class="gds-empty">${esc(text)}</p>`; }
 
-function sectionHead(title, n, extra) {
-  return `<div class="gds-card__header"><h2 class="gds-title-1">${esc(title)}${n != null ? ' ' + count(n) : ''}</h2>${extra || ''}</div>`;
-}
-
 /* ------------------------------------------------------------ responder (DEC-012) */
 
 const reqOf = (m, id) => (m.decisions && id ? m.decisions.requests.find(r => r.id === id) : null);
@@ -153,8 +149,12 @@ export function renderRespond(req, m) {
 
 const TIPO_LABEL = { accion: 'Acción tuya', pedido: 'Decisión', decision: 'Decisión', backlog: 'Bloqueado por vos', status: 'Pendiente tuyo' };
 
-/** Tarjeta de decisión: qué se pide, por qué importa, qué recomienda la Factory y cómo responder. */
-function renderDecisionCard(h, m, first) {
+/**
+ * Tarjeta de decisión: qué se pide, por qué importa, qué recomienda la Factory y cómo responder.
+ * `level`/`title`: en Hoy la tarjeta es un h3 bajo "Necesita tu decisión" (h2); en el detalle de un pedido,
+ * un h2 "Qué necesitás decidir" bajo el h1 del pedido (los niveles de título no se saltean, GDS §5).
+ */
+function renderDecisionCard(h, m, first, { level = 'h3', title = null } = {}) {
   const req = reqOf(m, h.id);
   const failed = (m.channel && m.channel.items || []).find(c => c.solicitud && c.solicitud === h.id);
   const why = req ? firstParagraph(req.porQueImporta) : h.pregunta;
@@ -166,7 +166,7 @@ function renderDecisionCard(h, m, first) {
       ${prioChip(h.prioridad)}
       ${h.esperaMs != null ? `<span class="gds-caption gds-text-muted">${icon('clock')} Esperando ${esc(duration(h.esperaMs))}</span>` : ''}
     </div>
-    <h3 id="${esc(headId)}" class="gds-title-1">${t(plainTitle(h.titulo), m)}</h3>
+    <${level} id="${esc(headId)}" class="gds-title-1">${title ? esc(title) : t(plainTitle(h.titulo), m)}</${level}>
     ${why && !(req && req.recomendacion && why === h.pregunta) ? `<p class="gds-body-2 gds-text-secondary gds-measure">${t(why, m)}</p>` : ''}
     ${req && req.opciones && req.opciones.length ? `<ul class="decision__options gds-body-2">${req.opciones.map(o => `<li><strong>${esc(o.clave)}</strong> — ${t(o.texto, m)}</li>`).join('')}</ul>` : ''}
     ${req && req.recomendacion ? `<div class="gds-callout gds-callout--accent">${icon('sparkle')}<div>
@@ -478,10 +478,10 @@ export function renderItem(m, id) {
     const queueItem = entry.kind === 'REQ' ? m.human.find(h => h.id === id) : null;
     return `
     <nav class="crumbs gds-body-2" aria-label="Volver"><a href="${back[0]}">← ${esc(back[1])}</a></nav>
-    ${queueItem ? renderDecisionCard(queueItem, m, true) : ''}
     <article class="gds-card doc gds-stack">
       <p class="gds-cluster">${statusChip(KIND_LABEL[kind] || kind, 'accent', 'book')}${entry.estadoCodigo ? stateChip(entry.estado || entry.estadoCodigo) : ''}<span class="gds-ref">${esc(entry.id)}</span></p>
       <h1 class="gds-headline-1">${esc(plainTitle(entry.titulo))}</h1>
+      ${queueItem ? renderDecisionCard(queueItem, m, true, { level: 'h2', title: 'Qué necesitás decidir' }) : ''}
       ${entry.kind === 'REQ' && !queueItem ? `<p class="gds-body-2 gds-text-secondary">${esc(entry.estadoTexto || '')}</p>` : ''}
       <dl class="meta">${Object.entries(entry.meta).map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${t(v, m)}</dd></div>`).join('')}</dl>
       ${cited}
