@@ -224,7 +224,8 @@ test('panel: los pedidos encabezan "Necesita tu decisión" y absorben lo que cub
   const r2 = m.human.find(h => h.id === 'REQ-002');
   assert.ok(r2.relacionados.includes('BL-003'));
   assert.match(r2.pregunta, /^Recomendación: /);
-  assert.ok(ids.includes('DEC-006'), 'lo no cubierto por un pedido sigue apareciendo');
+  // Soberanía de decisiones (DEC-018): una decisión sin pedido justificado no llega a Pablo; queda como aviso.
+  assert.ok(!ids.includes('DEC-006'), 'una DEC PROPUESTA sin pedido no aparece en la cola');
   assert.equal(new Set(ids).size, ids.length);
   assert.ok(m.allIds.has('REQ-001'));
   assert.ok(m.health.checks.some(c => c.id === 'dec:noreq:DEC-006'), 'DEC-006 PROPUESTA sin pedido');
