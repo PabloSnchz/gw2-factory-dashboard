@@ -23,7 +23,7 @@ export const CONFIG = {
     { dir: 'features',  prefix: 'FEAT', label: 'Funcionalidades' },
   ],
 
-  // Caché de la API de GitHub (anónima: 60 req/h por IP). Una carga usa 5.
+  // Caché de la API de GitHub (anónima: 60 req/h por IP). Una carga usa 6 (ver loader.js).
   apiCacheTtlMs: 10 * 60 * 1000,
   storagePrefix: 'gfd:',
 

@@ -3,10 +3,14 @@
  * datos crudos que consume model.js. Nunca lanza: lo que no se puede leer
  * queda como null con su motivo.
  *
- * Presupuesto de API por carga (sin caché): 5 llamadas.
+ * Presupuesto de API por carga (sin caché): 6 llamadas.
  *   1. commits de DEV   2. árbol de DEV   3. commits del dashboard
  *   4. rama main de PROD (protección)     5. comparación PROD...DEV
+ *   6. issues abiertos de Pablo en DEV (respuestas del canal sin registrar, DEC-012)
  */
+
+/** Marca que el panel pone en cada issue de respuesta (js/respond.js). */
+const CHANNEL_MARKER = 'gds:decision-response';
 
 import { CONFIG } from './config.js';
 import { parseIndex } from './parse.js';
@@ -17,10 +21,11 @@ export async function loadAll(gh, now = Date.now()) {
   const dev = repos.dev, dash = repos.dashboard, prod = repos.prod;
   const since = new Date(now - 30 * 24 * 3600 * 1000).toISOString();
 
-  const [devCommits, dashCommits, prodBranch] = await Promise.all([
+  const [devCommits, dashCommits, prodBranch, openIssues] = await Promise.all([
     gh.api(`/repos/${owner}/${dev.name}/commits?sha=${dev.branch}&per_page=100&since=${since}`, { label: 'commits DEV' }),
     gh.api(`/repos/${owner}/${dash.name}/commits?sha=${dash.branch}&per_page=100&since=${since}`, { label: 'commits dashboard', allow404: true }),
     gh.api(`/repos/${owner}/${prod.name}/branches/${prod.branch}`, { label: 'rama de producción' }),
+    gh.api(`/repos/${owner}/${dev.name}/issues?state=open&creator=${owner}&per_page=30`, { label: 'respuestas en curso', allow404: true }),
   ]);
 
   const ref = Array.isArray(devCommits) && devCommits[0] ? devCommits[0].sha : null;
@@ -73,6 +78,11 @@ export async function loadAll(gh, now = Date.now()) {
       message: prodBranch.commit.commit ? prodBranch.commit.commit.message.split('\n')[0] : '',
     } : null,
     compare: compare ? { ahead_by: compare.ahead_by, behind_by: compare.behind_by, status: compare.status } : null,
+    // Solo issues (no PRs) con la marca del canal; null = no se pudo consultar.
+    channel: Array.isArray(openIssues)
+      ? openIssues.filter(i => !i.pull_request && String(i.body || '').includes(CHANNEL_MARKER))
+        .map(i => ({ number: i.number, html_url: i.html_url, created_at: i.created_at, updated_at: i.updated_at, body: i.body }))
+      : (openIssues === null ? [] : null),
     api: { remaining: gh.state.remaining, limit: gh.state.limit, reset: gh.state.reset, errors: [...gh.state.errors], stale: [...gh.state.stale] },
   };
 }
