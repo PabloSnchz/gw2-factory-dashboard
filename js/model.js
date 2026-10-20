@@ -65,7 +65,8 @@ export function buildModel(raw) {
   const commits = mergeCommits(raw.commits);
   const statusInfo = deriveStatus(status, now);
   const human = buildHumanQueue({ status, backlog, entries, decisions, now });
-  const health = runHealthChecks({ raw, status, statusInfo, backlog, roadmap, risks, index, entries, allIds, commits, decisions, now });
+  const channel = buildChannel(raw.channel, decisions, now);
+  const health = runHealthChecks({ raw, status, statusInfo, backlog, roadmap, risks, index, entries, allIds, commits, decisions, channel, now });
   const activity = buildActivity({ commits, entries, backlog, now });
   const concerns = buildConcerns({ risks, backlog, health });
   const fase = (roadmap || []).find(p => /CURSO/.test(p.estado)) || null;
@@ -74,7 +75,7 @@ export function buildModel(raw) {
     generatedAt: now,
     ref: raw.ref,
     status, statusInfo, backlog, roadmap, fase, risks, index, entries, allIds,
-    commits, activity, human, concerns, health, decisions,
+    commits, activity, human, concerns, health, decisions, channel,
     prod: raw.prod, compare: raw.compare, api: raw.api,
   };
 }
@@ -164,9 +165,12 @@ function buildHumanQueue({ status, backlog, entries, decisions, now }) {
   for (const txt of (status && status.esperandoPablo) || []) {
     const ids = idsIn(txt);
     if (absorb(ids, 'status.md')) continue;
-    // Coincidencia directa o indirecta (el ítem ya en cola referencia este ID, p. ej. BL-010 → RSK-001).
+    // Coincidencia directa, o indirecta solo si la línea cita un dato de contexto (p. ej. BL-010 → RSK-001).
+    // Si la línea nombra su propio trabajo (BL o pedido), es un pendiente propio: no se agrupa dentro
+    // de otro ítem que solo lo cita (antes "Validar MC-4 [BL-020]" quedaba escondido dentro de BL-016).
+    const own = ids[0] && /^(BL|REQ)-/.test(ids[0]);
     const known = ids.find(x => byId.has(x))
-      || [...byId.keys()].find(k => ids.some(x => byId.get(k).relacionados.includes(x)));
+      || (!own && [...byId.keys()].find(k => ids.some(x => byId.get(k).relacionados.includes(x))));
     if (known) { byId.get(known).origenes.push('status.md'); continue; }
     add(ids[0] || null, { titulo: txt.replace(/^\[?[A-Z]+-\d{3}\]?\s*[:—-]?\s*/, ''), tipo: 'status', fecha: null, esperaMs: null,
       origenes: ['status.md: Esperando a Pablo'], relacionados: ids.slice(1), pregunta: null });
@@ -174,6 +178,34 @@ function buildHumanQueue({ status, backlog, entries, decisions, now }) {
 
   return [...byId.values()].map(x => ({ ...x, relacionados: [...new Set(x.relacionados)] }))
     .sort((a, b) => prioRank(a.prioridad) - prioRank(b.prioridad) || (b.esperaMs || 0) - (a.esperaMs || 0));
+}
+
+/* ------------------------------------------------------------ canal de respuesta (DEC-012) */
+
+/** Ventana en la que un issue abierto se considera "registrándose" y no "falló". */
+export const CHANNEL_PROCESSING_MS = 5 * 60 * 1000;
+
+/**
+ * Respuestas enviadas desde el panel que todavía no se registraron.
+ * El workflow cierra el issue al registrar: un issue abierto con la marca es
+ * "registrándose" (recién enviado o editado) o "falló" (el workflow dejó el motivo en el issue).
+ * @returns { available: boolean, items: [{ number, url, solicitud, respuesta, state, ageMs, request }] }
+ */
+export function buildChannel(issues, decisions, now) {
+  if (!Array.isArray(issues)) return { available: false, items: [] };
+  const requests = (decisions && decisions.requests) || [];
+  const items = issues.map(i => {
+    const at = Date.parse(i.updated_at || i.created_at);
+    const ageMs = isNaN(at) ? null : now - at;
+    const solicitud = (String(i.body || '').match(/^\s*solicitud:\s*(REQ-\d{3})\s*$/mi) || [])[1] || null;
+    const respuesta = ((String(i.body || '').match(/^\s*respuesta:\s*([A-Z]+)\s*$/mi) || [])[1] || '').toUpperCase() || null;
+    return {
+      number: i.number, url: i.html_url, solicitud, respuesta, ageMs,
+      state: ageMs != null && ageMs < CHANNEL_PROCESSING_MS ? 'processing' : 'failed',
+      request: requests.find(r => r.id === solicitud) || null,
+    };
+  }).sort((a, b) => (a.ageMs || 0) - (b.ageMs || 0));
+  return { available: true, items };
 }
 
 function extractPendiente(body) {
@@ -267,13 +299,22 @@ function buildConcerns({ risks, backlog, health }) {
 /* ------------------------------------------------------------ salud */
 
 function runHealthChecks(ctx) {
-  const { raw, status, statusInfo, backlog, roadmap, risks, index, entries, allIds, commits, decisions, now } = ctx;
+  const { raw, status, statusInfo, backlog, roadmap, risks, index, entries, allIds, commits, decisions, channel, now } = ctx;
   const T = CONFIG.thresholds;
   const checks = [];
   const add = (level, id, title, detail, source, ref) => checks.push({ level, id, title, detail, source, ref: ref || null });
 
   // --- Intercambio de decisiones (pedidos y respuestas, DEC-011)
   if (decisions) checks.push(...decisions.checks);
+
+  // --- Canal de respuesta (DEC-012): una respuesta enviada que no se registró
+  for (const c of (channel && channel.items) || []) {
+    if (c.state !== 'failed') continue;
+    add('warn', 'channel:failed:' + c.number,
+      `Tu respuesta${c.solicitud ? ' a ' + c.solicitud : ''} no se pudo registrar`,
+      `El issue #${c.number} sigue abierto: el motivo está en su último comentario. Corregilo (Edit) y se reintenta solo.`,
+      'medido', c.solicitud);
+  }
 
   // --- Lectura de la memoria
   for (const file of CONFIG.requiredFiles) {
