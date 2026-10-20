@@ -133,11 +133,11 @@ test('panel: cada pedido abierto muestra sus botones de respuesta', async () => 
   const gh = createGitHub({ owner: 'PabloSnchz', fetchImpl, storage: memoryStorage(), now: () => NOW, ttlMs: 600000, prefix: 't:' });
   const m = buildModel(await loadAll(gh, NOW));
   const home = V.renderHome(m);
-  for (const label of ['Ya lo hice ↗', 'Posponer 7 días ↗', 'No lo voy a hacer ↗']) assert.ok(home.includes(label), label);
+  for (const label of ['Ya lo hice<svg', 'Posponer 7 días<svg', 'No lo voy a hacer<svg']) assert.ok(home.includes(label), label);
   assert.equal((home.match(/issues\/new\?/g) || []).length, 6, '3 respuestas × 2 pedidos');
   assert.ok(home.includes('target="_blank" rel="noopener"'));
   assert.ok(home.includes('Submit new issue'));
-  assert.ok(V.renderItem(m, 'REQ-002').includes('Ya lo hice ↗'), 'también desde el detalle del pedido');
+  assert.ok(V.renderItem(m, 'REQ-002').includes('Ya lo hice<svg'), 'también desde el detalle del pedido');
   assert.doesNotMatch(home, /undefined|NaN/);
 });
 
@@ -150,5 +150,5 @@ test('panel: después de responder, el pedido sale de la cola y aparece en "Ya r
   const home = V.renderHome(m);
   assert.ok(home.includes('Ya respondiste'));
   assert.match(home, /Hecha · Respondido · la Factory lo está procesando/);
-  assert.ok(!V.renderItem(m, 'REQ-002').includes('Ya lo hice ↗'), 'un pedido respondido no se vuelve a responder');
+  assert.ok(!V.renderItem(m, 'REQ-002').includes('Ya lo hice<svg'), 'un pedido respondido no se vuelve a responder');
 });

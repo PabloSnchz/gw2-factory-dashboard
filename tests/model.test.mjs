@@ -15,10 +15,10 @@ async function run(opts = {}, files = mem, storage = memoryStorage()) {
   return { raw, model: buildModel(raw), calls: fetchImpl.calls };
 }
 
-test('pipeline completo: snapshot por SHA y presupuesto de 5 llamadas a la API', async () => {
+test('pipeline completo: snapshot por SHA y presupuesto de 6 llamadas a la API (incluye el canal de respuestas)', async () => {
   const { raw, calls } = await run();
   assert.equal(raw.ref, HEAD);
-  assert.equal(calls.filter(u => u.startsWith('https://api.github.com')).length, 5);
+  assert.equal(calls.filter(u => u.startsWith('https://api.github.com')).length, 6);
   const rawCalls = calls.filter(u => u.startsWith('https://raw.githubusercontent.com'));
   assert.ok(rawCalls.every(u => u.includes('/' + HEAD + '/')), 'todo el contenido se lee del mismo commit');
   assert.equal(Object.values(raw.files).filter(x => x == null).length, 0);
