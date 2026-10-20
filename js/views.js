@@ -1,24 +1,46 @@
 /**
- * js/views.js — Vistas. Funciones puras: modelo → string HTML.
- * Todo texto proveniente de la memoria se escapa (esc) antes de insertarse.
+ * js/views.js — Vistas del Centro de Decisiones. Funciones puras: modelo → string HTML.
+ *
+ * Construidas con el Gato Design System (gds/components.css, gds/icons.js):
+ * - Todo texto proveniente de la memoria se escapa (esc) antes de insertarse.
+ * - Ningún estado depende solo del color: siempre ícono + texto (WCAG 1.4.1).
+ * - Los IDs internos (DEC, LES, BL, RSK, REQ) son referencias secundarias, nunca el contenido principal.
+ * - Orden de la vista Hoy: lo que necesita a Pablo primero; el estado de la Factory después.
  */
 
 import { CONFIG, blobUrl, commitUrl, repoUrl } from './config.js';
 import { esc, mdToHtml, extractIds } from './parse.js';
 import { responseActions, buildIssueUrl } from './respond.js';
 import { RESPONSES } from './decisions.js';
+import { icon, brandMark } from '../gds/icons.js';
 
-const WORKFLOW = ['PRODUCT', 'ARCHITECTURE', 'DEVELOPMENT', 'REVIEW', 'DOCUMENTATION'];
-const LEVEL_LABEL = { critical: 'Crítico', warn: 'Atención', info: 'Info', ok: 'OK' };
-const KIND_LABEL = { DEC: 'Decisión', LES: 'Lección', FEAT: 'Funcionalidad', BL: 'Backlog', RSK: 'Riesgo', REQ: 'Pedido', RESP: 'Respuesta' };
+const WORKFLOW = [
+  ['PRODUCT', 'Producto'], ['ARCHITECTURE', 'Arquitectura'], ['DEVELOPMENT', 'Desarrollo'],
+  ['REVIEW', 'Revisión'], ['DOCUMENTATION', 'Documentación'],
+];
+const KIND_LABEL = { DEC: 'Decisión', LES: 'Lección', FEAT: 'Funcionalidad', BL: 'Tarea', RSK: 'Riesgo', REQ: 'Pedido', RESP: 'Respuesta' };
+
+/** Nivel → variante visual, ícono y texto. El texto siempre acompaña al color. */
+const LEVEL = {
+  critical: { variant: 'danger', icon: 'octagon', label: 'Crítico' },
+  warn: { variant: 'warning', icon: 'alert', label: 'Atención' },
+  info: { variant: 'info', icon: 'info', label: 'Info' },
+  ok: { variant: 'success', icon: 'check', label: 'En orden' },
+};
+const PRIORITY = {
+  'CRÍTICO': { variant: 'danger', icon: 'octagon', label: 'Prioridad crítica' },
+  ALTO: { variant: 'warning', icon: 'alert', label: 'Prioridad alta' },
+  MEDIO: { variant: 'info', icon: 'info', label: 'Prioridad media' },
+  BAJO: { variant: '', icon: 'info', label: 'Prioridad baja' },
+};
 
 export const NAV = [
-  { route: 'hoy', label: 'Hoy', icon: '◉' },
-  { route: 'trabajo', label: 'Trabajo', icon: '▤' },
-  { route: 'conocimiento', label: 'Conocimiento', icon: '◈' },
-  { route: 'riesgos', label: 'Riesgos', icon: '⚠' },
-  { route: 'actividad', label: 'Actividad', icon: '↻' },
-  { route: 'salud', label: 'Salud', icon: '✚' },
+  { route: 'hoy', label: 'Hoy', icon: 'compass' },
+  { route: 'trabajo', label: 'Trabajo', icon: 'layers' },
+  { route: 'conocimiento', label: 'Conocimiento', icon: 'book' },
+  { route: 'riesgos', label: 'Riesgos', icon: 'shield' },
+  { route: 'actividad', label: 'Actividad', icon: 'clock' },
+  { route: 'salud', label: 'Salud', icon: 'pulse' },
 ];
 
 /* ------------------------------------------------------------ formato */
@@ -46,14 +68,54 @@ function fmtDate(d, withTime = false) {
   return d.toLocaleString('es-AR', opts);
 }
 
-function badge(text, cls) { return `<span class="badge ${cls || ''}">${esc(text)}</span>`; }
-function prioBadge(p) { return p ? badge(p, 'prio-' + p.toLowerCase().replace('í', 'i')) : ''; }
-function levelDot(level) { return `<span class="dot dot-${level}" aria-hidden="true"></span>`; }
+/** Estado de la Factory en lenguaje humano (status.md usa códigos). */
+export function humanStatus(code) {
+  const c = String(code || '').toUpperCase();
+  if (/BLOQUEAD/.test(c)) return { text: 'Bloqueada', level: 'warn' };
+  if (/VALIDAC/.test(c)) return { text: 'Esperando tu validación', level: 'warn' };
+  if (/CURSO|EJECUC|ACTIVO/.test(c)) return { text: 'Trabajando', level: 'ok' };
+  if (/ESPERA/.test(c)) return { text: 'Esperando', level: 'info' };
+  if (/IDLE|PAUSA/.test(c)) return { text: 'En pausa', level: 'info' };
+  if (!c || c === 'SIN DATO') return { text: 'Sin dato', level: 'critical' };
+  return { text: code, level: 'info' };
+}
 
-/** Convierte IDs conocidos dentro de texto YA escapado en links internos. */
+/** Quita IDs del comienzo de un título ("BL-020 — X", "[REQ-001] X") para mostrar solo el contenido. */
+export function plainTitle(text) {
+  return String(text || '').replace(/^(\[?(DEC|LES|FEAT|BL|RSK|REQ|RESP)-\d{3}\]?\s*[—:\-–]?\s*)+/, '').trim();
+}
+
+/** Primer párrafo de un texto markdown, en una línea (para resúmenes). */
+function firstParagraph(md) {
+  return String(md || '').trim().split(/\n\s*\n/)[0].replace(/^\s*[-*]\s+/gm, '').replace(/\s*\n\s*/g, ' ').trim();
+}
+
+function statusChip(text, variant, iconName) {
+  return `<span class="gds-status${variant ? ' gds-status--' + variant : ''}">${icon(iconName || 'info')}${esc(text)}</span>`;
+}
+function levelChip(level, text) {
+  const L = LEVEL[level] || LEVEL.info;
+  return statusChip(text || L.label, L.variant, L.icon);
+}
+function prioChip(p) {
+  const P = PRIORITY[p];
+  return P ? statusChip(P.label, P.variant, P.icon) : '';
+}
+function count(n, label) {
+  return `<span class="gds-count">${n}<span class="gds-visually-hidden"> ${esc(label || '')}</span></span>`;
+}
+
+/** Referencia interna: link chico y secundario. */
+function ref(id, model, label) {
+  if (!id) return '';
+  return model.allIds.has(id)
+    ? `<a class="gds-ref" href="#/item/${esc(id)}"${label ? ` aria-label="${esc(label)}"` : ''}>${esc(id)}</a>`
+    : `<span class="gds-ref gds-ref--missing" title="No existe en la memoria">${esc(id)}</span>`;
+}
+
+/** Convierte IDs conocidos dentro de texto YA escapado en referencias secundarias. */
 function linkIds(escaped, model) {
-  return escaped.replace(/\b(DEC|LES|FEAT|BL|RSK|REQ|RESP)-\d{3}\b/g, (id) =>
-    model.allIds.has(id) ? `<a class="idref" href="#/item/${id}">${id}</a>` : `<span class="idref idref-missing" title="No existe en la memoria">${id}</span>`);
+  return escaped.replace(/\b(DEC|LES|FEAT|BL|RSK|REQ|RESP)-\d{3}\b/g, (id) => ref(id, model));
 }
 
 /** Texto de una línea: escapa, renderiza `código` y enlaza IDs. */
@@ -63,10 +125,14 @@ function t(text, model) {
     .join('');
 }
 
-/** Texto "sin dato" explícito: un dato no leído nunca se muestra como 0. */
-function na(reason) { return `<span class="na" title="${esc(reason || 'sin dato')}">— <small>${esc(reason || 'sin dato')}</small></span>`; }
+/** Dato faltante explícito: un dato no leído nunca se muestra como 0. */
+function na(reason) { return `<span class="gds-na">— <small>${esc(reason || 'sin dato')}</small></span>`; }
 
-function empty(text) { return `<p class="empty">${esc(text)}</p>`; }
+function empty(text) { return `<p class="gds-empty">${esc(text)}</p>`; }
+
+function sectionHead(title, n, extra) {
+  return `<div class="gds-card__header"><h2 class="gds-title-1">${esc(title)}${n != null ? ' ' + count(n) : ''}</h2>${extra || ''}</div>`;
+}
 
 /* ------------------------------------------------------------ responder (DEC-012) */
 
@@ -76,13 +142,58 @@ const reqOf = (m, id) => (m.decisions && id ? m.decisions.requests.find(r => r.i
 export function renderRespond(req, m) {
   const actions = responseActions(req, m.generatedAt);
   if (!actions.length) return '';
-  return `<div class="respond" role="group" aria-label="Responder ${esc(req.id)}">
-    <p class="li-meta"><strong>Responder:</strong>
-      ${actions.map(a => `<a class="btn" href="${esc(buildIssueUrl(req, a))}" target="_blank" rel="noopener"
-        aria-label="${esc(a.label)} — ${esc(req.id)} (abre GitHub en otra pestaña)">${esc(a.label)} ↗</a>`).join(' ')}
-    </p>
-    <p class="li-meta">Se abre GitHub con tu respuesta lista. Podés agregar un comentario y tocá <strong>Submit new issue</strong>: en un minuto queda registrada.</p>
+  return `<div class="respond" role="group" aria-label="Responder: ${esc(plainTitle(req.titulo))}">
+    <div class="gds-cluster">
+      ${actions.map((a, i) => `<a class="gds-button ${i === 0 ? 'gds-button--primary' : 'gds-button--secondary'}" href="${esc(buildIssueUrl(req, a))}" target="_blank" rel="noopener"
+        aria-label="${esc(a.label)}: ${esc(plainTitle(req.titulo))} (abre GitHub en otra pestaña)">${esc(a.label)}${icon('external')}</a>`).join('')}
+    </div>
+    <p class="gds-caption gds-text-muted">Se abre GitHub con tu respuesta lista. Podés agregar un comentario y tocá <strong>Submit new issue</strong>: en un minuto queda registrada.</p>
   </div>`;
+}
+
+const TIPO_LABEL = { accion: 'Acción tuya', pedido: 'Decisión', decision: 'Decisión', backlog: 'Bloqueado por vos', status: 'Pendiente tuyo' };
+
+/** Tarjeta de decisión: qué se pide, por qué importa, qué recomienda la Factory y cómo responder. */
+function renderDecisionCard(h, m, first) {
+  const req = reqOf(m, h.id);
+  const failed = (m.channel && m.channel.items || []).find(c => c.solicitud && c.solicitud === h.id);
+  const why = req ? firstParagraph(req.porQueImporta) : h.pregunta;
+  const extra = (h.relacionados || []).filter(r => r !== h.id);
+  const headId = 'dq-' + (h.id || Math.abs(hash(h.titulo)));
+  return `<article class="gds-card decision${first ? ' gds-card--accent' : ''}" aria-labelledby="${esc(headId)}">
+    <div class="decision__meta gds-cluster">
+      ${statusChip(TIPO_LABEL[h.tipo] || 'Pendiente', 'accent', h.tipo === 'accion' ? 'hand' : 'compass')}
+      ${prioChip(h.prioridad)}
+      ${h.esperaMs != null ? `<span class="gds-caption gds-text-muted">${icon('clock')} Esperando ${esc(duration(h.esperaMs))}</span>` : ''}
+    </div>
+    <h3 id="${esc(headId)}" class="gds-title-1">${t(plainTitle(h.titulo), m)}</h3>
+    ${why && !(req && req.recomendacion && why === h.pregunta) ? `<p class="gds-body-2 gds-text-secondary gds-measure">${t(why, m)}</p>` : ''}
+    ${req && req.opciones && req.opciones.length ? `<ul class="decision__options gds-body-2">${req.opciones.map(o => `<li><strong>${esc(o.clave)}</strong> — ${t(o.texto, m)}</li>`).join('')}</ul>` : ''}
+    ${req && req.recomendacion ? `<div class="gds-callout gds-callout--accent">${icon('sparkle')}<div>
+      <p class="gds-callout__title">La Factory recomienda</p><p class="gds-callout__body">${t(req.recomendacion.texto, m)}</p></div></div>` : ''}
+    ${req && req.comoHacerlo ? `<details class="decision__how"><summary class="gds-label-1">Cómo hacerlo</summary><div class="md gds-body-2">${linkIdsInHtml(mdToHtml(req.comoHacerlo, () => '#'), m)}</div></details>` : ''}
+    ${failed ? renderChannelItem(failed, m, true) : ''}
+    ${req ? renderRespond(req, m) : `<p class="gds-caption gds-text-muted">${icon('info')} Se responde fuera del panel, en la conversación con la Factory.</p>`}
+    <p class="gds-caption gds-text-muted decision__refs">${h.id ? `Detalle: ${ref(h.id, m, 'Ver detalle de ' + h.id)}` : ''}${extra.length ? ` · También resuelve: ${extra.map(r => ref(r, m)).join(', ')}` : ''}</p>
+  </article>`;
+}
+
+function hash(s) { let x = 0; for (const c of String(s)) x = (x * 31 + c.charCodeAt(0)) | 0; return x; }
+
+/** Una respuesta enviada que todavía no se registró (registrándose o con error). */
+function renderChannelItem(c, m, compact) {
+  const r = c.request;
+  const what = c.respuesta && RESPONSES[c.respuesta] ? RESPONSES[c.respuesta].label : 'Tu respuesta';
+  const subject = r ? `«${plainTitle(r.titulo)}»` : (c.solicitud || 'un pedido');
+  if (c.state === 'processing') {
+    return `<div class="gds-callout gds-callout--info" role="status">${icon('clock')}<div>
+      <p class="gds-callout__title">Registrando tu respuesta (${esc(what.toLowerCase())})${compact ? '' : ' a ' + esc(subject)}</p>
+      <p class="gds-callout__body">Enviada ${esc(relTime(c.ageMs))}. Tocá Refrescar en un minuto. <a href="${esc(c.url)}" target="_blank" rel="noopener">Ver el issue #${esc(c.number)}</a></p></div></div>`;
+  }
+  return `<div class="gds-callout gds-callout--danger">${icon('octagon')}<div>
+    <p class="gds-callout__title">Tu respuesta (${esc(what.toLowerCase())})${compact ? '' : ' a ' + esc(subject)} no se pudo registrar</p>
+    <p class="gds-callout__body">El motivo está en el último comentario del issue. Corregilo con Edit y se reintenta solo.
+      <a href="${esc(c.url)}" target="_blank" rel="noopener">Abrir el issue #${esc(c.number)}</a></p></div></div>`;
 }
 
 /** Pedidos que ya respondiste y todavía no se cerraron: confirmación de que la respuesta llegó. */
@@ -97,178 +208,185 @@ function renderAnswered(m) {
     const label = u && RESPONSES[u.respuesta] ? RESPONSES[u.respuesta].label : 'Respondido';
     return label + (u && u.opcion ? ` · opción ${u.opcion}` : '') + (r.state === 'postponed' && u.hasta ? ` hasta el ${u.hasta.toISOString().slice(0, 10)}` : '');
   };
-  return `<h3 class="eyebrow">Ya respondiste</h3>
-    <ul class="list">${list.map(r => `<li class="list-item"><div class="li-main">
-      <a class="idref" href="#/item/${esc(r.id)}">${esc(r.id)}</a> <span>${esc(r.titulo)}</span></div>
-      <p class="li-meta">${esc(what(r))} · ${esc(r.estadoTexto)}</p></li>`).join('')}</ul>`;
+  return `<section class="gds-stack--sm gds-stack" aria-labelledby="answered-title">
+    <h3 id="answered-title" class="gds-label-2 gds-text-secondary">Ya respondiste</h3>
+    <ul class="gds-list">${list.map(r => `<li class="gds-list__item">${icon('check', 'is-success')}<div>
+      <p class="gds-label-1">${esc(plainTitle(r.titulo))}</p>
+      <p class="gds-caption gds-text-secondary">${esc(what(r))} · ${esc(r.estadoTexto)} · ${ref(r.id, m)}</p></div></li>`).join('')}</ul>
+  </section>`;
 }
 
 /* ------------------------------------------------------------ chrome */
 
 export function renderHeader(model, route, loading) {
-  const lvl = model ? model.health.level : 'info';
   const counts = model ? {
-    human: model.human.length,
-    risks: (model.risks || []).filter(r => r.estado === 'ABIERTO').length,
-    health: (model.health.counts.critical || 0) + (model.health.counts.warn || 0),
+    hoy: model.human.length,
+    riesgos: (model.risks || []).filter(r => r.estado === 'ABIERTO').length,
+    salud: (model.health.counts.critical || 0) + (model.health.counts.warn || 0),
   } : {};
-  const pill = (r) => {
-    if (!model) return '';
-    if (r === 'hoy' && counts.human) return `<span class="pill pill-warn" title="Decisiones esperando a Pablo">${counts.human}</span>`;
-    if (r === 'riesgos' && counts.risks) return `<span class="pill">${counts.risks}</span>`;
-    if (r === 'salud' && counts.health) return `<span class="pill pill-${lvl}">${counts.health}</span>`;
-    return '';
-  };
+  const pillLabel = { hoy: 'pendientes tuyos', riesgos: 'riesgos abiertos', salud: 'problemas de salud' };
+  const st = model ? humanStatus(model.statusInfo.code) : null;
   return `
-  <div class="brand">
-    <span class="brand-mark">🐈‍⬛</span>
-    <div><strong>Gato Negro Factory</strong><small>Centro de observación</small></div>
-  </div>
-  <nav class="nav" aria-label="Secciones">
-    ${NAV.map(n => `<a href="#/${n.route}" class="nav-link ${route === n.route ? 'active' : ''}" ${route === n.route ? 'aria-current="page"' : ''}>
-      <span class="nav-icon" aria-hidden="true">${n.icon}</span>${n.label}${pill(n.route)}</a>`).join('')}
-  </nav>
-  <div class="header-meta">
-    ${model ? `${levelDot(lvl)}<span class="muted">Leído ${esc(relTime(Date.now() - model.generatedAt))}</span>
-      ${model.ref ? `<a class="sha" href="${commitUrl('dev', model.ref)}" target="_blank" rel="noopener" title="Snapshot de ai-memory">@${esc(model.ref.slice(0, 7))}</a>` : '<span class="sha" title="Leído desde la rama">@main</span>'}` : ''}
-    <button id="btn-refresh" class="btn" ${loading ? 'disabled' : ''}>${loading ? 'Leyendo…' : '↻ Refrescar'}</button>
+  <div class="app-bar">
+    <a class="brand" href="#/hoy" aria-label="Gato Negro Factory — inicio">
+      ${brandMark(32)}
+      <span><strong class="gds-title-2">Gato Negro Factory</strong><span class="gds-caption gds-text-muted">Centro de decisiones</span></span>
+    </a>
+    <nav class="app-nav gds-tabs" aria-label="Secciones">
+      ${NAV.map(n => `<a href="#/${n.route}" class="gds-tab"${route === n.route ? ' aria-current="page"' : ''}>${icon(n.icon)}${n.label}${model && counts[n.route] ? ' ' + count(counts[n.route], pillLabel[n.route]) : ''}</a>`).join('')}
+    </nav>
+    <div class="app-meta gds-cluster">
+      ${model ? `${levelChip(st.level, st.text)}
+        <span class="gds-caption gds-text-muted">Leído ${esc(relTime(Date.now() - model.generatedAt))}
+        ${model.ref ? `· <a class="gds-ref" href="${commitUrl('dev', model.ref)}" target="_blank" rel="noopener" title="Commit de la memoria leída">@${esc(model.ref.slice(0, 7))}</a>` : '· rama main'}</span>` : ''}
+      <button id="btn-refresh" type="button" class="gds-button gds-button--secondary gds-button--sm" ${loading ? 'disabled aria-busy="true"' : ''}>${icon('refresh')}${loading ? 'Leyendo…' : 'Refrescar'}</button>
+    </div>
   </div>`;
 }
 
 /* ------------------------------------------------------------ HOY */
 
+/** Frase de una línea que resume la situación para Pablo. */
+export function verdict(m) {
+  const n = m.human.length;
+  const failed = (m.channel && m.channel.items || []).filter(c => c.state === 'failed').length;
+  if (failed) return { text: failed === 1 ? 'Una respuesta tuya no se pudo registrar' : `${failed} respuestas tuyas no se pudieron registrar`, level: 'critical' };
+  if (n) return { text: n === 1 ? 'Hay 1 cosa esperando tu decisión' : `Hay ${n} cosas esperando tu decisión`, level: 'warn' };
+  if (m.health.level === 'critical') return { text: 'Nada espera tu decisión, pero hay un problema crítico', level: 'critical' };
+  const st = humanStatus(m.statusInfo.code);
+  return { text: st.level === 'ok' ? 'La Factory está trabajando: nada necesita tu decisión' : 'Nada necesita tu decisión', level: 'ok' };
+}
+
 export function renderHome(m) {
   const s = m.status || {};
   const si = m.statusInfo;
+  const st = humanStatus(si.code);
   const a = m.activity;
   const b = m.backlog || {};
+  const v = verdict(m);
+  const crit = m.health.counts.critical || 0;
+  const blocked = (b.BLOCKED || []).length;
   const stage = (s.etapa || '').toUpperCase();
-  const stageIdx = WORKFLOW.findIndex(w => stage.includes(w));
+  const stageIdx = WORKFLOW.findIndex(([w]) => stage.includes(w));
   const stageDone = /COMPLETAD/.test(stage);
-
-  const statusLevel = m.health.level === 'critical' ? 'critical' : si.level;
-  const extraRefs = (h) => h.relacionados.filter(r => !String(h.pregunta || '').includes(r));
+  const channel = (m.channel && m.channel.items) || [];
+  const looseChannel = channel.filter(c => !m.human.some(h => h.id === c.solicitud));
 
   return `
-  <section class="hero card lvl-${statusLevel}">
-    <div class="hero-top">
-      <div>
-        <div class="eyebrow">¿Qué está haciendo la Factory?</div>
-        <h1 class="hero-title">${s.tarea ? t(s.tarea, m) : na('status.md no declara tarea')}</h1>
-      </div>
-      <div class="hero-state">
-        ${badge(si.label, 'state state-' + si.level)}
-        ${m.fase ? `<a href="#/trabajo" class="phase">${esc(m.fase.id)} · ${esc(m.fase.nombre)}</a>` : ''}
-      </div>
+  <section class="verdict gds-stack--sm gds-stack" aria-labelledby="verdict-title">
+    <p class="gds-label-2 gds-text-muted">Resumen</p>
+    <h1 id="verdict-title" class="gds-headline-1">${esc(v.text)}</h1>
+    <div class="gds-cluster">
+      ${m.human.length ? statusChip(`${m.human.length} esperando tu decisión`, 'warning', 'hand') : statusChip('Sin decisiones pendientes', 'success', 'check')}
+      ${crit ? statusChip(`${crit} problema${crit > 1 ? 's' : ''} crítico${crit > 1 ? 's' : ''}`, 'danger', 'octagon') : ''}
+      ${blocked ? statusChip(`${blocked} bloqueado${blocked > 1 ? 's' : ''}`, 'warning', 'alert') : ''}
+      ${levelChip(st.level, 'Factory: ' + st.text)}
     </div>
-
-    <div class="why"><span class="eyebrow">Por qué</span> ${s.motivo ? t(s.motivo, m) : na('falta "Motivo:" en status.md')}</div>
-
-    <ol class="stepper" aria-label="Etapa del workflow">
-      ${WORKFLOW.map((w, i) => {
-        const cls = stageIdx === -1 ? '' : i < stageIdx || (i === stageIdx && stageDone) ? 'done' : i === stageIdx ? 'current' : '';
-        return `<li class="${cls}"><span>${i + 1}</span>${w}</li>`;
-      }).join('')}
-    </ol>
-
-    <dl class="facts">
-      <div><dt>Etapa</dt><dd>${s.etapa ? esc(s.etapa) : na()}</dd></div>
-      <div><dt>Tiempo en ejecución</dt><dd>${si.inicio ? esc(duration(si.enEjecucionMs)) + ` <small class="muted">desde ${esc(fmtDate(si.inicio, true))}</small>` : na('falta "Inicio:" en status.md')}</dd></div>
-      <div><dt>Última actualización</dt><dd>${si.actualizado ? esc(relTime(si.desdeActualizacionMs)) : na()}</dd></div>
-      <div class="wide"><dt>Próxima acción</dt><dd>${s.proxima ? t(s.proxima, m) : na()}</dd></div>
-    </dl>
   </section>
 
-  <div class="grid-2">
-    <section class="card">
-      <h2>Necesita tu decisión <span class="count">${m.human.length}</span></h2>
-      ${m.human.length ? `<ul class="list">${m.human.map(h => `
-        <li class="list-item">
-          <div class="li-main">
-            ${h.id ? `<a class="idref" href="#/item/${esc(h.id)}">${esc(h.id)}</a>` : ''}
-            ${prioBadge(h.prioridad)}
-            <strong>${t(h.titulo, m)}</strong>
-          </div>
-          ${h.pregunta ? `<p class="li-sub">${t(h.pregunta, m)}</p>` : ''}
-          ${h.esperaMs != null || extraRefs(h).length ? `<p class="li-meta">${[
-            h.esperaMs != null ? `Esperando ${esc(duration(h.esperaMs))}` : '',
-            extraRefs(h).length ? `Relacionado: ${extraRefs(h).map(r => t(r, m)).join(', ')}` : '',
-          ].filter(Boolean).join(' · ')}</p>` : ''}
-          ${renderRespond(reqOf(m, h.id), m)}
-        </li>`).join('')}</ul>` : empty('Nada espera una decisión tuya.')}
-      ${renderAnswered(m)}
-    </section>
+  ${looseChannel.length ? `<div class="gds-stack--sm gds-stack">${looseChannel.map(c => renderChannelItem(c, m, false)).join('')}</div>` : ''}
 
-    <section class="card">
-      <h2>Qué debería preocuparte <span class="count">${m.concerns.length}</span></h2>
-      ${m.concerns.length ? `<ul class="list">${m.concerns.slice(0, 7).map(c => `
-        <li class="list-item">${levelDot(c.level)}
-          <div class="li-main">${c.id ? t(c.id, m) + ' ' : ''}<span>${t(c.titulo, m)}</span></div>
-          <p class="li-meta">${esc(c.origen)}</p></li>`).join('')}</ul>
-        ${m.concerns.length > 7 ? `<p class="more"><a href="#/salud">+${m.concerns.length - 7} más en Salud y Riesgos</a></p>` : ''}`
-      : empty('Sin riesgos altos abiertos ni problemas de salud.')}
-    </section>
-  </div>
+  <section class="gds-stack" aria-labelledby="human-title">
+    <h2 id="human-title" class="gds-headline-2">Necesita tu decisión ${count(m.human.length, 'pendientes')}</h2>
+    ${m.human.length
+      ? `<div class="decisions">${m.human.map((h, i) => renderDecisionCard(h, m, i === 0)).join('')}</div>`
+      : `<div class="gds-callout gds-callout--success">${icon('check')}<div><p class="gds-callout__title">Nada espera una decisión tuya.</p>
+        <p class="gds-callout__body">Cuando la Factory necesite algo, aparece acá con su recomendación y los botones para responder.</p></div></div>`}
+    ${renderAnswered(m)}
+  </section>
 
-  <div class="grid-2">
+  <section class="gds-card factory" aria-labelledby="factory-title">
+    <div class="gds-card__header">
+      <h2 id="factory-title" class="gds-title-1">¿Qué está haciendo la Factory?</h2>
+      <div class="gds-cluster">${levelChip(st.level, st.text)}${m.fase ? `<a class="gds-ref" href="#/trabajo">${esc(m.fase.id)} · ${esc(m.fase.nombre)}</a>` : ''}</div>
+    </div>
+    <div class="gds-stack">
+      <p class="gds-headline-2">${s.tarea ? t(plainTitle(s.tarea), m) : na('status.md no declara tarea')}</p>
+      <p class="gds-body-1 gds-text-secondary gds-measure"><strong class="gds-label-1">Por qué:</strong> ${s.motivo ? t(s.motivo, m) : na('falta "Motivo:" en status.md')}</p>
+      <ol class="gds-stepper" aria-label="Etapa del trabajo">
+        ${WORKFLOW.map(([w, label], i) => {
+          const state = stageIdx === -1 ? 'todo' : i < stageIdx || (i === stageIdx && stageDone) ? 'done' : i === stageIdx ? 'current' : 'todo';
+          const sr = { done: 'completada', current: 'etapa actual', todo: 'pendiente' }[state];
+          return `<li class="gds-stepper__step" data-state="${state}"${state === 'current' ? ' aria-current="step"' : ''}>${icon(state === 'done' ? 'check' : state === 'current' ? 'arrow' : 'clock')}<span>${label}<span class="gds-visually-hidden"> (${sr})</span></span></li>`;
+        }).join('')}
+      </ol>
+      <dl class="facts">
+        <div><dt>Tiempo en ejecución</dt><dd>${si.inicio ? esc(duration(si.enEjecucionMs)) + ` <span class="gds-caption gds-text-muted">desde ${esc(fmtDate(si.inicio, true))}</span>` : na('falta "Inicio:" en status.md')}</dd></div>
+        <div><dt>Última actualización</dt><dd>${si.actualizado ? esc(relTime(si.desdeActualizacionMs)) : na()}</dd></div>
+        <div class="facts__wide"><dt>Próxima acción</dt><dd>${s.proxima ? t(s.proxima, m) : na()}</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="gds-card" aria-labelledby="concerns-title">
+    <div class="gds-card__header"><h2 id="concerns-title" class="gds-title-1">Qué debería preocuparte ${count(m.concerns.length)}</h2></div>
+    ${m.concerns.length ? `<ul class="gds-list">${m.concerns.slice(0, 6).map(c => `
+      <li class="gds-list__item">${icon(LEVEL[c.level].icon, 'is-' + LEVEL[c.level].variant)}<div>
+        <p class="gds-label-1"><span class="gds-visually-hidden">${esc(LEVEL[c.level].label)}: </span>${t(c.titulo, m)}</p>
+        <p class="gds-caption gds-text-muted">${esc(c.origen)}${c.id ? ' · ' + ref(c.id, m) : ''}</p></div></li>`).join('')}</ul>
+      ${m.concerns.length > 6 ? `<p class="more gds-body-2"><a href="#/salud">Ver ${m.concerns.length - 6} más en Salud y Riesgos</a></p>` : ''}`
+    : empty('Sin riesgos altos abiertos ni problemas de salud.')}
+  </section>
+
+  <div class="gds-grid">
     ${renderPeriod('Hoy', a.commitsToday, a.memoryToday, a.doneToday, m)}
     ${renderPeriod('Esta semana', a.commitsWeek, a.memoryWeek, a.doneWeek, m)}
   </div>
 
-  <section class="kpis">
-    ${kpi('Listo', (b.READY || []).length, '#/trabajo')}
-    ${kpi('En curso', (b.IN_PROGRESS || []).length, '#/trabajo')}
-    ${kpi('Bloqueado', (b.BLOCKED || []).length, '#/trabajo', (b.BLOCKED || []).length ? 'warn' : '')}
-    ${kpi('Hecho', (b.DONE || []).length, '#/trabajo')}
-    ${kpi('Riesgos abiertos', (m.risks || []).filter(r => r.estado === 'ABIERTO').length, '#/riesgos')}
-    ${kpi('Decisiones', (m.entries.DEC || []).length, '#/conocimiento/dec')}
-    ${kpi('Lecciones', (m.entries.LES || []).length, '#/conocimiento/les')}
-    ${kpi('Funcionalidades', (m.entries.FEAT || []).length, '#/conocimiento/feat')}
+  <section aria-labelledby="metrics-title">
+    <h2 id="metrics-title" class="gds-visually-hidden">Números</h2>
+    <div class="metrics">
+      ${metric('Listo para hacer', (b.READY || []).length, '#/trabajo')}
+      ${metric('En curso', (b.IN_PROGRESS || []).length, '#/trabajo')}
+      ${metric('Bloqueado', blocked, '#/trabajo')}
+      ${metric('Hecho', (b.DONE || []).length, '#/trabajo')}
+      ${metric('Riesgos abiertos', (m.risks || []).filter(r => r.estado === 'ABIERTO').length, '#/riesgos')}
+      ${metric('Decisiones', (m.entries.DEC || []).length, '#/conocimiento/dec')}
+      ${metric('Lecciones', (m.entries.LES || []).length, '#/conocimiento/les')}
+      ${metric('Funcionalidades', (m.entries.FEAT || []).length, '#/conocimiento/feat')}
+    </div>
   </section>
 
   ${renderEnvironments(m)}`;
 }
 
-function kpi(label, value, href, tone) {
-  return `<a class="kpi ${tone ? 'kpi-' + tone : ''}" href="${href}"><span class="kpi-value">${value}</span><span class="kpi-label">${esc(label)}</span></a>`;
+function metric(label, value, href) {
+  return `<a class="gds-metric" href="${href}"><span class="gds-metric__value">${value}</span><span class="gds-metric__label">${esc(label)}</span></a>`;
 }
 
 function renderPeriod(title, commits, memory, done, m) {
   const total = commits.length + memory.length + done.length;
-  return `<section class="card">
-    <h2>${esc(title)}</h2>
-    <div class="period-stats">
-      <span><strong>${commits.length}</strong> commits</span>
-      <span><strong>${memory.length}</strong> registros de memoria</span>
-      <span><strong>${done.length}</strong> ítems terminados</span>
-    </div>
-    ${total ? `<ul class="timeline compact">
-      ${done.slice(0, 4).map(d => `<li><span class="tl-kind kind-BL">Hecho</span> ${t(d.id, m)} ${t(d.titulo, m)}</li>`).join('')}
-      ${memory.slice(0, 5).map(x => `<li><span class="tl-kind kind-${x.kind}">${esc(KIND_LABEL[x.kind] || x.kind)}</span> ${t(x.id, m)} ${esc(x.titulo)}</li>`).join('')}
-      ${commits.slice(0, 5).map(c => `<li><span class="tl-kind kind-commit">${esc(CONFIG.repos[c.repo].label)}</span> <a href="${commitUrl(c.repo, c.sha)}" target="_blank" rel="noopener" class="sha">${esc(c.short)}</a> ${t(c.title, m)}</li>`).join('')}
+  return `<section class="gds-card" aria-label="Actividad: ${esc(title)}">
+    <div class="gds-card__header"><h2 class="gds-title-1">${esc(title)}</h2>
+      <span class="gds-caption gds-text-muted">${commits.length} commits · ${memory.length} registros · ${done.length} terminados</span></div>
+    ${total ? `<ul class="gds-timeline">
+      ${done.slice(0, 4).map(d => `<li class="gds-timeline__item"><span class="gds-timeline__time">Hecho</span><span>${esc(plainTitle(d.titulo))} ${ref(d.id, m)}</span></li>`).join('')}
+      ${memory.slice(0, 4).map(x => `<li class="gds-timeline__item"><span class="gds-timeline__time">${esc(KIND_LABEL[x.kind] || x.kind)}</span><span>${esc(plainTitle(x.titulo))} ${ref(x.id, m)}</span></li>`).join('')}
+      ${commits.slice(0, 4).map(c => `<li class="gds-timeline__item"><span class="gds-timeline__time">${esc(c.repo === 'dev' ? 'DEV' : 'Panel')}</span><span>${t(c.title, m)} <a class="gds-ref" href="${commitUrl(c.repo, c.sha)}" target="_blank" rel="noopener">${esc(c.short)}</a></span></li>`).join('')}
     </ul>` : empty('Sin actividad registrada en el período.')}
   </section>`;
 }
 
 function renderEnvironments(m) {
   const p = m.prod, c = m.compare;
-  return `<section class="card">
-    <h2>Entornos <small class="muted">medido en GitHub</small></h2>
-    <div class="env-grid">
-      <div class="env">
-        <div class="env-head"><a href="${repoUrl('dev')}" target="_blank" rel="noopener">${esc(CONFIG.repos.dev.name)}</a>${badge('DEV', 'env-dev')}</div>
-        <p>${m.commits.find(x => x.repo === 'dev') ? `Último commit ${esc(relTime(m.generatedAt - m.commits.find(x => x.repo === 'dev').date))}` : na('sin commits leídos')}</p>
-        <p>${c ? (c.status === 'identical' ? 'Idéntico a producción' : `${c.ahead_by} commit(s) por delante de producción` + (c.behind_by ? `, ${c.behind_by} por detrás` : '')) : na('comparación no disponible')}</p>
+  const lastOf = (repo) => m.commits.find(x => x.repo === repo);
+  return `<section class="gds-card" aria-labelledby="env-title">
+    <div class="gds-card__header"><h2 id="env-title" class="gds-title-1">Entornos</h2><span class="gds-caption gds-text-muted">medido en GitHub</span></div>
+    <div class="gds-grid">
+      <div class="gds-card gds-card--inset gds-stack--sm gds-stack">
+        <p class="gds-cluster">${statusChip('DEV', 'info', 'layers')}<a href="${repoUrl('dev')}" target="_blank" rel="noopener">${esc(CONFIG.repos.dev.name)}</a></p>
+        <p class="gds-body-2">${lastOf('dev') ? `Último commit ${esc(relTime(m.generatedAt - lastOf('dev').date))}` : na('sin commits leídos')}</p>
+        <p class="gds-body-2">${c ? (c.status === 'identical' ? 'Idéntico a producción' : `${c.ahead_by} commit(s) por delante de producción` + (c.behind_by ? `, ${c.behind_by} por detrás` : '')) : na('comparación no disponible')}</p>
       </div>
-      <div class="env">
-        <div class="env-head"><a href="${repoUrl('prod')}" target="_blank" rel="noopener">${esc(CONFIG.repos.prod.name)}</a>${badge('PROD', 'env-prod')}</div>
-        <p>${p ? `Último cambio ${p.date ? esc(relTime(m.generatedAt - new Date(p.date))) : ''} · <span class="sha">${esc(p.sha.slice(0, 7))}</span>` : na('no verificable')}</p>
-        <p>${p ? (p.protected ? `${levelDot('ok')} main protegida` : `${levelDot('critical')} <strong>main sin protección</strong>`) : ''}</p>
-        <p class="muted small">Solo lectura. La promoción es decisión exclusiva de Pablo.</p>
+      <div class="gds-card gds-card--inset gds-stack--sm gds-stack">
+        <p class="gds-cluster">${statusChip('PROD', 'accent', 'shield')}<a href="${repoUrl('prod')}" target="_blank" rel="noopener">${esc(CONFIG.repos.prod.name)}</a></p>
+        <p class="gds-body-2">${p ? `Último cambio ${p.date ? esc(relTime(m.generatedAt - new Date(p.date))) : ''} · <span class="gds-ref">${esc(p.sha.slice(0, 7))}</span>` : na('no verificable')}</p>
+        <p class="gds-body-2">${p ? (p.protected ? levelChip('ok', 'main protegida') : levelChip('critical', 'main sin protección')) : ''}</p>
+        <p class="gds-caption gds-text-muted">Solo lectura. Pasar algo a producción es decisión exclusiva tuya.</p>
       </div>
-      <div class="env">
-        <div class="env-head"><a href="${repoUrl('dashboard')}" target="_blank" rel="noopener">${esc(CONFIG.repos.dashboard.name)}</a>${badge('PANEL', 'env-dash')}</div>
-        <p>${m.commits.find(x => x.repo === 'dashboard') ? `Último commit ${esc(relTime(m.generatedAt - m.commits.find(x => x.repo === 'dashboard').date))}` : na('sin commits leídos')}</p>
+      <div class="gds-card gds-card--inset gds-stack--sm gds-stack">
+        <p class="gds-cluster">${statusChip('PANEL', '', 'eye')}<a href="${repoUrl('dashboard')}" target="_blank" rel="noopener">${esc(CONFIG.repos.dashboard.name)}</a></p>
+        <p class="gds-body-2">${lastOf('dashboard') ? `Último commit ${esc(relTime(m.generatedAt - lastOf('dashboard').date))}` : na('sin commits leídos')}</p>
       </div>
     </div>
   </section>`;
@@ -279,29 +397,30 @@ function renderEnvironments(m) {
 export function renderWork(m) {
   const b = m.backlog;
   const cols = [
-    ['IN_PROGRESS', 'En curso'], ['BLOCKED', 'Bloqueado'], ['READY', 'Listo'], ['DONE', 'Hecho'],
+    ['IN_PROGRESS', 'En curso', 'arrow'], ['BLOCKED', 'Bloqueado', 'alert'], ['READY', 'Listo para hacer', 'clock'], ['DONE', 'Hecho', 'check'],
   ];
   return `
-  <header class="page-head"><h1>Trabajo</h1><p class="muted">Roadmap y backlog declarados en <code>ai-memory/</code>.</p></header>
-  <section class="card">
-    <h2>Roadmap</h2>
-    ${m.roadmap && m.roadmap.length ? `<ol class="roadmap">${m.roadmap.map(p => `
-      <li class="phase-card ${/CURSO/.test(p.estado) ? 'current' : /HECH|COMPLET|DONE/.test(p.estado) ? 'done' : ''}">
-        <div class="phase-head"><strong>${esc(p.id)}</strong> ${esc(p.nombre)} ${badge(p.estado || 'SIN ESTADO', 'phase-state')}</div>
-        <p>${t(p.objetivo, m)}</p>
-        <p class="li-meta"><strong>Sale cuando:</strong> ${t(p.criterio, m)}</p>
-      </li>`).join('')}</ol>` : na('roadmap.md no disponible')}
+  <header class="page-head gds-stack--sm gds-stack"><h1 class="gds-headline-1">Trabajo</h1><p class="gds-body-2 gds-text-secondary">Hacia dónde va la Factory y en qué está cada tarea.</p></header>
+  <section class="gds-card" aria-labelledby="roadmap-title">
+    <div class="gds-card__header"><h2 id="roadmap-title" class="gds-title-1">Etapas del plan</h2></div>
+    ${m.roadmap && m.roadmap.length ? `<ol class="gds-list">${m.roadmap.map(p => {
+      const lvl = /CURSO/.test(p.estado) ? ['accent', 'arrow', 'En curso'] : /HECH|COMPLET|DONE/.test(p.estado) ? ['success', 'check', 'Hecha'] : ['', 'clock', p.estado ? p.estado.charAt(0) + p.estado.slice(1).toLowerCase() : 'Sin estado'];
+      return `<li class="gds-list__item">${icon(lvl[1])}<div class="gds-stack--sm gds-stack">
+        <p class="gds-cluster"><strong class="gds-title-2">${esc(p.nombre)}</strong>${statusChip(lvl[2], lvl[0], lvl[1])}<span class="gds-ref">${esc(p.id)}</span></p>
+        <p class="gds-body-2">${t(p.objetivo, m)}</p>
+        <p class="gds-caption gds-text-secondary"><strong>Termina cuando:</strong> ${t(p.criterio, m)}</p></div></li>`;
+    }).join('')}</ol>` : na('roadmap.md no disponible')}
   </section>
-  ${b ? `<section class="board">${cols.map(([k, label]) => `
-    <div class="column col-${k}">
-      <h2>${label} <span class="count">${b[k].length}</span></h2>
-      ${b[k].length ? b[k].map(it => `
-        <article class="ticket" id="${esc(it.id)}">
-          <div class="ticket-head"><a class="idref" href="#/item/${esc(it.id)}">${esc(it.id)}</a>${prioBadge(it.prioridad)}</div>
-          <p class="ticket-title">${t(it.titulo, m)}</p>
-          ${it.detalle ? `<p class="ticket-detail">${t(it.detalle, m)}</p>` : ''}
-        </article>`).join('') : empty('Vacío')}
-    </div>`).join('')}</section>` : na('backlog.md no disponible')}`;
+  ${b ? `<div class="board">${cols.map(([k, label, ic]) => `
+    <section class="gds-card board__col" aria-labelledby="col-${k}">
+      <div class="gds-card__header"><h2 id="col-${k}" class="gds-title-2">${icon(ic)} ${label} ${count(b[k].length)}</h2></div>
+      ${b[k].length ? `<ul class="gds-list">${b[k].map(it => `
+        <li class="gds-list__item ticket"><div class="gds-stack--sm gds-stack">
+          <p class="gds-cluster">${prioChip(it.prioridad)}${ref(it.id, m)}</p>
+          <p class="gds-label-1">${t(plainTitle(it.titulo), m)}</p>
+          ${it.detalle ? `<p class="gds-caption gds-text-secondary">${t(it.detalle, m)}</p>` : ''}
+        </div></li>`).join('')}</ul>` : empty('Vacío')}
+    </section>`).join('')}</div>` : na('backlog.md no disponible')}`;
 }
 
 /* ------------------------------------------------------------ CONOCIMIENTO */
@@ -313,15 +432,24 @@ export function renderKnowledge(m, sub) {
   const resumen = new Map(Object.values(m.index || {}).flat().filter(x => x && x.id).map(x => [x.id, x.resumen]));
   const backlinks = buildBacklinks(m);
   return `
-  <header class="page-head"><h1>Conocimiento</h1><p class="muted">Lo que la Factory decidió, aprendió y construyó.</p></header>
-  <div class="tabs" role="tablist">${tabs.map(x => `<a role="tab" href="#/conocimiento/${x.key}" class="tab ${x === active ? 'active' : ''}" aria-selected="${x === active}">${esc(x.label)} <span class="count">${(m.entries[x.prefix] || []).length}</span></a>`).join('')}</div>
-  ${list.length ? `<div class="entries">${list.slice().reverse().map(e => `
-    <a class="entry card" href="#/item/${esc(e.id || '')}">
-      <div class="entry-head"><span class="idref">${esc(e.id || '?')}</span>${e.estadoCodigo ? badge(e.estadoCodigo, 'st-' + e.estadoCodigo.toLowerCase()) : ''}<span class="muted small">${esc(e.fechaTexto || 'sin fecha')}</span></div>
-      <h3>${esc(e.titulo)}</h3>
-      ${resumen.get(e.id) ? `<p>${esc(resumen.get(e.id))}</p>` : ''}
-      ${(backlinks.get(e.id) || []).length ? `<p class="li-meta">Citado por ${(backlinks.get(e.id) || []).length}</p>` : ''}
+  <header class="page-head gds-stack--sm gds-stack"><h1 class="gds-headline-1">Conocimiento</h1><p class="gds-body-2 gds-text-secondary">Lo que la Factory decidió, aprendió y construyó.</p></header>
+  <nav class="gds-tabs" aria-label="Tipo de registro">${tabs.map(x => `<a href="#/conocimiento/${x.key}" class="gds-tab"${x === active ? ' aria-current="page"' : ''}>${esc(x.label)} ${count((m.entries[x.prefix] || []).length)}</a>`).join('')}</nav>
+  ${list.length ? `<div class="gds-grid">${list.slice().reverse().map(e => `
+    <a class="gds-card gds-stack--sm gds-stack" href="#/item/${esc(e.id || '')}">
+      <p class="gds-cluster">${e.estadoCodigo ? stateChip(e.estadoCodigo) : ''}<span class="gds-caption gds-text-muted">${esc(e.fechaTexto || 'sin fecha')}</span><span class="gds-ref">${esc(e.id || '?')}</span></p>
+      <h2 class="gds-title-2">${esc(plainTitle(e.titulo))}</h2>
+      ${resumen.get(e.id) ? `<p class="gds-body-2 gds-text-secondary">${esc(resumen.get(e.id))}</p>` : ''}
+      ${(backlinks.get(e.id) || []).length ? `<p class="gds-caption gds-text-muted">Citado por ${(backlinks.get(e.id) || []).length}</p>` : ''}
     </a>`).join('')}</div>` : empty(`No hay ${active.label.toLowerCase()} registradas.`)}`;
+}
+
+/** Estado declarado de una entrada (ACEPTADA, PROPUESTA, …) con ícono y texto. */
+function stateChip(code) {
+  const c = String(code || '').toUpperCase();
+  if (/ACEPTAD|HECH|DONE|DISPONIBLE|CERRAD|PROCESAD/.test(c)) return statusChip(code, 'success', 'check');
+  if (/PROPUEST|ABIERT|PENDIENTE/.test(c)) return statusChip(code, 'warning', 'clock');
+  if (/REEMPLAZ|DESCART|OBSOLET/.test(c)) return statusChip(code, '', 'x');
+  return statusChip(code, 'info', 'info');
 }
 
 function buildBacklinks(m) {
@@ -335,7 +463,7 @@ function buildBacklinks(m) {
 
 export function renderItem(m, id) {
   const backlinks = buildBacklinks(m).get(id) || [];
-  const cited = backlinks.length ? `<p class="li-meta">Citado por: ${backlinks.map(x => t(x, m)).join(', ')}</p>` : '';
+  const cited = backlinks.length ? `<p class="gds-caption gds-text-secondary">Citado por: ${backlinks.map(x => ref(x, m)).join(', ')}</p>` : '';
   const entry = Object.values(m.entries).flat().find(e => e.id === id);
   if (entry) {
     const resolver = (href) => {
@@ -345,33 +473,39 @@ export function renderItem(m, id) {
       const linked = Object.values(m.entries).flat().find(e => e.path === target);
       return linked ? '#/item/' + linked.id : blobUrl('dev', CONFIG.memoryRoot + '/' + target, m.ref);
     };
+    const kind = id.split('-')[0];
+    const back = kind === 'REQ' || kind === 'RESP' ? ['#/hoy', 'Hoy'] : [`#/conocimiento/${kind.toLowerCase()}`, KIND_LABEL[kind] || 'Conocimiento'];
+    const queueItem = entry.kind === 'REQ' ? m.human.find(h => h.id === id) : null;
     return `
-    <nav class="crumbs"><a href="#/conocimiento/${esc(id.split('-')[0].toLowerCase())}">← ${esc(KIND_LABEL[id.split('-')[0]] || '')}</a></nav>
-    <article class="card doc">
-      <div class="entry-head"><span class="idref">${esc(entry.id)}</span>${entry.estadoCodigo ? badge(entry.estado, 'st-' + entry.estadoCodigo.toLowerCase()) : ''}</div>
-      <h1>${esc(entry.titulo)}</h1>
-      ${entry.kind === 'REQ' ? renderRespond(entry, m) || `<p class="li-meta">${esc(entry.estadoTexto || '')}</p>` : ''}
+    <nav class="crumbs gds-body-2" aria-label="Volver"><a href="${back[0]}">← ${esc(back[1])}</a></nav>
+    ${queueItem ? renderDecisionCard(queueItem, m, true) : ''}
+    <article class="gds-card doc gds-stack">
+      <p class="gds-cluster">${statusChip(KIND_LABEL[kind] || kind, 'accent', 'book')}${entry.estadoCodigo ? stateChip(entry.estado || entry.estadoCodigo) : ''}<span class="gds-ref">${esc(entry.id)}</span></p>
+      <h1 class="gds-headline-1">${esc(plainTitle(entry.titulo))}</h1>
+      ${entry.kind === 'REQ' && !queueItem ? `<p class="gds-body-2 gds-text-secondary">${esc(entry.estadoTexto || '')}</p>` : ''}
       <dl class="meta">${Object.entries(entry.meta).map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${t(v, m)}</dd></div>`).join('')}</dl>
       ${cited}
-      <div class="md">${linkIdsInHtml(mdToHtml(entry.body, resolver), m)}</div>
-      <p class="li-meta"><a href="${blobUrl('dev', CONFIG.memoryRoot + '/' + entry.path, m.ref)}" target="_blank" rel="noopener">Ver en GitHub ↗</a></p>
+      <div class="md gds-measure">${linkIdsInHtml(mdToHtml(entry.body, resolver), m)}</div>
+      <p class="gds-caption"><a href="${blobUrl('dev', CONFIG.memoryRoot + '/' + entry.path, m.ref)}" target="_blank" rel="noopener">Ver en GitHub ${icon('external')}</a></p>
     </article>`;
   }
   const bl = m.backlog ? Object.values(m.backlog).flat().find(x => x && x.id === id) : null;
   if (bl) {
-    return `<nav class="crumbs"><a href="#/trabajo">← Trabajo</a></nav>
-    <article class="card doc"><div class="entry-head"><span class="idref">${esc(bl.id)}</span>${prioBadge(bl.prioridad)}${badge(bl.seccion, 'phase-state')}</div>
-      <h1>${t(bl.titulo, m)}</h1>${bl.detalle ? `<p>${t(bl.detalle, m)}</p>` : ''}${cited}</article>`;
+    return `<nav class="crumbs gds-body-2" aria-label="Volver"><a href="#/trabajo">← Trabajo</a></nav>
+    <article class="gds-card doc gds-stack"><p class="gds-cluster">${statusChip(SECTION_LABEL[bl.seccion] || bl.seccion, 'accent', 'layers')}${prioChip(bl.prioridad)}<span class="gds-ref">${esc(bl.id)}</span></p>
+      <h1 class="gds-headline-1">${t(plainTitle(bl.titulo), m)}</h1>${bl.detalle ? `<p class="gds-body-1 gds-measure">${t(bl.detalle, m)}</p>` : ''}${cited}</article>`;
   }
   const rk = (m.risks || []).find(r => r.id === id);
   if (rk) {
-    return `<nav class="crumbs"><a href="#/riesgos">← Riesgos</a></nav>
-    <article class="card doc"><div class="entry-head"><span class="idref">${esc(rk.id)}</span>${prioBadge(rk.severidad)}${badge(rk.estado, 'st-' + rk.estado.toLowerCase())}</div>
-      <h1>${t(rk.riesgo, m)}</h1><dl class="meta"><div><dt>Mitigación</dt><dd>${t(rk.mitigacion || '—', m)}</dd></div>
+    return `<nav class="crumbs gds-body-2" aria-label="Volver"><a href="#/riesgos">← Riesgos</a></nav>
+    <article class="gds-card doc gds-stack"><p class="gds-cluster">${prioChip(rk.severidad)}${stateChip(rk.estado)}<span class="gds-ref">${esc(rk.id)}</span></p>
+      <h1 class="gds-headline-2">${t(rk.riesgo, m)}</h1><dl class="meta"><div><dt>Mitigación</dt><dd>${t(rk.mitigacion || '—', m)}</dd></div>
       <div><dt>Responsable</dt><dd>${esc(rk.responsable || '—')}</dd></div></dl>${cited}</article>`;
   }
-  return `<article class="card">${empty(`No existe ${id} en la memoria.`)}<p><a href="#/hoy">Volver</a></p></article>`;
+  return `<article class="gds-card gds-stack">${empty(`No existe ${id} en la memoria.`)}<p><a href="#/hoy">Volver a Hoy</a></p></article>`;
 }
+
+const SECTION_LABEL = { READY: 'Listo para hacer', IN_PROGRESS: 'En curso', BLOCKED: 'Bloqueado', DONE: 'Hecho' };
 
 /** Enlaza IDs en HTML ya generado, sin tocar atributos ni contenido de <a>/<code>. */
 function linkIdsInHtml(html, m) {
@@ -383,20 +517,20 @@ function linkIdsInHtml(html, m) {
 
 export function renderRisks(m) {
   const risks = m.risks;
-  if (!risks) return `<header class="page-head"><h1>Riesgos</h1></header>${na('risks.md no disponible')}`;
+  if (!risks) return `<header class="page-head"><h1 class="gds-headline-1">Riesgos</h1></header>${na('risks.md no disponible')}`;
   const open = risks.filter(r => r.estado === 'ABIERTO');
   const groups = [
     ['Críticos abiertos', open.filter(r => r.severidad === 'CRÍTICO'), 'critical'],
     ['Altos abiertos', open.filter(r => r.severidad === 'ALTO'), 'warn'],
     ['Otros abiertos', open.filter(r => !['CRÍTICO', 'ALTO'].includes(r.severidad)), 'info'],
-    ['Mitigados / cerrados', risks.filter(r => r.estado !== 'ABIERTO'), 'ok'],
+    ['Mitigados o cerrados', risks.filter(r => r.estado !== 'ABIERTO'), 'ok'],
   ];
   return `
-  <header class="page-head"><h1>Riesgos</h1><p class="muted">${open.length} abiertos · ${risks.length - open.length} mitigados o cerrados.</p></header>
-  ${groups.map(([title, list, lvl]) => `<section class="card">
-    <h2>${levelDot(lvl)} ${esc(title)} <span class="count">${list.length}</span></h2>
-    ${list.length ? `<div class="table-wrap"><table><thead><tr><th>ID</th><th>Severidad</th><th>Riesgo</th><th>Mitigación</th><th>Responsable</th></tr></thead><tbody>
-      ${list.map(r => `<tr><td><a class="idref" href="#/item/${esc(r.id)}">${esc(r.id)}</a></td><td>${prioBadge(r.severidad)}</td><td>${t(r.riesgo, m)}</td><td>${t(r.mitigacion, m)}</td><td>${esc(r.responsable)}</td></tr>`).join('')}
+  <header class="page-head gds-stack--sm gds-stack"><h1 class="gds-headline-1">Riesgos</h1><p class="gds-body-2 gds-text-secondary">${open.length} abiertos · ${risks.length - open.length} mitigados o cerrados.</p></header>
+  ${groups.map(([title, list, lvl], gi) => `<section class="gds-card" aria-labelledby="rg-${gi}">
+    <div class="gds-card__header"><h2 id="rg-${gi}" class="gds-title-1">${icon(LEVEL[lvl].icon, 'is-' + LEVEL[lvl].variant)} ${esc(title)} ${count(list.length)}</h2></div>
+    ${list.length ? `<div class="gds-table-wrap"><table class="gds-table"><thead><tr><th scope="col">Riesgo</th><th scope="col">Severidad</th><th scope="col">Qué se hace</th><th scope="col">Responsable</th></tr></thead><tbody>
+      ${list.map(r => `<tr><td>${t(r.riesgo, m)} ${ref(r.id, m)}</td><td>${prioChip(r.severidad)}</td><td>${t(r.mitigacion, m)}</td><td>${esc(r.responsable)}</td></tr>`).join('')}
     </tbody></table></div>` : empty('Ninguno.')}
   </section>`).join('')}`;
 }
@@ -404,15 +538,16 @@ export function renderRisks(m) {
 /* ------------------------------------------------------------ ACTIVIDAD */
 
 export const RANGES = { '24h': 24, '7d': 24 * 7, '30d': 24 * 30 };
+const RANGE_LABEL = { '24h': 'Últimas 24 h', '7d': 'Últimos 7 días', '30d': 'Últimos 30 días' };
 
 export function renderActivity(m, range) {
   const r = RANGES[range] ? range : '7d';
   const from = m.generatedAt - RANGES[r] * 3600 * 1000;
   const events = [
-    ...m.commits.filter(c => c.date.getTime() >= from).map(c => ({ date: c.date, kind: 'commit', html:
-      `<span class="tl-kind kind-commit">${esc(CONFIG.repos[c.repo].label)}</span> <a class="sha" href="${commitUrl(c.repo, c.sha)}" target="_blank" rel="noopener">${esc(c.short)}</a> ${t(c.title, m)}`, time: true })),
-    ...m.activity.memory.filter(x => x.date.getTime() >= from - 24 * 3600 * 1000).map(x => ({ date: x.date, kind: x.kind, html:
-      `<span class="tl-kind kind-${x.kind}">${esc(KIND_LABEL[x.kind] || x.kind)}</span> ${t(x.id, m)} ${esc(x.titulo)} ${x.estado ? `<small class="muted">· ${esc(x.estado)}</small>` : ''}`, time: false })),
+    ...m.commits.filter(c => c.date.getTime() >= from).map(c => ({ date: c.date, time: true, html:
+      `${statusChip(c.repo === 'dev' ? 'DEV' : 'Panel', c.repo === 'dev' ? 'info' : '', 'layers')} ${t(c.title, m)} <a class="gds-ref" href="${commitUrl(c.repo, c.sha)}" target="_blank" rel="noopener">${esc(c.short)}</a>` })),
+    ...m.activity.memory.filter(x => x.date.getTime() >= from - 24 * 3600 * 1000).map(x => ({ date: x.date, time: false, html:
+      `${statusChip(KIND_LABEL[x.kind] || x.kind, 'accent', 'book')} ${esc(plainTitle(x.titulo))} ${ref(x.id, m)}${x.estado ? ` <span class="gds-caption gds-text-muted">· ${esc(x.estado)}</span>` : ''}` })),
   ].sort((a, b) => b.date - a.date);
 
   const byDay = new Map();
@@ -424,14 +559,14 @@ export function renderActivity(m, range) {
   const dashCount = m.commits.filter(c => c.repo === 'dashboard' && c.date.getTime() >= from).length;
 
   return `
-  <header class="page-head"><h1>Actividad</h1>
-    <div class="range" role="group" aria-label="Rango">${Object.keys(RANGES).map(k => `<a href="#/actividad/${k}" class="tab ${k === r ? 'active' : ''}">${k}</a>`).join('')}</div>
+  <header class="page-head gds-stack--sm gds-stack"><h1 class="gds-headline-1">Actividad</h1>
+    <nav class="gds-tabs" aria-label="Período">${Object.keys(RANGES).map(k => `<a href="#/actividad/${k}" class="gds-tab"${k === r ? ' aria-current="page"' : ''}>${RANGE_LABEL[k]}</a>`).join('')}</nav>
+    <p class="gds-body-2 gds-text-secondary">${devCount} commits en DEV · ${dashCount} en el panel · ${events.length - devCount - dashCount} registros de memoria.</p>
   </header>
-  <p class="muted">${devCount} commits en DEV · ${dashCount} en el dashboard · ${events.length - devCount - dashCount} registros de memoria.</p>
-  ${events.length ? [...byDay.entries()].map(([day, list]) => `<section class="card">
-    <h2>${esc(day)}</h2>
-    <ul class="timeline">${list.map(e => `<li>${e.time ? `<time>${esc(e.date.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }))}</time>` : '<time>—</time>'}<div>${e.html}</div></li>`).join('')}</ul>
-  </section>`).join('') : empty('Sin actividad en el rango.')}`;
+  ${events.length ? [...byDay.entries()].map(([day, list]) => `<section class="gds-card" aria-label="${esc(day)}">
+    <div class="gds-card__header"><h2 class="gds-title-1">${esc(day)}</h2></div>
+    <ul class="gds-timeline">${list.map(e => `<li class="gds-timeline__item"><span class="gds-timeline__time">${e.time ? esc(e.date.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })) : 'día'}</span><span>${e.html}</span></li>`).join('')}</ul>
+  </section>`).join('') : empty('Sin actividad en el período.')}`;
 }
 
 /* ------------------------------------------------------------ SALUD */
@@ -439,43 +574,48 @@ export function renderActivity(m, range) {
 export function renderHealth(m) {
   const h = m.health;
   const api = m.api || {};
-  const filesRead = m.allIds.size;
   const groups = ['critical', 'warn', 'info'];
+  const GROUP_TITLE = { critical: 'Críticos', warn: 'Para revisar', info: 'Informativos' };
+  const headline = h.level === 'ok' ? 'Sin problemas detectados' : h.level === 'critical' ? 'Hay problemas críticos' : 'Hay puntos para revisar';
   return `
-  <header class="page-head"><h1>Salud</h1>
-    <p>${levelDot(h.level)} <strong>${h.level === 'ok' ? 'Sin problemas detectados' : h.level === 'critical' ? 'Hay problemas críticos' : 'Hay puntos que requieren atención'}</strong>
-    <span class="muted">· ${h.counts.critical || 0} críticos · ${h.counts.warn || 0} de atención · ${h.counts.info || 0} informativos</span></p>
+  <header class="page-head gds-stack--sm gds-stack"><h1 class="gds-headline-1">Salud</h1>
+    <p class="gds-cluster">${levelChip(h.level, headline)}<span class="gds-caption gds-text-muted">${h.counts.critical || 0} críticos · ${h.counts.warn || 0} para revisar · ${h.counts.info || 0} informativos</span></p>
   </header>
   ${groups.map(g => {
     const list = h.checks.filter(c => c.level === g);
     if (!list.length) return '';
-    return `<section class="card"><h2>${levelDot(g)} ${LEVEL_LABEL[g]} <span class="count">${list.length}</span></h2>
-      <ul class="list">${list.map(c => `<li class="list-item">
-        <div class="li-main"><strong>${t(c.title, m)}</strong> ${badge(c.source, 'src-' + c.source)}</div>
-        ${c.detail ? `<p class="li-sub">${t(c.detail, m)}</p>` : ''}</li>`).join('')}</ul></section>`;
+    return `<section class="gds-card" aria-labelledby="hg-${g}"><div class="gds-card__header"><h2 id="hg-${g}" class="gds-title-1">${icon(LEVEL[g].icon, 'is-' + LEVEL[g].variant)} ${GROUP_TITLE[g]} ${count(list.length)}</h2></div>
+      <ul class="gds-list">${list.map(c => `<li class="gds-list__item">${icon(LEVEL[g].icon, 'is-' + LEVEL[g].variant)}<div class="gds-stack--sm gds-stack">
+        <p class="gds-label-1">${t(c.title, m)}</p>
+        ${c.detail ? `<p class="gds-body-2 gds-text-secondary">${t(c.detail, m)}</p>` : ''}
+        <p class="gds-caption gds-text-muted">${c.source === 'medido' ? 'Medido en GitHub' : 'Declarado en la memoria'}</p></div></li>`).join('')}</ul></section>`;
   }).join('')}
-  ${h.checks.length === 0 ? `<section class="card">${empty('Todos los chequeos pasaron.')}</section>` : ''}
-  <section class="card">
-    <h2>Fuentes de datos</h2>
+  ${h.checks.length === 0 ? `<div class="gds-callout gds-callout--success">${icon('check')}<div><p class="gds-callout__title">Todos los chequeos pasaron.</p></div></div>` : ''}
+  <section class="gds-card" aria-labelledby="sources-title">
+    <div class="gds-card__header"><h2 id="sources-title" class="gds-title-1">De dónde salen los datos</h2></div>
     <dl class="facts">
-      <div><dt>Memoria</dt><dd>${m.ref ? `Snapshot <a class="sha" href="${commitUrl('dev', m.ref)}" target="_blank" rel="noopener">${esc(m.ref.slice(0, 7))}</a>` : 'Rama main (sin fijar)'}</dd></div>
-      <div><dt>IDs registrados</dt><dd>${filesRead}</dd></div>
-      <div><dt>API GitHub</dt><dd>${api.remaining != null ? `${api.remaining}/${api.limit} restantes · reinicia ${esc(relTime((api.reset || 0) - Date.now()))}` : 'sin consultas nuevas (caché)'}</dd></div>
-      <div><dt>Chequeos</dt><dd>Se ejecutan en tu navegador en cada lectura. Sin scripts locales.</dd></div>
+      <div><dt>Memoria</dt><dd>${m.ref ? `Commit <a class="gds-ref" href="${commitUrl('dev', m.ref)}" target="_blank" rel="noopener">${esc(m.ref.slice(0, 7))}</a>` : 'Rama main (sin fijar)'}</dd></div>
+      <div><dt>Registros leídos</dt><dd>${m.allIds.size}</dd></div>
+      <div><dt>Canal de respuestas</dt><dd>${m.channel && m.channel.available ? (m.channel.items.length ? `${m.channel.items.length} respuesta(s) sin registrar` : 'Sin respuestas pendientes de registrar') : na('no se pudo consultar')}</dd></div>
+      <div><dt>API de GitHub</dt><dd>${api.remaining != null ? `${api.remaining}/${api.limit} consultas restantes · se renueva ${esc(relTime((api.reset || 0) - Date.now()))}` : 'sin consultas nuevas (caché)'}</dd></div>
+      <div class="facts__wide"><dt>Cómo se calcula</dt><dd>Los chequeos corren en tu navegador en cada lectura, sin scripts locales. <strong>Declarado</strong> = lo que la Factory escribió en su memoria; <strong>medido</strong> = lo que se observa en GitHub. Una diferencia entre ambos es una inconsistencia.</dd></div>
     </dl>
-    <p class="muted small"><strong>Declarado</strong> = lo que la Factory escribió en ai-memory. <strong>Medido</strong> = lo que se observa en GitHub. Una diferencia entre ambos es una inconsistencia.</p>
   </section>`;
 }
 
 /* ------------------------------------------------------------ estados de carga */
 
 export function renderLoading() {
-  return `<section class="card skeleton" aria-busy="true"><p>Leyendo la memoria de la Factory…</p></section>`;
+  return `<section class="gds-stack" aria-busy="true" aria-label="Cargando">
+    <p class="gds-body-1 gds-text-secondary">Leyendo la memoria de la Factory…</p>
+    <div class="gds-skeleton"></div><div class="gds-skeleton"></div><div class="gds-skeleton"></div>
+  </section>`;
 }
 
 export function renderFatal(err) {
-  return `<section class="card lvl-critical"><h2>No se pudo construir el panel</h2><p>${esc(err && err.message || err)}</p>
-  <p class="muted">Ningún dato se muestra como 0: si algo falla, se dice.</p></section>`;
+  return `<div class="gds-callout gds-callout--danger" role="alert">${icon('octagon')}<div>
+    <p class="gds-callout__title">No se pudo construir el panel</p>
+    <p class="gds-callout__body">${esc(err && err.message || err)}. Ningún dato se muestra como 0: si algo falla, se dice. Probá con Refrescar.</p></div></div>`;
 }
 
 export { extractIds };
