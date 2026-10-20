@@ -1,0 +1,224 @@
+/* ==========================================================================
+   Gato Design System (GDS) — componentes v1.0.0
+   Regla: este archivo solo usa tokens semánticos o de componente (--gds-color-*,
+   --gds-space-*, --gds-font-*, ...). Nunca primitivos (--gds-p-*) ni valores hex.
+   Excepción única: 1px en .gds-visually-hidden (patrón estándar de accesibilidad).
+   Lo verifica tests/gds.test.mjs.
+   ========================================================================== */
+
+/* ---------------------------------------------------------------- base */
+*, *::before, *::after { box-sizing: border-box; }
+html { color-scheme: dark; -webkit-text-size-adjust: 100%; }
+body.gds {
+  margin: 0;
+  background: var(--gds-color-bg);
+  color: var(--gds-color-text-primary);
+  font: var(--gds-font-body-1);
+}
+.gds h1, .gds h2, .gds h3, .gds h4, .gds p { margin: 0; }
+.gds a { color: var(--gds-color-text-link); text-underline-offset: var(--gds-space-optical); }
+.gds a:hover { text-decoration-thickness: var(--gds-border-width-strong); }
+.gds code { font: var(--gds-font-code); background: var(--gds-color-surface-2); color: var(--gds-color-text-secondary); padding: 0 var(--gds-space-1); border-radius: var(--gds-radius-sm); }
+
+/* Foco visible y consistente en todo elemento interactivo (WCAG 2.4.7) */
+.gds :focus-visible {
+  outline: var(--gds-focus-width) solid var(--gds-color-focus);
+  outline-offset: var(--gds-focus-offset);
+}
+
+.gds-visually-hidden {
+  position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+.gds-skip {
+  position: absolute; left: var(--gds-space-2); top: calc(-1 * var(--gds-space-8));
+  z-index: var(--gds-z-overlay); padding: var(--gds-space-2) var(--gds-space-4);
+  background: var(--gds-color-fill-primary); color: var(--gds-color-text-on-primary);
+  border-radius: var(--gds-radius-md); font: var(--gds-font-label-1);
+}
+.gds-skip:focus { top: var(--gds-space-2); }
+
+/* ---------------------------------------------------------------- tipografía */
+.gds-headline-1 { font: var(--gds-font-headline-1); letter-spacing: -0.01em; }
+.gds-headline-2 { font: var(--gds-font-headline-2); letter-spacing: -0.005em; }
+.gds-title-1 { font: var(--gds-font-title-1); }
+.gds-title-2 { font: var(--gds-font-title-2); }
+.gds-body-1 { font: var(--gds-font-body-1); }
+.gds-body-2 { font: var(--gds-font-body-2); }
+.gds-label-1 { font: var(--gds-font-label-1); }
+.gds-label-2 { font: var(--gds-font-label-2); letter-spacing: var(--gds-tracking-label-2); text-transform: uppercase; }
+.gds-caption { font: var(--gds-font-caption); }
+.gds-text-secondary { color: var(--gds-color-text-secondary); }
+.gds-text-muted { color: var(--gds-color-text-muted); }
+.gds-measure { max-width: var(--gds-measure); }
+
+/* ---------------------------------------------------------------- ícono */
+.gds-icon { width: var(--gds-size-icon-md); height: var(--gds-size-icon-md); flex: none; vertical-align: -0.25em; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ---------------------------------------------------------------- botón */
+.gds-button {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--gds-space-2);
+  min-height: var(--gds-button-height); padding: 0 var(--gds-space-4);
+  border: var(--gds-border-width) solid transparent; border-radius: var(--gds-radius-md);
+  font: var(--gds-font-label-1); text-decoration: none; cursor: pointer;
+  transition: background-color var(--gds-motion-fast), border-color var(--gds-motion-fast);
+}
+.gds-button:disabled, .gds-button[aria-disabled="true"] { opacity: 0.55; cursor: not-allowed; }
+.gds-button--primary { background: var(--gds-color-fill-primary); color: var(--gds-color-text-on-primary); }
+.gds-button--primary:hover:not(:disabled) { background: var(--gds-color-fill-primary-hover); }
+.gds-button--primary:active:not(:disabled) { background: var(--gds-color-fill-primary-pressed); }
+.gds-button--secondary { background: var(--gds-color-fill-neutral); color: var(--gds-color-text-primary); border-color: var(--gds-color-border-control); }
+.gds-button--secondary:hover:not(:disabled) { background: var(--gds-color-fill-neutral-hover); }
+.gds-button--ghost { background: transparent; color: var(--gds-color-text-secondary); }
+.gds-button--ghost:hover:not(:disabled) { background: var(--gds-color-fill-neutral); color: var(--gds-color-text-primary); }
+.gds-button--danger { background: var(--gds-color-fill-danger); color: var(--gds-color-text-on-danger); }
+.gds-button--sm { min-height: var(--gds-button-height-sm); padding: 0 var(--gds-space-3); font: var(--gds-font-body-2); }
+.gds a.gds-button--primary { color: var(--gds-color-text-on-primary); }
+
+/* ---------------------------------------------------------------- estado (badge) */
+/* Un estado SIEMPRE combina ícono + texto: nunca depende solo del color (WCAG 1.4.1) */
+.gds-status {
+  display: inline-flex; align-items: center; gap: var(--gds-space-1);
+  padding: var(--gds-space-optical) var(--gds-space-2); border-radius: var(--gds-radius-full);
+  font: var(--gds-font-label-2); letter-spacing: var(--gds-tracking-label-2); text-transform: uppercase;
+  background: var(--gds-color-fill-neutral); color: var(--gds-color-text-secondary);
+  border: var(--gds-border-width) solid var(--gds-color-border-default); white-space: nowrap;
+}
+.gds-status .gds-icon { width: var(--gds-size-icon-sm); height: var(--gds-size-icon-sm); }
+.gds-status--success { background: var(--gds-color-tint-success); color: var(--gds-color-text-success); border-color: transparent; }
+.gds-status--warning { background: var(--gds-color-tint-warning); color: var(--gds-color-text-warning); border-color: transparent; }
+.gds-status--danger  { background: var(--gds-color-tint-danger);  color: var(--gds-color-text-danger);  border-color: transparent; }
+.gds-status--info    { background: var(--gds-color-tint-info);    color: var(--gds-color-text-info);    border-color: transparent; }
+.gds-status--accent  { background: var(--gds-color-tint-primary); color: var(--gds-color-text-accent);  border-color: transparent; }
+
+/* Referencia interna (ID) — metadato secundario, nunca el contenido principal */
+.gds-ref { font: var(--gds-font-caption); font-family: var(--gds-font-family-mono); color: var(--gds-color-text-muted); text-decoration: none; }
+.gds a.gds-ref { color: var(--gds-color-text-muted); }
+.gds a.gds-ref:hover { color: var(--gds-color-text-link); }
+.gds-ref--missing { text-decoration: line-through; color: var(--gds-color-text-danger); }
+
+/* ---------------------------------------------------------------- tarjeta */
+.gds-card {
+  background: var(--gds-color-surface-1);
+  border: var(--gds-border-width) solid var(--gds-color-border-default);
+  border-radius: var(--gds-radius-lg);
+  padding: var(--gds-card-padding);
+  min-width: 0;
+}
+.gds-card--inset { background: var(--gds-color-surface-2); border-color: transparent; padding: var(--gds-space-4); border-radius: var(--gds-radius-md); }
+.gds-card--accent { border-color: var(--gds-color-border-accent); box-shadow: var(--gds-glow-arcane); }
+a.gds-card { display: block; color: inherit; text-decoration: none; transition: border-color var(--gds-motion-fast); }
+a.gds-card:hover { border-color: var(--gds-color-border-accent); }
+.gds-card__header { display: flex; align-items: center; justify-content: space-between; gap: var(--gds-space-3); margin-bottom: var(--gds-space-4); }
+
+/* ---------------------------------------------------------------- aviso (callout) */
+.gds-callout {
+  display: grid; grid-template-columns: auto 1fr; gap: var(--gds-space-3); align-items: start;
+  padding: var(--gds-space-3) var(--gds-space-4); border-radius: var(--gds-radius-md);
+  background: var(--gds-color-surface-2); border-left: var(--gds-border-width-thick) solid var(--gds-color-border-default);
+}
+.gds-callout--success { border-left-color: var(--gds-color-border-success); }
+.gds-callout--success > .gds-icon { color: var(--gds-color-icon-success); }
+.gds-callout--warning { border-left-color: var(--gds-color-border-warning); }
+.gds-callout--warning > .gds-icon { color: var(--gds-color-icon-warning); }
+.gds-callout--danger { border-left-color: var(--gds-color-border-danger); }
+.gds-callout--danger > .gds-icon { color: var(--gds-color-icon-danger); }
+.gds-callout--info { border-left-color: var(--gds-color-border-info); }
+.gds-callout--info > .gds-icon { color: var(--gds-color-icon-info); }
+.gds-callout--accent { border-left-color: var(--gds-color-border-accent); }
+.gds-callout--accent > .gds-icon { color: var(--gds-color-icon-accent); }
+.gds-callout__title { font: var(--gds-font-title-2); }
+.gds-callout__body { font: var(--gds-font-body-2); color: var(--gds-color-text-secondary); margin-top: var(--gds-space-1); }
+
+/* ---------------------------------------------------------------- pasos (stepper) */
+.gds-stepper { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--gds-space-2); }
+.gds-stepper__step {
+  display: flex; align-items: center; gap: var(--gds-space-2);
+  padding: var(--gds-space-2) var(--gds-space-3); border-radius: var(--gds-radius-md);
+  background: var(--gds-color-surface-2); color: var(--gds-color-text-muted); font: var(--gds-font-label-1);
+  border: var(--gds-border-width) solid transparent; min-width: 0;
+}
+.gds-stepper__step span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gds-stepper__step[data-state="done"] { color: var(--gds-color-text-success); }
+.gds-stepper__step[data-state="current"] { color: var(--gds-color-text-primary); border-color: var(--gds-color-border-accent); background: var(--gds-color-tint-primary); }
+
+/* ---------------------------------------------------------------- métrica */
+.gds-metric { display: flex; flex-direction: column; gap: var(--gds-space-1); padding: var(--gds-space-4); border-radius: var(--gds-radius-md); background: var(--gds-color-surface-1); border: var(--gds-border-width) solid var(--gds-color-border-default); color: inherit; text-decoration: none; }
+a.gds-metric:hover { border-color: var(--gds-color-border-accent); }
+.gds-metric__value { font: var(--gds-font-headline-2); }
+.gds-metric__label { font: var(--gds-font-body-2); color: var(--gds-color-text-secondary); }
+
+/* ---------------------------------------------------------------- pestañas */
+.gds-tabs { display: flex; flex-wrap: wrap; gap: var(--gds-space-1); border-bottom: var(--gds-border-width) solid var(--gds-color-border-subtle); }
+.gds-tab {
+  display: inline-flex; align-items: center; gap: var(--gds-space-2); min-height: var(--gds-target-min);
+  padding: 0 var(--gds-space-4); color: var(--gds-color-text-secondary); text-decoration: none;
+  font: var(--gds-font-label-1); border-bottom: var(--gds-border-width-strong) solid transparent; margin-bottom: calc(-1 * var(--gds-border-width));
+}
+.gds a.gds-tab { color: var(--gds-color-text-secondary); }
+.gds a.gds-tab:hover { color: var(--gds-color-text-primary); }
+.gds a.gds-tab[aria-current="page"], .gds a.gds-tab[aria-selected="true"] { color: var(--gds-color-text-primary); border-bottom-color: var(--gds-color-border-accent); }
+.gds-count { font: var(--gds-font-caption); color: var(--gds-color-text-secondary); background: var(--gds-color-surface-2); border-radius: var(--gds-radius-full); padding: 0 var(--gds-space-2); }
+
+/* ---------------------------------------------------------------- lista y línea de tiempo */
+.gds-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--gds-space-2); }
+.gds-list__item { display: grid; grid-template-columns: auto 1fr; gap: var(--gds-space-1) var(--gds-space-3); align-items: start; padding: var(--gds-space-3); border-radius: var(--gds-radius-md); background: var(--gds-color-surface-2); }
+.gds-list__item > .gds-icon { margin-top: var(--gds-space-optical); }
+.gds-timeline { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--gds-space-2); }
+.gds-timeline__item { display: grid; grid-template-columns: var(--gds-timeline-time-width) 1fr; gap: var(--gds-space-3); font: var(--gds-font-body-2); }
+.gds-timeline__time { font: var(--gds-font-caption); font-family: var(--gds-font-family-mono); color: var(--gds-color-text-muted); padding-top: var(--gds-space-optical); }
+
+/* ---------------------------------------------------------------- tabla */
+.gds-table-wrap { overflow-x: auto; }
+.gds-table { width: 100%; border-collapse: collapse; font: var(--gds-font-body-2); }
+.gds-table th { text-align: left; font: var(--gds-font-label-2); letter-spacing: var(--gds-tracking-label-2); text-transform: uppercase; color: var(--gds-color-text-secondary); }
+.gds-table th, .gds-table td { padding: var(--gds-space-2) var(--gds-space-3); border-bottom: var(--gds-border-width) solid var(--gds-color-border-subtle); vertical-align: top; }
+
+/* ---------------------------------------------------------------- opción (radio como tarjeta) */
+.gds-choice { display: grid; gap: var(--gds-space-2); margin: 0; padding: 0; border: 0; }
+.gds-choice__option {
+  position: relative; display: grid; grid-template-columns: auto 1fr; gap: var(--gds-space-1) var(--gds-space-3);
+  padding: var(--gds-space-3) var(--gds-space-4); border-radius: var(--gds-radius-md); cursor: pointer;
+  background: var(--gds-color-surface-2); border: var(--gds-border-width) solid var(--gds-color-border-default);
+}
+.gds-choice__option:hover { border-color: var(--gds-color-border-control); }
+.gds-choice__option:has(input:checked) { border-color: var(--gds-color-border-accent); background: var(--gds-color-tint-primary); }
+.gds-choice__option input { width: var(--gds-size-control); height: var(--gds-size-control); margin: var(--gds-space-optical) 0 0; accent-color: var(--gds-color-fill-primary); }
+.gds-choice__option:has(input:focus-visible) { outline: var(--gds-focus-width) solid var(--gds-color-focus); outline-offset: var(--gds-focus-offset); }
+
+/* ---------------------------------------------------------------- campos */
+.gds-field { display: grid; gap: var(--gds-space-1); }
+.gds-field__label { font: var(--gds-font-label-1); }
+.gds-field__hint { font: var(--gds-font-caption); color: var(--gds-color-text-muted); }
+.gds-input, .gds-select, .gds-textarea {
+  width: 100%; min-height: var(--gds-target-min); padding: var(--gds-space-2) var(--gds-space-3);
+  background: var(--gds-color-surface-2); color: var(--gds-color-text-primary);
+  border: var(--gds-border-width) solid var(--gds-color-border-control); border-radius: var(--gds-radius-md);
+  font: var(--gds-font-body-2);
+}
+.gds-textarea { min-height: var(--gds-textarea-min); resize: vertical; }
+
+/* ---------------------------------------------------------------- diálogo */
+.gds-dialog {
+  width: min(var(--gds-dialog-width), calc(100vw - var(--gds-space-6))); padding: 0; border: var(--gds-border-width) solid var(--gds-color-border-default);
+  border-radius: var(--gds-radius-xl); background: var(--gds-color-surface-1); color: var(--gds-color-text-primary);
+  box-shadow: var(--gds-elevation-3);
+}
+.gds-dialog::backdrop { background: var(--gds-color-surface-overlay); backdrop-filter: blur(var(--gds-space-optical)); }
+.gds-dialog__header { padding: var(--gds-space-5) var(--gds-space-5) 0; }
+.gds-dialog__body { padding: var(--gds-space-4) var(--gds-space-5); display: grid; gap: var(--gds-space-4); }
+.gds-dialog__footer { padding: 0 var(--gds-space-5) var(--gds-space-5); display: flex; justify-content: flex-end; gap: var(--gds-space-2); flex-wrap: wrap; }
+
+/* ---------------------------------------------------------------- vacío y carga */
+.gds-empty { color: var(--gds-color-text-muted); font: var(--gds-font-body-2); }
+.gds-na { color: var(--gds-color-text-muted); font-style: italic; }
+.gds-skeleton { border-radius: var(--gds-radius-md); background: linear-gradient(90deg, var(--gds-color-surface-1), var(--gds-color-surface-2), var(--gds-color-surface-1)); background-size: 200% 100%; animation: gds-shimmer 1.4s ease-in-out infinite; min-height: var(--gds-space-7); }
+@keyframes gds-shimmer { to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .gds-skeleton { animation: none; } }
+
+/* ---------------------------------------------------------------- disposición */
+.gds-stack { display: grid; gap: var(--gds-space-4); }
+.gds-stack--sm { gap: var(--gds-space-2); }
+.gds-stack--lg { gap: var(--gds-space-6); }
+.gds-cluster { display: flex; flex-wrap: wrap; align-items: center; gap: var(--gds-space-2); }
+.gds-grid { display: grid; gap: var(--gds-space-4); grid-template-columns: repeat(auto-fit, minmax(min(100%, calc(var(--gds-space-8) * 5)), 1fr)); }

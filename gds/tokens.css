@@ -1,0 +1,196 @@
+/* ==========================================================================
+   Gato Design System (GDS) — tokens v1.0.0
+   Fuente de verdad: gds/GDS_FOUNDATION.md · Decisión: DEC-010
+
+   Tres niveles:
+     1. Primitivos   --gds-p-*      Paleta y escalas crudas. PROHIBIDOS en componentes.
+     2. Semánticos   --gds-color-*, --gds-space-*, --gds-font-*  Intención de uso.
+     3. Componente   --gds-<componente>-*  Solo cuando un semántico no alcanza.
+
+   Todos los pares de uso se miden contra WCAG 2.1 AA con gds/contrast.mjs
+   (tabla en GDS_FOUNDATION.md §4; tests/gds.test.mjs falla si alguno no cumple).
+   ========================================================================== */
+
+:root {
+  /* ------------------------------------------------------------------ 1. PRIMITIVOS */
+
+  /* Obsidian — la bóveda: fondos y superficies */
+  --gds-p-obsidian-950: #0F1117;
+  --gds-p-obsidian-900: #1A1F2B;
+  --gds-p-obsidian-800: #232A3A;
+  --gds-p-obsidian-700: #2E3649;
+  --gds-p-obsidian-600: #3B4560;
+  --gds-p-obsidian-400: #6B7690;
+
+  /* Mist — texto sobre la oscuridad */
+  --gds-p-mist-50:  #F4F6FA;
+  --gds-p-mist-200: #C9D0DA;
+  --gds-p-mist-400: #8E96A3;
+
+  /* Arcane — el conocimiento: acción e identidad */
+  --gds-p-arcane-300: #A896FF;
+  --gds-p-arcane-500: #7B5CFF;
+  --gds-p-arcane-600: #6A4AF0;
+  --gds-p-arcane-700: #5A3DDB;
+  --gds-p-arcane-800: #4A30C0;
+
+  /* Jade · Amber · Crimson · Astral — estados */
+  --gds-p-jade-400:    #3CC48A;   /* texto de éxito: legible también sobre su tinte */
+  --gds-p-jade-500:    #2FB67C;
+  --gds-p-amber-500:   #F2B94B;
+  --gds-p-crimson-300: #F47C7C;   /* texto de peligro: legible también sobre su tinte */
+  --gds-p-crimson-400: #F06A6A;
+  --gds-p-crimson-500: #D94A4A;
+  --gds-p-crimson-600: #B83A3A;
+  --gds-p-astral-400:  #6EA3FF;
+  --gds-p-astral-500:  #4D8DFF;
+
+  --gds-p-white: #FFFFFF;
+
+  /* ------------------------------------------------------------------ 2. SEMÁNTICOS — COLOR */
+
+  /* Background: lo que está detrás de todo */
+  --gds-color-bg:              var(--gds-p-obsidian-950);
+
+  /* Surface: contenedores apilados (1 = tarjeta, 2 = dentro de tarjeta, 3 = hover) */
+  --gds-color-surface-1:       var(--gds-p-obsidian-900);
+  --gds-color-surface-2:       var(--gds-p-obsidian-800);
+  --gds-color-surface-3:       var(--gds-p-obsidian-700);
+  --gds-color-surface-overlay: rgba(8, 9, 13, 0.72);
+
+  /* Fill: áreas sólidas de acción o estado */
+  --gds-color-fill-primary:         var(--gds-p-arcane-700);
+  --gds-color-fill-primary-hover:   var(--gds-p-arcane-600);
+  --gds-color-fill-primary-pressed: var(--gds-p-arcane-800);
+  --gds-color-fill-neutral:         var(--gds-p-obsidian-800);
+  --gds-color-fill-neutral-hover:   var(--gds-p-obsidian-700);
+  --gds-color-fill-danger:          var(--gds-p-crimson-600);
+  --gds-color-fill-success:         var(--gds-p-jade-500);
+  --gds-color-fill-warning:         var(--gds-p-amber-500);
+  --gds-color-fill-info:            var(--gds-p-astral-500);
+
+  /* Tintes de estado (fondos suaves; siempre acompañados de ícono + texto) */
+  --gds-color-tint-primary: rgba(123, 92, 255, 0.14);
+  --gds-color-tint-success: rgba(47, 182, 124, 0.14);
+  --gds-color-tint-warning: rgba(242, 185, 75, 0.14);
+  --gds-color-tint-danger:  rgba(217, 74, 74, 0.16);
+  --gds-color-tint-info:    rgba(77, 141, 255, 0.14);
+
+  /* Border */
+  --gds-color-border-subtle:  var(--gds-p-obsidian-700);  /* divisores, decorativo */
+  --gds-color-border-default: var(--gds-p-obsidian-600);  /* contorno de tarjetas */
+  --gds-color-border-control: var(--gds-p-obsidian-400);  /* controles: >= 3:1 en toda superficie */
+  --gds-color-border-accent:  var(--gds-p-arcane-500);    /* selección, elemento actual */
+  --gds-color-border-success: var(--gds-p-jade-500);
+  --gds-color-border-warning: var(--gds-p-amber-500);
+  --gds-color-border-danger:  var(--gds-p-crimson-500);
+  --gds-color-border-info:    var(--gds-p-astral-500);
+  --gds-color-focus:          var(--gds-p-arcane-300);    /* anillo de foco: >= 4.8:1 */
+
+  /* Text */
+  --gds-color-text-primary:    var(--gds-p-mist-50);
+  --gds-color-text-secondary:  var(--gds-p-mist-200);
+  --gds-color-text-muted:      var(--gds-p-mist-400);     /* NO usar sobre surface-3 (4.05:1) */
+  --gds-color-text-on-primary: var(--gds-p-white);        /* sobre fill-primary: 6.72:1 */
+  --gds-color-text-on-danger:  var(--gds-p-white);        /* sobre fill-danger: 5.67:1 */
+  --gds-color-text-on-light:   var(--gds-p-obsidian-950); /* sobre jade/amber/astral */
+  --gds-color-text-accent:     var(--gds-p-arcane-300);
+  --gds-color-text-link:       var(--gds-p-arcane-300);
+  --gds-color-text-success:    var(--gds-p-jade-400);
+  --gds-color-text-warning:    var(--gds-p-amber-500);
+  --gds-color-text-danger:     var(--gds-p-crimson-300);
+  --gds-color-text-info:       var(--gds-p-astral-400);
+
+  /* Icon */
+  --gds-color-icon-primary:   var(--gds-color-text-primary);
+  --gds-color-icon-secondary: var(--gds-color-text-secondary);
+  --gds-color-icon-muted:     var(--gds-color-text-muted);
+  --gds-color-icon-accent:    var(--gds-p-arcane-300);
+  --gds-color-icon-success:   var(--gds-p-jade-500);
+  --gds-color-icon-warning:   var(--gds-p-amber-500);
+  --gds-color-icon-danger:    var(--gds-p-crimson-400);
+  --gds-color-icon-info:      var(--gds-p-astral-400);
+
+  /* Marca: el gato de la bóveda. Solo para la marca, nunca para comunicar estado. */
+  --gds-color-brand-frame: var(--gds-p-arcane-500);
+  --gds-color-brand-eyes:  var(--gds-p-amber-500);
+
+  /* ------------------------------------------------------------------ ESPACIADO (escala única) */
+  --gds-space-1: 4px;
+  --gds-space-2: 8px;
+  --gds-space-3: 12px;
+  --gds-space-4: 16px;
+  --gds-space-5: 24px;
+  --gds-space-6: 32px;
+  --gds-space-7: 48px;
+  --gds-space-8: 64px;
+  /* Ajuste óptico: SOLO para alinear íconos con texto o el padding vertical de un badge.
+     No es un paso de la escala y no se usa para separar bloques. */
+  --gds-space-optical: 2px;
+
+  /* ------------------------------------------------------------------ TAMAÑOS */
+  --gds-size-icon-sm: 16px;      /* íconos dentro de badges y metadatos */
+  --gds-size-icon-md: 1.25em;    /* íconos junto a texto: escalan con la fuente */
+  --gds-size-control: 16px;      /* radio y checkbox nativos */
+
+  /* ------------------------------------------------------------------ TIPOGRAFÍA */
+  --gds-font-family-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --gds-font-family-mono: ui-monospace, "JetBrains Mono", SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Roles: tamaño / interlineado / peso. Unidades rem: respetan el zoom del usuario. */
+  --gds-font-headline-1: 700 2rem/2.5rem var(--gds-font-family-sans);        /* 32/40 */
+  --gds-font-headline-2: 650 1.5rem/2rem var(--gds-font-family-sans);        /* 24/32 */
+  --gds-font-title-1:    600 1.125rem/1.625rem var(--gds-font-family-sans);  /* 18/26 */
+  --gds-font-title-2:    600 1rem/1.5rem var(--gds-font-family-sans);        /* 16/24 */
+  --gds-font-body-1:     400 1rem/1.5rem var(--gds-font-family-sans);        /* 16/24 */
+  --gds-font-body-2:     400 0.875rem/1.375rem var(--gds-font-family-sans);  /* 14/22 */
+  --gds-font-label-1:    500 0.875rem/1.25rem var(--gds-font-family-sans);   /* 14/20 */
+  --gds-font-label-2:    600 0.75rem/1rem var(--gds-font-family-sans);       /* 12/16, mayúsculas */
+  --gds-font-caption:    400 0.75rem/1rem var(--gds-font-family-sans);       /* 12/16 */
+  --gds-font-code:       400 0.8125rem/1.25rem var(--gds-font-family-mono);  /* 13/20 */
+  --gds-tracking-label-2: 0.06em;
+
+  /* ------------------------------------------------------------------ FORMA, ELEVACIÓN, MOVIMIENTO */
+  --gds-radius-sm:   4px;
+  --gds-radius-md:   8px;
+  --gds-radius-lg:   12px;
+  --gds-radius-xl:   16px;
+  --gds-radius-full: 999px;
+
+  --gds-border-width:       1px;
+  --gds-border-width-strong: 2px;   /* indicador de pestaña actual */
+  --gds-border-width-thick: 3px;    /* barra lateral de avisos y columnas */
+  --gds-focus-width:        2px;
+  --gds-focus-offset:       2px;
+
+  --gds-elevation-1: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --gds-elevation-2: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --gds-elevation-3: 0 24px 64px rgba(0, 0, 0, 0.6);
+  --gds-glow-arcane: 0 0 0 1px rgba(123, 92, 255, 0.35), 0 8px 32px rgba(123, 92, 255, 0.18);
+
+  --gds-motion-fast: 120ms cubic-bezier(0.2, 0, 0, 1);
+  --gds-motion-base: 200ms cubic-bezier(0.2, 0, 0, 1);
+  --gds-motion-slow: 320ms cubic-bezier(0.2, 0, 0, 1);
+
+  --gds-target-min: 40px;   /* tamaño mínimo de objetivo táctil/puntero */
+  --gds-measure: 72ch;      /* ancho máximo de texto corrido */
+
+  --gds-z-sticky: 100;
+  --gds-z-overlay: 1000;
+
+  /* ------------------------------------------------------------------ 3. COMPONENTE (excepciones) */
+  --gds-button-height:     var(--gds-target-min);
+  --gds-button-height-sm:  var(--gds-space-6);          /* 32px: supera el mínimo de 24px de WCAG 2.2 */
+  --gds-card-padding:      var(--gds-space-5);
+  --gds-textarea-min:      calc(var(--gds-space-7) * 2); /* 96px: ~3 líneas */
+  --gds-dialog-width:      560px;
+  --gds-timeline-time-width: 3.5rem;                     /* ancho de "HH:MM" en mono */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --gds-motion-fast: 0ms linear;
+    --gds-motion-base: 0ms linear;
+    --gds-motion-slow: 0ms linear;
+  }
+}
