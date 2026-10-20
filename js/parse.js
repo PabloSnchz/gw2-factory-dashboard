@@ -83,19 +83,23 @@ const STATUS_KEYS = {
   'bloqueos': 'bloqueos',
   'esperando a pablo': 'esperandoPablo',
   'decisiones pendientes de pablo': 'esperandoPablo',
+  'para tu información': 'paraInfo',
+  'para tu informacion': 'paraInfo',
 };
 
 /**
  * Tolera dos formas:
  *   "Clave: valor"            (contrato v2)
  *   "Clave:\n- valor\n- ..."  (forma v1, inicialización 2026-10-19)
- * Y secciones "## Esperando a Pablo" / "## Bloqueos" con bullets.
+ * Y secciones "## Esperando a Pablo" / "## Para tu información" / "## Bloqueos" con bullets.
+ * En "Esperando a Pablo" cada línea declara su clase (contrato v4, DEC-018):
+ *   "- [ID] Acción: …" · "- [ID] Validación: …" · "- [ID] Decisión: …" (solo con un pedido REQ) · "- [ID] Info: …"
  */
 export function parseStatus(md) {
   const res = {
     estado: null, fase: null, tarea: null, motivo: null, etapa: null,
     inicio: null, actualizado: null, proxima: null,
-    bloqueos: [], esperandoPablo: [], unknownKeys: [],
+    bloqueos: [], esperandoPablo: [], paraInfo: [], unknownKeys: [],
   };
   if (md == null) return null;
   let current = null;
