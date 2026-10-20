@@ -147,7 +147,18 @@ export function renderRespond(req, m) {
   </div>`;
 }
 
-const TIPO_LABEL = { accion: 'Acción tuya', pedido: 'Decisión', decision: 'Decisión', backlog: 'Bloqueado por vos', status: 'Pendiente tuyo' };
+/** Clase de cada pendiente (DEC-018): etiqueta, ícono y texto de ayuda. */
+const CLASE = {
+  decision:   { label: 'Decisión', icon: 'compass' },
+  accion:     { label: 'Acción tuya', icon: 'hand' },
+  validacion: { label: 'Para validar', icon: 'check' },
+};
+
+/** Un bloque rotulado dentro de una tarjeta (Contexto, Impacto…). Párrafos, no títulos: la tarjeta ya tiene su h3. */
+function labeled(label, text, m) {
+  if (!text) return '';
+  return `<div class="gds-stack--sm gds-stack"><p class="gds-label-2 gds-text-muted">${esc(label)}</p><p class="gds-body-2 gds-measure">${t(firstParagraph(text), m)}</p></div>`;
+}
 
 /**
  * Tarjeta de decisión: qué se pide, por qué importa, qué recomienda la Factory y cómo responder.
@@ -160,14 +171,19 @@ function renderDecisionCard(h, m, first, { level = 'h3', title = null } = {}) {
   const why = req ? firstParagraph(req.porQueImporta) : h.pregunta;
   const extra = (h.relacionados || []).filter(r => r !== h.id);
   const headId = 'dq-' + (h.id || Math.abs(hash(h.titulo)));
+  const cl = CLASE[h.clase] || CLASE.accion;
+  // Una decisión muestra las cuatro piezas que exige DEC-018: contexto, impacto, por qué te lo pregunto y recomendación.
+  const body = h.clase === 'decision' && req
+    ? `<div class="gds-stack">${labeled('Contexto', req.quePaso, m)}${labeled('Impacto', req.porQueImporta, m)}${labeled('Por qué te lo pregunto', req.justificacion, m)}</div>`
+    : (why && !(req && req.recomendacion && why === h.pregunta) ? `<p class="gds-body-2 gds-text-secondary gds-measure">${t(why, m)}</p>` : '');
   return `<article class="gds-card decision${first ? ' gds-card--accent' : ''}" aria-labelledby="${esc(headId)}">
     <div class="decision__meta gds-cluster">
-      ${statusChip(TIPO_LABEL[h.tipo] || 'Pendiente', 'accent', h.tipo === 'accion' ? 'hand' : 'compass')}
+      ${statusChip(cl.label, 'accent', cl.icon)}
       ${prioChip(h.prioridad)}
       ${h.esperaMs != null ? `<span class="gds-caption gds-text-muted">${icon('clock')} Esperando ${esc(duration(h.esperaMs))}</span>` : ''}
     </div>
     <${level} id="${esc(headId)}" class="gds-title-1">${title ? esc(title) : t(plainTitle(h.titulo), m)}</${level}>
-    ${why && !(req && req.recomendacion && why === h.pregunta) ? `<p class="gds-body-2 gds-text-secondary gds-measure">${t(why, m)}</p>` : ''}
+    ${body}
     ${req && req.opciones && req.opciones.length ? `<ul class="decision__options gds-body-2">${req.opciones.map(o => `<li><strong>${esc(o.clave)}</strong> — ${t(o.texto, m)}</li>`).join('')}</ul>` : ''}
     ${req && req.recomendacion ? `<div class="gds-callout gds-callout--accent">${icon('sparkle')}<div>
       <p class="gds-callout__title">La Factory recomienda</p><p class="gds-callout__body">${t(req.recomendacion.texto, m)}</p></div></div>` : ''}
@@ -194,6 +210,19 @@ function renderChannelItem(c, m, compact) {
     <p class="gds-callout__title">Tu respuesta (${esc(what.toLowerCase())})${compact ? '' : ' a ' + esc(subject)} no se pudo registrar</p>
     <p class="gds-callout__body">El motivo está en el último comentario del issue. Corregilo con Edit y se reintenta solo.
       <a href="${esc(c.url)}" target="_blank" rel="noopener">Abrir el issue #${esc(c.number)}</a></p></div></div>`;
+}
+
+/** "Para tu información": avisos que no piden nada (riesgos aceptados, verificaciones opcionales, límites de la Factory). */
+function renderInfo(m) {
+  const list = m.info || [];
+  if (!list.length) return '';
+  return `<section class="gds-card" aria-labelledby="info-title">
+    <div class="gds-card__header"><h2 id="info-title" class="gds-title-1">Para tu información ${count(list.length)}</h2></div>
+    <p class="gds-caption gds-text-muted">No hace falta que hagas nada.</p>
+    <ul class="gds-list">${list.map(x => `<li class="gds-list__item">${icon('info')}<div>
+      <p class="gds-body-2">${t(x.titulo, m)}</p>
+      ${x.id ? `<p class="gds-caption gds-text-muted">${ref(x.id, m)}</p>` : ''}</div></li>`).join('')}</ul>
+  </section>`;
 }
 
 /** Pedidos que ya respondiste y todavía no se cerraron: confirmación de que la respuesta llegó. */
@@ -246,12 +275,32 @@ export function renderHeader(model, route, loading) {
 
 /* ------------------------------------------------------------ HOY */
 
-/** Frase de una línea que resume la situación para Pablo. */
+/** Pendientes de Pablo por clase: { decision: [], accion: [], validacion: [] }. */
+export function byClase(m) {
+  const out = { decision: [], accion: [], validacion: [] };
+  for (const h of m.human) (out[h.clase] || out.accion).push(h);
+  return out;
+}
+
+const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+
+/** "1 acción y 1 validación" — solo lo que existe. */
+function tasksPhrase(g) {
+  const parts = [];
+  if (g.accion.length) parts.push(plural(g.accion.length, 'acción', 'acciones'));
+  if (g.validacion.length) parts.push(plural(g.validacion.length, 'validación', 'validaciones'));
+  return parts.join(' y ');
+}
+
+/** Frase de una línea que resume la situación para Pablo: primero las decisiones, después las tareas. */
 export function verdict(m) {
-  const n = m.human.length;
+  const g = byClase(m);
   const failed = (m.channel && m.channel.items || []).filter(c => c.state === 'failed').length;
   if (failed) return { text: failed === 1 ? 'Una respuesta tuya no se pudo registrar' : `${failed} respuestas tuyas no se pudieron registrar`, level: 'critical' };
-  if (n) return { text: n === 1 ? 'Hay 1 cosa esperando tu decisión' : `Hay ${n} cosas esperando tu decisión`, level: 'warn' };
+  const nd = g.decision.length;
+  if (nd) return { text: nd === 1 ? 'Hay 1 decisión esperándote' : `Hay ${nd} decisiones esperándote`, level: 'warn' };
+  const tasks = tasksPhrase(g);
+  if (tasks) return { text: `Nada que decidir: te ${g.accion.length + g.validacion.length === 1 ? 'espera' : 'esperan'} ${tasks}`, level: 'info' };
   if (m.health.level === 'critical') return { text: 'Nada espera tu decisión, pero hay un problema crítico', level: 'critical' };
   const st = humanStatus(m.statusInfo.code);
   return { text: st.level === 'ok' ? 'La Factory está trabajando: nada necesita tu decisión' : 'Nada necesita tu decisión', level: 'ok' };
@@ -271,13 +320,16 @@ export function renderHome(m) {
   const stageDone = /COMPLETAD/.test(stage);
   const channel = (m.channel && m.channel.items) || [];
   const looseChannel = channel.filter(c => !m.human.some(h => h.id === c.solicitud));
+  const g = byClase(m);
 
   return `
   <section class="verdict gds-stack--sm gds-stack" aria-labelledby="verdict-title">
     <p class="gds-label-2 gds-text-muted">Resumen</p>
     <h1 id="verdict-title" class="gds-headline-1">${esc(v.text)}</h1>
     <div class="gds-cluster">
-      ${m.human.length ? statusChip(`${m.human.length} esperando tu decisión`, 'warning', 'hand') : statusChip('Sin decisiones pendientes', 'success', 'check')}
+      ${g.decision.length ? statusChip(plural(g.decision.length, 'decisión', 'decisiones'), 'warning', 'compass') : statusChip('Sin decisiones pendientes', 'success', 'check')}
+      ${g.accion.length ? statusChip(plural(g.accion.length, 'acción tuya', 'acciones tuyas'), 'info', 'hand') : ''}
+      ${g.validacion.length ? statusChip(plural(g.validacion.length, 'para validar', 'para validar'), 'info', 'check') : ''}
       ${crit ? statusChip(`${crit} problema${crit > 1 ? 's' : ''} crítico${crit > 1 ? 's' : ''}`, 'danger', 'octagon') : ''}
       ${blocked ? statusChip(`${blocked} bloqueado${blocked > 1 ? 's' : ''}`, 'warning', 'alert') : ''}
       ${levelChip(st.level, 'Factory: ' + st.text)}
@@ -287,11 +339,15 @@ export function renderHome(m) {
   ${looseChannel.length ? `<div class="gds-stack--sm gds-stack">${looseChannel.map(c => renderChannelItem(c, m, false)).join('')}</div>` : ''}
 
   <section class="gds-stack" aria-labelledby="human-title">
-    <h2 id="human-title" class="gds-headline-2">Necesita tu decisión ${count(m.human.length, 'pendientes')}</h2>
-    ${m.human.length
-      ? `<div class="decisions">${m.human.map((h, i) => renderDecisionCard(h, m, i === 0)).join('')}</div>`
-      : `<div class="gds-callout gds-callout--success">${icon('check')}<div><p class="gds-callout__title">Nada espera una decisión tuya.</p>
-        <p class="gds-callout__body">Cuando la Factory necesite algo, aparece acá con su recomendación y los botones para responder.</p></div></div>`}
+    <h2 id="human-title" class="gds-headline-2">Necesita tu decisión ${count(g.decision.length, 'decisiones')}</h2>
+    ${g.decision.length
+      ? `<div class="decisions">${g.decision.map((h, i) => renderDecisionCard(h, m, i === 0)).join('')}</div>`
+      : `<div class="gds-callout gds-callout--success">${icon('check')}<div><p class="gds-callout__title">Nada que decidir.</p>
+        <p class="gds-callout__body">Las decisiones técnicas las toma la Factory. Acá solo llegan decisiones de producto, negocio o estrategia, con contexto, impacto, recomendación y el motivo por el que te las pregunta.</p></div></div>`}
+    ${g.accion.length || g.validacion.length ? `
+    <h2 id="tasks-title" class="gds-title-1">Necesita tu mano ${count(g.accion.length + g.validacion.length, 'tareas')}</h2>
+    <p class="gds-body-2 gds-text-secondary gds-measure">No hay nada que decidir: son cosas que solo vos podés hacer o mirar.</p>
+    <div class="decisions">${[...g.accion, ...g.validacion].map((h, i) => renderDecisionCard(h, m, !g.decision.length && i === 0)).join('')}</div>` : ''}
     ${renderAnswered(m)}
   </section>
 
@@ -317,6 +373,8 @@ export function renderHome(m) {
       </dl>
     </div>
   </section>
+
+  ${renderInfo(m)}
 
   <section class="gds-card" aria-labelledby="concerns-title">
     <div class="gds-card__header"><h2 id="concerns-title" class="gds-title-1">Qué debería preocuparte ${count(m.concerns.length)}</h2></div>
@@ -367,6 +425,12 @@ function renderPeriod(title, commits, memory, done, m) {
   </section>`;
 }
 
+/** "main sin protección": crítico, salvo que Pablo haya aceptado el riesgo (el chequeo medido ya bajó a informativo, DEC-018). */
+function unprotectedChip(m) {
+  const c = m.health.checks.find(x => x.id === 'prod:unprotected');
+  return c && c.level === 'info' ? levelChip('info', 'main sin protección (riesgo que aceptaste)') : levelChip('critical', 'main sin protección');
+}
+
 function renderEnvironments(m) {
   const p = m.prod, c = m.compare;
   const lastOf = (repo) => m.commits.find(x => x.repo === repo);
@@ -381,7 +445,7 @@ function renderEnvironments(m) {
       <div class="gds-card gds-card--inset gds-stack--sm gds-stack">
         <p class="gds-cluster">${statusChip('PROD', 'accent', 'shield')}<a href="${repoUrl('prod')}" target="_blank" rel="noopener">${esc(CONFIG.repos.prod.name)}</a></p>
         <p class="gds-body-2">${p ? `Último cambio ${p.date ? esc(relTime(m.generatedAt - new Date(p.date))) : ''} · <span class="gds-ref">${esc(p.sha.slice(0, 7))}</span>` : na('no verificable')}</p>
-        <p class="gds-body-2">${p ? (p.protected ? levelChip('ok', 'main protegida') : levelChip('critical', 'main sin protección')) : ''}</p>
+        <p class="gds-body-2">${p ? (p.protected ? levelChip('ok', 'main protegida') : unprotectedChip(m)) : ''}</p>
         <p class="gds-caption gds-text-muted">Solo lectura. Pasar algo a producción es decisión exclusiva tuya.</p>
       </div>
       <div class="gds-card gds-card--inset gds-stack--sm gds-stack">
@@ -481,7 +545,7 @@ export function renderItem(m, id) {
     <article class="gds-card doc gds-stack">
       <p class="gds-cluster">${statusChip(KIND_LABEL[kind] || kind, 'accent', 'book')}${entry.estadoCodigo ? stateChip(entry.estado || entry.estadoCodigo) : ''}<span class="gds-ref">${esc(entry.id)}</span></p>
       <h1 class="gds-headline-1">${esc(plainTitle(entry.titulo))}</h1>
-      ${queueItem ? renderDecisionCard(queueItem, m, true, { level: 'h2', title: 'Qué necesitás decidir' }) : ''}
+      ${queueItem ? renderDecisionCard(queueItem, m, true, { level: 'h2', title: queueItem.clase === 'decision' ? 'Qué necesitás decidir' : 'Qué necesitás hacer' }) : ''}
       ${entry.kind === 'REQ' && !queueItem ? `<p class="gds-body-2 gds-text-secondary">${esc(entry.estadoTexto || '')}</p>` : ''}
       <dl class="meta">${Object.entries(entry.meta).map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${t(v, m)}</dd></div>`).join('')}</dl>
       ${cited}
