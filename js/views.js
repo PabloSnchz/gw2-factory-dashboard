@@ -5,6 +5,8 @@
 
 import { CONFIG, blobUrl, commitUrl, repoUrl } from './config.js';
 import { esc, mdToHtml, extractIds } from './parse.js';
+import { responseActions, buildIssueUrl } from './respond.js';
+import { RESPONSES } from './decisions.js';
 
 const WORKFLOW = ['PRODUCT', 'ARCHITECTURE', 'DEVELOPMENT', 'REVIEW', 'DOCUMENTATION'];
 const LEVEL_LABEL = { critical: 'Crítico', warn: 'Atención', info: 'Info', ok: 'OK' };
@@ -65,6 +67,41 @@ function t(text, model) {
 function na(reason) { return `<span class="na" title="${esc(reason || 'sin dato')}">— <small>${esc(reason || 'sin dato')}</small></span>`; }
 
 function empty(text) { return `<p class="empty">${esc(text)}</p>`; }
+
+/* ------------------------------------------------------------ responder (DEC-012) */
+
+const reqOf = (m, id) => (m.decisions && id ? m.decisions.requests.find(r => r.id === id) : null);
+
+/** Botones de respuesta de un pedido abierto: enlaces a un issue prellenado (sin secretos en el navegador). */
+export function renderRespond(req, m) {
+  const actions = responseActions(req, m.generatedAt);
+  if (!actions.length) return '';
+  return `<div class="respond" role="group" aria-label="Responder ${esc(req.id)}">
+    <p class="li-meta"><strong>Responder:</strong>
+      ${actions.map(a => `<a class="btn" href="${esc(buildIssueUrl(req, a))}" target="_blank" rel="noopener"
+        aria-label="${esc(a.label)} — ${esc(req.id)} (abre GitHub en otra pestaña)">${esc(a.label)} ↗</a>`).join(' ')}
+    </p>
+    <p class="li-meta">Se abre GitHub con tu respuesta lista. Podés agregar un comentario y tocá <strong>Submit new issue</strong>: en un minuto queda registrada.</p>
+  </div>`;
+}
+
+/** Pedidos que ya respondiste y todavía no se cerraron: confirmación de que la respuesta llegó. */
+function renderAnswered(m) {
+  const d = m.decisions;
+  if (!d) return '';
+  const list = [...d.answered, ...d.postponed, ...d.measured];
+  if (!list.length) return '';
+  const what = (r) => {
+    if (r.state === 'measured') return 'Hecho (verificado por el panel)';
+    const u = r.ultima;
+    const label = u && RESPONSES[u.respuesta] ? RESPONSES[u.respuesta].label : 'Respondido';
+    return label + (u && u.opcion ? ` · opción ${u.opcion}` : '') + (r.state === 'postponed' && u.hasta ? ` hasta el ${u.hasta.toISOString().slice(0, 10)}` : '');
+  };
+  return `<h3 class="eyebrow">Ya respondiste</h3>
+    <ul class="list">${list.map(r => `<li class="list-item"><div class="li-main">
+      <a class="idref" href="#/item/${esc(r.id)}">${esc(r.id)}</a> <span>${esc(r.titulo)}</span></div>
+      <p class="li-meta">${esc(what(r))} · ${esc(r.estadoTexto)}</p></li>`).join('')}</ul>`;
+}
 
 /* ------------------------------------------------------------ chrome */
 
@@ -157,7 +194,9 @@ export function renderHome(m) {
             h.esperaMs != null ? `Esperando ${esc(duration(h.esperaMs))}` : '',
             extraRefs(h).length ? `Relacionado: ${extraRefs(h).map(r => t(r, m)).join(', ')}` : '',
           ].filter(Boolean).join(' · ')}</p>` : ''}
+          ${renderRespond(reqOf(m, h.id), m)}
         </li>`).join('')}</ul>` : empty('Nada espera una decisión tuya.')}
+      ${renderAnswered(m)}
     </section>
 
     <section class="card">
@@ -311,6 +350,7 @@ export function renderItem(m, id) {
     <article class="card doc">
       <div class="entry-head"><span class="idref">${esc(entry.id)}</span>${entry.estadoCodigo ? badge(entry.estado, 'st-' + entry.estadoCodigo.toLowerCase()) : ''}</div>
       <h1>${esc(entry.titulo)}</h1>
+      ${entry.kind === 'REQ' ? renderRespond(entry, m) || `<p class="li-meta">${esc(entry.estadoTexto || '')}</p>` : ''}
       <dl class="meta">${Object.entries(entry.meta).map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${t(v, m)}</dd></div>`).join('')}</dl>
       ${cited}
       <div class="md">${linkIdsInHtml(mdToHtml(entry.body, resolver), m)}</div>

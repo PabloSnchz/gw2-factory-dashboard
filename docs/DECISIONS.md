@@ -63,9 +63,27 @@ Reglas:
 - Códigos canónicos en inglés (los pidió Pablo); se aceptan también `APROBADA`, `RECHAZADA`, `POSPUESTA`, `HECHA`.
 - `APPROVED` sin opción en un pedido con opciones = aprobar la recomendación.
 - La respuesta vigente es la de fecha más reciente. Una respuesta mal formada no cuenta (el panel la muestra en Salud).
-- `responses/README.md` explica cómo responder a mano. No se interpreta como respuesta: solo cuentan archivos `RESP-XXX*.md`.
+- `responses/README.md` explica cómo responder (panel y a mano). No se interpreta como respuesta: solo cuentan archivos `RESP-XXX*.md`.
 
 Generar una respuesta desde código: `buildResponseMarkdown({ id, solicitud, respuesta, opcion, hasta, fecha, comentario, issue, autor })`. Los metadatos se limpian de saltos de línea (no se puede inyectar `Estado: PROCESADA`).
+
+## Canal de respuesta desde el panel (DEC-012, MC-4)
+
+```
+Panel (botón)  →  github.com/PabloSnchz/gw2-factory-dev/issues/new?title&body   (issue prellenado)
+Pablo: Submit  →  workflow decision-response (gw2-factory-dev)
+               →  valida → escribe ai-memory/responses/RESP-XXX.md → comenta → cierra el issue
+Panel (Refrescar) → el pedido pasa a "Ya respondiste"
+```
+
+- `js/respond.js` arma las acciones por pedido abierto:
+  - **acción**: Ya lo hice (`DONE`) · Posponer 7 días · No lo voy a hacer (`REJECTED`).
+  - **decisión**: Aprobar <recomendada> · Aprobar <otras opciones> · Rechazar · Posponer 7 días.
+- Cuerpo del issue: marca `<!-- gds:decision-response v1 -->` + bloque ```` ```gds-response ```` (`solicitud`, `respuesta`, `opcion`, `hasta`) + `### Comentario` libre.
+- Sin secretos en el navegador: el panel solo arma un enlace; escribe GitHub con el `GITHUB_TOKEN` del workflow.
+- Seguridad del workflow: solo en `PabloSnchz/gw2-factory-dev`, solo issues del dueño con la marca, el cuerpo nunca se interpola en comandos, permisos `contents: write` + `issues: write`, ejecución en serie (`concurrency`).
+- Errores (pedido inexistente/cerrado, opción inválida, fecha pasada): comentario en el issue, sin escribir nada; editar el issue lo reprocesa.
+- **Contrato espejo**: `buildResponseMarkdown` y el cuerpo del issue tienen el mismo texto dorado en `tests/respond.test.mjs` (panel) y `.github/scripts/decision-response.test.cjs` (dev). Cambiar el formato exige cambiar ambos.
 
 ## Ciclo de vida
 
