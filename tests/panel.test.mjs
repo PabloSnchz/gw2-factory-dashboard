@@ -38,7 +38,8 @@ test('Hoy: lo que necesita a Pablo va antes que el estado de la Factory', async 
 
 test('veredicto: una frase que dice qué hacer', async () => {
   const m = await model();
-  assert.match(V.verdict(m).text, /^Hay \d+ cosas esperando tu decisión$/);
+  // Soberanía de decisiones (DEC-018): sin pedidos de decisión justificados, lo que queda son tareas, no decisiones.
+  assert.match(V.verdict(m).text, /^Nada que decidir: te esperan \d+ acciones$/);
   const none = { ...m, human: [], channel: { available: true, items: [] }, health: { ...m.health, level: 'ok' } };
   assert.match(V.verdict(none).text, /nada necesita tu decisión/i);
 });
@@ -59,6 +60,8 @@ test('tarjetas: la acción recomendada es el botón principal y va primero', asy
 test('lenguaje: los títulos no empiezan con IDs internos; los IDs quedan como referencia secundaria', async () => {
   const files = { ...mem, ...v3 };
   files['status.md'] = files['status.md'].replace(/^Tarea actual: .*$/m, 'Tarea actual: BL-020 — FACTORY-001B: Centro de decisiones');
+  // Una validación (no una decisión) sigue llegando a Pablo como tarea con su título sin ID.
+  files['backlog.md'] = files['backlog.md'].replace('· FEAT-001, DEC-008 — Bloqueado: decisión de Pablo.', '· FEAT-001, DEC-008 — Bloqueado: validación de Pablo.');
   const m = await model(files);
   const html = V.renderHome(m);
   const titles = [...html.matchAll(/<h3 id="dq-[^"]+" class="gds-title-1">([^<]*)/g)].map(x => x[1]);
@@ -144,7 +147,7 @@ test('accesibilidad: estados con ícono y texto, ids únicos, foco y nombres acc
   assert.match(views.header, /aria-current="page"/);
   assert.match(views.header, /<button id="btn-refresh" type="button"/);
   assert.match(views.home, /aria-current="step"/, 'el paso actual se anuncia');
-  assert.match(views.home, /<span class="gds-visually-hidden"> pendientes<\/span>/, 'los contadores tienen texto para lector de pantalla');
+  assert.match(views.home, /<span class="gds-visually-hidden"> decisiones<\/span>/, 'los contadores tienen texto para lector de pantalla');
 });
 
 test('accesibilidad: cada vista tiene un h1 y los niveles de título no se saltean (GDS §5)', async () => {
@@ -160,7 +163,7 @@ test('accesibilidad: cada vista tiene un h1 y los niveles de título no se salte
     assert.equal(levels.filter(l => l === 1).length, 1, `${name}: un solo h1`);
     levels.forEach((l, i) => { if (i) assert.ok(l <= levels[i - 1] + 1, `${name}: h${levels[i - 1]} → h${l} saltea un nivel`); });
   }
-  assert.match(views.req, /<h2 id="dq-REQ-002" class="gds-title-1">Qué necesitás decidir<\/h2>/, 'en el detalle, la tarjeta es un h2 bajo el h1 del pedido');
+  assert.match(views.req, /<h2 id="dq-REQ-002" class="gds-title-1">Qué necesitás hacer<\/h2>/, 'en el detalle, la tarjeta es un h2 bajo el h1 del pedido (acción: "hacer", no "decidir")');
 });
 
 test('textos: la procedencia de una alerta se dice en palabras, no en códigos', async () => {
