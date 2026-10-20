@@ -304,14 +304,16 @@ export function mdToHtml(md, linkResolver = h => h) {
       continue;
     }
     const h = line.match(/^(#{1,6})\s+(.*)$/);
-    if (h) { const lv = Math.min(6, h[1].length + 1); out.push(`<h${lv}>${inline(h[2])}</h${lv}>`); i++; continue; }
+    // La página ya tiene su h1 (el título de la entrada): "#" y "##" del cuerpo son h2, "###" es h3 (GDS §5: sin saltear niveles).
+    if (h) { const lv = Math.min(6, Math.max(2, h[1].length)); out.push(`<h${lv}>${inline(h[2])}</h${lv}>`); i++; continue; }
     if (/^\s*\|.*\|\s*$/.test(line)) {
       const buf = [];
       while (i < lines.length && /^\s*\|.*\|\s*$/.test(lines[i])) buf.push(lines[i++]);
       const rows = buf.map(l => l.trim().replace(/^\||\|$/g, '').split('|').map(c => c.trim()))
         .filter(cells => !cells.every(c => /^:?-{2,}:?$/.test(c)));
       const [head, ...body] = rows;
-      out.push('<div class="table-wrap"><table><thead><tr>' + head.map(c => `<th>${inline(c)}</th>`).join('') +
+      // gds-table-wrap: scroll horizontal propio para tablas anchas (WCAG 1.4.10); th con scope (1.3.1).
+      out.push('<div class="gds-table-wrap"><table><thead><tr>' + head.map(c => `<th scope="col">${inline(c)}</th>`).join('') +
         '</tr></thead><tbody>' + body.map(r => '<tr>' + r.map(c => `<td>${inline(c)}</td>`).join('') + '</tr>').join('') +
         '</tbody></table></div>');
       continue;
