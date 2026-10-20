@@ -65,8 +65,9 @@ export function buildModel(raw) {
   const commits = mergeCommits(raw.commits);
   const statusInfo = deriveStatus(status, now);
   const human = buildHumanQueue({ status, backlog, entries, decisions, now });
+  const info = buildInfo({ status, risks, human });
   const channel = buildChannel(raw.channel, decisions, now);
-  const health = runHealthChecks({ raw, status, statusInfo, backlog, roadmap, risks, index, entries, allIds, commits, decisions, channel, now });
+  const health = runHealthChecks({ raw, status, statusInfo, backlog, roadmap, risks, index, entries, allIds, commits, decisions, channel, human, now });
   const activity = buildActivity({ commits, entries, backlog, now });
   const concerns = buildConcerns({ risks, backlog, health });
   const fase = (roadmap || []).find(p => /CURSO/.test(p.estado)) || null;
@@ -75,7 +76,7 @@ export function buildModel(raw) {
     generatedAt: now,
     ref: raw.ref,
     status, statusInfo, backlog, roadmap, fase, risks, index, entries, allIds,
-    commits, activity, human, concerns, health, decisions, channel,
+    commits, activity, human, info, concerns, health, decisions, channel,
     prod: raw.prod, compare: raw.compare, api: raw.api,
   };
 }
@@ -103,6 +104,36 @@ function deriveStatus(status, now) {
 
 /* ------------------------------------------------------------ cola de decisión humana */
 
+/**
+ * Soberanía de decisiones (DEC-018): lo que le llega a Pablo se clasifica en
+ *   decision   — producto, negocio o estrategia; solo desde un pedido REQ con contexto, impacto,
+ *                recomendación y justificación de por qué la Factory no puede decidirlo;
+ *   accion     — algo que solo Pablo puede hacer (su cuenta, sus permisos);
+ *   validacion — mirar o probar algo funcionando y confirmar que sirve;
+ * y lo demás es información (`buildInfo`): no pide nada y no cuenta como pendiente.
+ * Las decisiones técnicas las toma la Factory y no aparecen acá.
+ */
+export const CLASES = ['decision', 'accion', 'validacion'];
+const CLASS_PREFIX = /^(decisi[oó]n|acci[oó]n|validaci[oó]n|info(?:rmaci[oó]n)?)\s*:\s*/i;
+const ID_PREFIX = /^\[?[A-Z]+-\d{3}\]?\s*[:—-]?\s*/;
+
+/** "[BL-016] Validación: Mirar el panel" → { clase: 'validacion', texto: 'Mirar el panel' }. Sin clase → null. */
+export function splitStatusLine(txt) {
+  const rest = String(txt || '').replace(ID_PREFIX, '');
+  const m = rest.match(CLASS_PREFIX);
+  if (!m) return { clase: null, texto: rest };
+  const k = m[1].toLowerCase()[0];
+  return { clase: k === 'd' ? 'decision' : k === 'a' ? 'accion' : k === 'v' ? 'validacion' : 'info', texto: rest.slice(m[0].length) };
+}
+
+/** Clase de una tarea BLOCKED que espera a Pablo, según cómo lo dice su texto. */
+function blockedClass(it) {
+  const why = (it.raw.match(/Bloqueado:\s*(.*)$/i) || [])[1] || it.raw;
+  if (/validaci|validar|mirar|probar/i.test(why)) return 'validacion';
+  if (/decisi|decidir|decide/i.test(why)) return 'decision';
+  return 'accion';
+}
+
 function buildHumanQueue({ status, backlog, entries, decisions, now }) {
   const byId = new Map();
   const add = (id, item) => {
@@ -111,6 +142,9 @@ function buildHumanQueue({ status, backlog, entries, decisions, now }) {
     if (prev) { prev.origenes.push(...item.origenes); prev.relacionados.push(...item.relacionados); return; }
     byId.set(key, { id, ...item });
   };
+  // Contrato v3 en uso: una decisión solo llega a Pablo como pedido. Sin pedidos (memoria v2) se conserva lo anterior.
+  const v3 = !!(decisions && decisions.requests && decisions.requests.length);
+  const skipped = [];
 
   // 0. Pedidos abiertos (contrato v3): lo que la Factory le pregunta a Pablo, con su recomendación.
   //    Un pedido no cerrado "cubre" sus IDs relacionados: si está pospuesto o respondido,
@@ -121,7 +155,9 @@ function buildHumanQueue({ status, backlog, entries, decisions, now }) {
     for (const x of [r.id, ...r.relacionados]) if (!coveredBy.has(x)) coveredBy.set(x, r);
   }
   for (const r of (decisions && decisions.open) || []) {
+    if (r.sinJustificar) { skipped.push(r.id); continue; } // aviso en Salud (req:unjustified)
     add(r.id, {
+      clase: r.tipo === 'accion' ? 'accion' : 'decision',
       titulo: r.titulo, tipo: r.tipo === 'accion' ? 'accion' : 'pedido', prioridad: r.prioridad, fecha: r.fecha,
       esperaMs: r.esperaMs, origenes: ['Pedido abierto'], relacionados: r.relacionados.slice(),
       pregunta: r.recomendacion ? 'Recomendación: ' + r.recomendacion.texto : r.porQueImporta,
@@ -139,7 +175,9 @@ function buildHumanQueue({ status, backlog, entries, decisions, now }) {
   for (const d of entries.DEC || []) {
     if (d.estadoCodigo === 'PROPUESTA') {
       if (absorb([d.id], 'DEC en estado PROPUESTA')) continue;
+      if (v3) { skipped.push(d.id); continue; } // sin pedido no hay justificación: aviso dec:noreq en Salud
       add(d.id, {
+        clase: 'decision',
         titulo: d.titulo, tipo: 'decision', fecha: d.fecha,
         esperaMs: d.fecha ? now - d.fecha.getTime() : null,
         origenes: ['DEC en estado PROPUESTA'], relacionados: [],
@@ -157,14 +195,20 @@ function buildHumanQueue({ status, backlog, entries, decisions, now }) {
     if (via) { absorb(via === it.id ? [it.id] : [via, it.id], null); continue; }
     const dec = it.refs.find(r => proposedDecs.has(r));
     if (dec) { byId.get(dec).relacionados.push(it.id); continue; }
-    add(it.id, { titulo: it.titulo, tipo: 'backlog', prioridad: it.prioridad, fecha: null, esperaMs: null,
+    const clase = blockedClass(it);
+    if (clase === 'decision' && v3) { skipped.push(it.id); continue; }
+    add(it.id, { clase, titulo: it.titulo, tipo: 'backlog', prioridad: it.prioridad, fecha: null, esperaMs: null,
       origenes: ['Backlog BLOCKED: requiere a Pablo'], relacionados: it.refs, pregunta: it.detalle });
   }
 
   // 3. Lo que status.md declara explícitamente.
   for (const txt of (status && status.esperandoPablo) || []) {
     const ids = idsIn(txt);
+    const line = splitStatusLine(txt);
+    if (line.clase === 'info') continue; // va a "Para tu información"
     if (absorb(ids, 'status.md')) continue;
+    // Una decisión descartada por no tener pedido justificado no vuelve a entrar disfrazada de línea de status.md.
+    if (ids[0] && skipped.includes(ids[0])) continue;
     // Coincidencia directa, o indirecta solo si la línea cita un dato de contexto (p. ej. BL-010 → RSK-001).
     // Si la línea nombra su propio trabajo (BL o pedido), es un pendiente propio: no se agrupa dentro
     // de otro ítem que solo lo cita (antes "Validar MC-4 [BL-020]" quedaba escondido dentro de BL-016).
@@ -172,13 +216,45 @@ function buildHumanQueue({ status, backlog, entries, decisions, now }) {
     const known = ids.find(x => byId.has(x))
       || (!own && [...byId.keys()].find(k => ids.some(x => byId.get(k).relacionados.includes(x))));
     if (known) { byId.get(known).origenes.push('status.md'); continue; }
-    add(ids[0] || null, { titulo: txt.replace(/^\[?[A-Z]+-\d{3}\]?\s*[:—-]?\s*/, ''), tipo: 'status', fecha: null, esperaMs: null,
+    if (line.clase === 'decision' && v3) { skipped.push(ids[0] || line.texto); continue; }
+    add(ids[0] || null, { clase: line.clase || 'accion', sinClase: !line.clase, titulo: line.texto, tipo: 'status', fecha: null, esperaMs: null,
       origenes: ['status.md: Esperando a Pablo'], relacionados: ids.slice(1), pregunta: null });
   }
 
-  return [...byId.values()].map(x => ({ ...x, relacionados: [...new Set(x.relacionados)] }))
-    .sort((a, b) => prioRank(a.prioridad) - prioRank(b.prioridad) || (b.esperaMs || 0) - (a.esperaMs || 0));
+  const items = [...byId.values()].map(x => ({ ...x, relacionados: [...new Set(x.relacionados)] }))
+    .sort((a, b) => CLASES.indexOf(a.clase) - CLASES.indexOf(b.clase) || prioRank(a.prioridad) - prioRank(b.prioridad) || (b.esperaMs || 0) - (a.esperaMs || 0));
+  items.skipped = skipped;
+  return items;
 }
+
+/**
+ * "Para tu información": lo que Pablo conviene saber pero no le pide nada.
+ * Fuentes: líneas "Info:" de status.md, la sección "## Para tu información" y los riesgos que Pablo aceptó.
+ */
+function buildInfo({ status, risks, human }) {
+  const out = [];
+  const seen = new Set(human.map(h => h.id).filter(Boolean));
+  const push = (id, titulo, origen) => {
+    if (id && seen.has(id)) return;
+    if (id) seen.add(id);
+    out.push({ id: id || null, titulo, origen });
+  };
+  for (const r of risks || []) {
+    if (r.estado !== 'ABIERTO' || !isAccepted(r)) continue;
+    const rev = (r.mitigacion.match(/Revisi[oó]n[^:]*:\s*(\d{4}-\d{2}-\d{2})/i) || [])[1];
+    const what = r.riesgo.split(/(?<=[.:])\s/)[0].replace(/[.:]$/, '');
+    push(r.id, `Riesgo que aceptaste: ${what}.${rev ? ` Se revisa el ${rev}.` : ''}`, 'Riesgo aceptado');
+  }
+  const lines = [
+    ...((status && status.esperandoPablo) || []).filter(t => splitStatusLine(t).clase === 'info'),
+    ...((status && status.paraInfo) || []),
+  ];
+  for (const txt of lines) push(idsIn(txt)[0] || null, splitStatusLine(txt).texto, 'status.md');
+  return out;
+}
+
+/** Un riesgo aceptado por Pablo lo dice en su mitigación ("ACEPTADO por Pablo…"). */
+export function isAccepted(r) { return /\bACEPTADO\b/.test((r && r.mitigacion) || ''); }
 
 /* ------------------------------------------------------------ canal de respuesta (DEC-012) */
 
@@ -271,7 +347,8 @@ function buildActivity({ commits, entries, backlog, now }) {
 function buildConcerns({ risks, backlog, health }) {
   const out = [];
   for (const r of risks || []) {
-    if (r.estado === 'ABIERTO' && (r.severidad === 'CRÍTICO' || r.severidad === 'ALTO')) {
+    // Un riesgo que Pablo aceptó ya no preocupa: va a "Para tu información" con su fecha de revisión.
+    if (r.estado === 'ABIERTO' && !isAccepted(r) && (r.severidad === 'CRÍTICO' || r.severidad === 'ALTO')) {
       out.push({ level: r.severidad === 'CRÍTICO' ? 'critical' : 'warn', id: r.id, titulo: r.riesgo, origen: 'Riesgo ' + r.severidad.toLowerCase() });
     }
   }
@@ -299,7 +376,7 @@ function buildConcerns({ risks, backlog, health }) {
 /* ------------------------------------------------------------ salud */
 
 function runHealthChecks(ctx) {
-  const { raw, status, statusInfo, backlog, roadmap, risks, index, entries, allIds, commits, decisions, channel, now } = ctx;
+  const { raw, status, statusInfo, backlog, roadmap, risks, index, entries, allIds, commits, decisions, channel, human, now } = ctx;
   const T = CONFIG.thresholds;
   const checks = [];
   const add = (level, id, title, detail, source, ref) => checks.push({ level, id, title, detail, source, ref: ref || null });
@@ -413,6 +490,28 @@ function runHealthChecks(ctx) {
   if (api.stale && api.stale.length) add('info', 'api:stale', 'Se muestran datos de GitHub en caché', api.stale.join(' · '), 'medido');
   if (api.remaining != null && api.remaining < T.apiLowRemaining) add('info', 'api:quota', `Cuota de API casi agotada (${api.remaining} restantes)`, 'Se usará caché hasta el reinicio de la cuota.', 'medido');
   if (!raw.ref) add('info', 'snapshot:branch', 'Memoria leída desde la rama (no fijada a un commit)', 'Sin API: el CDN puede servir una versión de hasta 5 min.', 'medido');
+
+  // --- Soberanía de decisiones (DEC-018)
+  const declaredElsewhere = new Set(checks.filter(c => /^(req:unjustified|dec:noreq):/.test(c.id)).map(c => c.ref));
+  const orphanDecisions = ((human && human.skipped) || []).filter(x => !declaredElsewhere.has(x));
+  if (orphanDecisions.length) {
+    add('warn', 'sovereignty:noreq', `${orphanDecisions.length} decisión(es) para Pablo sin pedido justificado: no se muestran`,
+      `${orphanDecisions.join(', ')}. Una decisión llega a Pablo solo como pedido (requests/) con contexto, impacto, recomendación y por qué la Factory no puede decidirla.`, 'declarado');
+  }
+  const untagged = ((human || []).filter(h => h.sinClase)).map(h => h.id || h.titulo);
+  if (untagged.length) {
+    add('info', 'status:noclass', `${untagged.length} línea(s) de "Esperando a Pablo" sin clase`,
+      `${untagged.join(', ')}. Empezar cada línea con Acción:, Validación:, Decisión: o Info: (contrato v4). Se muestran como acción.`, 'declarado');
+  }
+
+  // Un riesgo aceptado por Pablo se sigue midiendo, pero deja de ser un problema: queda como información.
+  for (const c of checks) {
+    const r = c.ref && c.source === 'medido' && (risks || []).find(x => x.id === c.ref);
+    if (r && isAccepted(r) && (c.level === 'critical' || c.level === 'warn')) {
+      c.level = 'info';
+      c.title += ' (riesgo que aceptaste)';
+    }
+  }
 
   checks.sort((a, b) => LEVEL_ORDER[a.level] - LEVEL_ORDER[b.level]);
   const level = checks.some(c => c.level === 'critical') ? 'critical' : checks.some(c => c.level === 'warn') ? 'warn' : 'ok';
