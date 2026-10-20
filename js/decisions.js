@@ -84,8 +84,12 @@ export function parseRequest(md, path) {
   const recTexto = s['recomendacion'];
   const recClave = recTexto ? (recTexto.match(/^([A-Z])\s+[—-]\s+/) || [])[1] || null : null;
 
+  const impacto = s['por que importa'] || s['impacto'] || null;
+  // Soberanía de decisiones (DEC-018): un pedido de decisión explica por qué la Factory no puede decidirlo sola.
+  const justificacion = s['por que te lo pregunto'] || s['por que no lo decide la factory'] || null;
+
   if (!s['que paso']) problems.push('falta "## Qué pasó"');
-  if (!s['por que importa']) problems.push('falta "## Por qué importa"');
+  if (!impacto) problems.push('falta "## Por qué importa"');
   if (!recTexto) problems.push('falta "## Recomendación"');
   if (opciones.length === 1) problems.push('una sola opción no es una decisión: usar 2 o más, o ninguna (aprobar/rechazar)');
   if (recClave && !opciones.some(o => o.clave === recClave)) problems.push(`la recomendación ${recClave} no está entre las opciones`);
@@ -103,7 +107,10 @@ export function parseRequest(md, path) {
     relacionados: idsIn(meta(e, 'relacionado', 'relacionados')),
     verificacion,
     quePaso: s['que paso'] || null,
-    porQueImporta: s['por que importa'] || null,
+    porQueImporta: impacto,
+    justificacion,
+    // Una decisión sin justificación no llega a Pablo: la Factory debe decidirla o justificarla.
+    sinJustificar: tipo === 'decision' && !justificacion,
     comoHacerlo: s['como hacerlo'] || null,
     opciones,
     recomendacion: recTexto ? { clave: recClave, texto: recTexto } : null,
@@ -217,6 +224,10 @@ export function buildDecisions(ctx) {
     r.esperaMs = r.state === 'open' && r.fecha ? now - r.fecha.getTime() : null;
 
     if (r.problems.length) add('warn', 'req:invalid:' + (r.id || r.path), `Pedido ${r.id || r.path} fuera de formato`, r.problems.join('; '), 'declarado', r.id);
+    if (r.sinJustificar && r.state !== 'closed') {
+      add('warn', 'req:unjustified:' + r.id, `${r.id} no llega a Pablo: no explica por qué la Factory no puede decidirlo`,
+        'Falta "## Por qué te lo pregunto". La Factory debe decidirlo sola o justificar el pedido (soberanía de decisiones, DEC-018).', 'declarado', r.id);
+    }
     if (r.state === 'open' && r.esperaMs != null && r.esperaMs > T.requestWaitDays * 864e5) {
       add('warn', 'req:waiting:' + r.id, `Hace ${Math.floor(r.esperaMs / 864e5)} días que la Factory espera tu respuesta: ${r.titulo}`, 'Pedido abierto sin respuesta.', 'medido', r.id);
     }
