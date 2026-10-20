@@ -1,36 +1,52 @@
-# 🐈‍⬛ Gato Negro Factory — Dashboard
+# 🐈‍⬛ Gato Negro Factory — Centro de Decisiones
 
-Centro de observación de la Factory: en menos de 60 segundos responde **qué está haciendo, por qué, qué hizo hoy y esta semana, qué está bloqueado y qué necesita una decisión humana**.
+El lugar donde Pablo y la Factory trabajan juntos. En menos de 60 segundos responde **qué necesita tu decisión, qué está haciendo la Factory y por qué, qué hizo hoy y esta semana, y qué está bloqueado**. Y permite responder desde el mismo lugar.
 
 **Panel:** https://pablosnchz.github.io/gw2-factory-dashboard/
+
+```
+Factory trabaja → el panel propone → Pablo responde → la Factory continúa
+```
 
 ## Qué muestra
 
 | Vista | Pregunta que responde |
 |---|---|
-| **Hoy** | ¿Qué está haciendo la Factory y por qué? ¿En qué etapa, hace cuánto, qué sigue? ¿Qué necesita mi decisión? ¿Qué debería preocuparme? ¿Qué pasó hoy y esta semana? ¿Cómo están DEV y PROD? |
-| **Trabajo** | Roadmap por fases y backlog READY / IN_PROGRESS / BLOCKED / DONE |
+| **Hoy** | ¿Tengo que hacer algo? Una frase de resumen, una tarjeta por pendiente (por qué importa, qué recomienda la Factory, botones para responder), lo que ya respondiste, qué hace la Factory y por qué, qué debería preocuparme, qué pasó hoy y esta semana, cómo están DEV y PROD |
+| **Trabajo** | Etapas del plan y tareas: en curso, bloqueadas, listas, hechas |
 | **Conocimiento** | Decisiones, lecciones y funcionalidades, con detalle y "citado por" |
 | **Riesgos** | Críticos, altos, otros abiertos y mitigados |
-| **Actividad** | Commits y registros de memoria por día (24h / 7d / 30d) |
-| **Salud** | Inconsistencias entre memoria y realidad, datos desactualizados, fuentes |
+| **Actividad** | Commits y registros de memoria por día (24 h / 7 d / 30 d) |
+| **Salud** | Diferencias entre lo que la memoria dice y lo que se mide en GitHub, datos desactualizados, fuentes |
+
+## Responder una decisión
+
+1. En **Hoy**, cada pedido tiene sus botones: *Aprobar (recomendada)*, *Rechazar*, *Posponer 7 días*, *Ya lo hice*…
+2. El botón abre GitHub con la respuesta lista. Podés agregar un comentario y tocás **Submit new issue**.
+3. Un workflow de `gw2-factory-dev` la guarda en `ai-memory/responses/`, comenta y cierra el issue. Al volver al panel, el pedido pasa a **Ya respondiste**.
+4. Si algo falla, el panel lo dice ("no se pudo registrar") y enlaza el motivo.
+
+Sin tokens ni secretos en el navegador: GitHub te identifica a vos. Detalle en [docs/DECISIONS.md](docs/DECISIONS.md).
 
 ## Cómo funciona
 
 - Página estática, JavaScript sin dependencias ni build.
 - Lee `ai-memory/` de [gw2-factory-dev](https://github.com/PabloSnchz/gw2-factory-dev/tree/main/ai-memory) **fijado al SHA del último commit** (snapshot consistente).
-- Mide en GitHub: commits, protección de producción y diferencia DEV/PROD. 5 llamadas a la API por lectura, con caché de 10 minutos.
+- Mide en GitHub: commits, protección de producción, diferencia DEV/PROD y respuestas del canal sin registrar. **6 llamadas a la API por lectura**, con caché de 10 minutos.
 - **Sin backend y sin scripts locales**: todo se calcula en el navegador.
 - Un dato que no se pudo leer aparece como **—** con el motivo, nunca como 0.
+- Visual: [Gato Design System](gds/GDS_FOUNDATION.md) 1.0.1. Contraste WCAG 2.1 AA calculado, estados con ícono y texto, navegación por teclado.
 
 ## Documentación
 
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — capas, fuentes, presupuesto de API, decisiones de diseño.
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — capas, fuentes, presupuesto de API, accesibilidad.
+- [docs/DECISIONS.md](docs/DECISIONS.md) — pedidos, respuestas y canal de respuesta (contrato v3).
 - [docs/DATA-CONTRACT.md](docs/DATA-CONTRACT.md) — formato de ai-memory que el panel consume.
+- [gds/GDS_FOUNDATION.md](gds/GDS_FOUNDATION.md) — el sistema de diseño.
 - [docs/ANALISIS-HISTORICO.md](docs/ANALISIS-HISTORICO.md) — qué se conservó, qué se eliminó y qué se creó respecto de `gw2-agents-dashboard`.
 - [CHANGELOG.md](CHANGELOG.md)
 
-Decisiones oficiales en la memoria de la Factory: DEC-008 (dashboard nuevo) y DEC-009 (contrato de datos).
+Decisiones oficiales en la memoria de la Factory: DEC-008 (panel nuevo), DEC-009 (contrato de datos), DEC-010 (GDS), DEC-011 (pedidos y respuestas), DEC-012 (canal), DEC-013 (Centro de Decisiones).
 
 ## Desarrollo
 
@@ -38,10 +54,12 @@ Decisiones oficiales en la memoria de la Factory: DEC-008 (dashboard nuevo) y DE
 node --test tests/*.test.mjs     # Node 20+; sin npm install
 ```
 
-Los tests usan la memoria real (`tests/fixtures/ai-memory/`) y simulan GitHub, incluido el caso de cuota de API agotada.
+Los tests usan la memoria real (`tests/fixtures/ai-memory/`) y simulan GitHub: cuota agotada, canal con errores, contraste, reglas del GDS, accesibilidad y textos dorados compartidos con el workflow de respuestas.
 
 Para probar localmente: servir la carpeta con cualquier servidor estático (`python3 -m http.server`) y abrir `http://localhost:8000`.
 
 ## Publicación
 
 GitHub Pages: Settings → Pages → Deploy from a branch → `main` / `/ (root)`.
+
+Si un cambio no entra en un solo commit, publicarlo en orden de dependencias (GDS y estilos → modelo → vistas → `app.js` / `index.html`) para que cada commit deje el sitio funcionando (LES-017).
