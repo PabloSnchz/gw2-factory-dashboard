@@ -13,6 +13,7 @@ import {
   parseStatus, parseBacklog, parseRoadmap, parseRisks, parseIndex, parseEntry,
   parseDate, extractIds, PRIORITIES,
 } from './parse.js';
+import { buildDecisions, idsIn } from './decisions.js';
 
 const H = 3600 * 1000;
 const D = 24 * H;
@@ -50,6 +51,11 @@ export function buildModel(raw) {
       .sort((a, b) => (a.id || '').localeCompare(b.id || ''));
   }
 
+  // Intercambio de decisiones (contrato v3, DEC-011): pedidos de la Factory y respuestas de Pablo.
+  const decisions = buildDecisions({ files: f, now, prod: raw.prod, decs: entries.DEC || [], thresholds: CONFIG.thresholds });
+  entries.REQ = decisions.requests;
+  entries.RESP = decisions.responses;
+
   const allIds = new Set([
     ...Object.values(entries).flat().map(e => e.id),
     ...(backlog ? Object.values(backlog).flat().filter(x => x && x.id).map(x => x.id) : []),
@@ -58,8 +64,8 @@ export function buildModel(raw) {
 
   const commits = mergeCommits(raw.commits);
   const statusInfo = deriveStatus(status, now);
-  const human = buildHumanQueue({ status, backlog, entries, now });
-  const health = runHealthChecks({ raw, status, statusInfo, backlog, roadmap, risks, index, entries, allIds, commits, now });
+  const human = buildHumanQueue({ status, backlog, entries, decisions, now });
+  const health = runHealthChecks({ raw, status, statusInfo, backlog, roadmap, risks, index, entries, allIds, commits, decisions, now });
   const activity = buildActivity({ commits, entries, backlog, now });
   const concerns = buildConcerns({ risks, backlog, health });
   const fase = (roadmap || []).find(p => /CURSO/.test(p.estado)) || null;
@@ -68,7 +74,7 @@ export function buildModel(raw) {
     generatedAt: now,
     ref: raw.ref,
     status, statusInfo, backlog, roadmap, fase, risks, index, entries, allIds,
-    commits, activity, human, concerns, health,
+    commits, activity, human, concerns, health, decisions,
     prod: raw.prod, compare: raw.compare, api: raw.api,
   };
 }
@@ -96,7 +102,7 @@ function deriveStatus(status, now) {
 
 /* ------------------------------------------------------------ cola de decisión humana */
 
-function buildHumanQueue({ status, backlog, entries, now }) {
+function buildHumanQueue({ status, backlog, entries, decisions, now }) {
   const byId = new Map();
   const add = (id, item) => {
     const key = id || ('txt:' + item.titulo);
@@ -105,9 +111,33 @@ function buildHumanQueue({ status, backlog, entries, now }) {
     byId.set(key, { id, ...item });
   };
 
+  // 0. Pedidos abiertos (contrato v3): lo que la Factory le pregunta a Pablo, con su recomendación.
+  //    Un pedido no cerrado "cubre" sus IDs relacionados: si está pospuesto o respondido,
+  //    lo que cubre tampoco aparece en la cola (no es el turno de Pablo).
+  const coveredBy = new Map();
+  for (const r of (decisions && decisions.requests) || []) {
+    if (r.state === 'closed' || !r.id) continue;
+    for (const x of [r.id, ...r.relacionados]) if (!coveredBy.has(x)) coveredBy.set(x, r);
+  }
+  for (const r of (decisions && decisions.open) || []) {
+    add(r.id, {
+      titulo: r.titulo, tipo: r.tipo === 'accion' ? 'accion' : 'pedido', prioridad: r.prioridad, fecha: r.fecha,
+      esperaMs: r.esperaMs, origenes: ['Pedido abierto'], relacionados: r.relacionados.slice(),
+      pregunta: r.recomendacion ? 'Recomendación: ' + r.recomendacion.texto : r.porQueImporta,
+    });
+  }
+  const absorb = (ids, origen) => {
+    const r = ids.map(x => coveredBy.get(x)).find(Boolean);
+    if (!r) return false;
+    const q = byId.get(r.id);
+    if (q) { q.relacionados.push(...ids.filter(x => x !== r.id)); if (origen) q.origenes.push(origen); }
+    return true;
+  };
+
   // 1. Decisiones PROPUESTA: son, por definición, pedidos de decisión a Pablo.
   for (const d of entries.DEC || []) {
     if (d.estadoCodigo === 'PROPUESTA') {
+      if (absorb([d.id], 'DEC en estado PROPUESTA')) continue;
       add(d.id, {
         titulo: d.titulo, tipo: 'decision', fecha: d.fecha,
         esperaMs: d.fecha ? now - d.fecha.getTime() : null,
@@ -121,6 +151,9 @@ function buildHumanQueue({ status, backlog, entries, now }) {
   // 2. Backlog BLOCKED que depende de Pablo. Si referencia una DEC ya en cola, se agrupa ahí.
   for (const it of (backlog && backlog.BLOCKED) || []) {
     if (!/pablo/i.test(it.raw)) continue;
+    // Cubierto por un pedido: directamente (el pedido lo cita) o vía algo que cita (BL-011 → RSK-002).
+    const via = coveredBy.has(it.id) ? it.id : it.refs.find(r => coveredBy.has(r));
+    if (via) { absorb(via === it.id ? [it.id] : [via, it.id], null); continue; }
     const dec = it.refs.find(r => proposedDecs.has(r));
     if (dec) { byId.get(dec).relacionados.push(it.id); continue; }
     add(it.id, { titulo: it.titulo, tipo: 'backlog', prioridad: it.prioridad, fecha: null, esperaMs: null,
@@ -129,7 +162,8 @@ function buildHumanQueue({ status, backlog, entries, now }) {
 
   // 3. Lo que status.md declara explícitamente.
   for (const txt of (status && status.esperandoPablo) || []) {
-    const ids = extractIds(txt);
+    const ids = idsIn(txt);
+    if (absorb(ids, 'status.md')) continue;
     // Coincidencia directa o indirecta (el ítem ya en cola referencia este ID, p. ej. BL-010 → RSK-001).
     const known = ids.find(x => byId.has(x))
       || [...byId.keys()].find(k => ids.some(x => byId.get(k).relacionados.includes(x)));
@@ -233,10 +267,13 @@ function buildConcerns({ risks, backlog, health }) {
 /* ------------------------------------------------------------ salud */
 
 function runHealthChecks(ctx) {
-  const { raw, status, statusInfo, backlog, roadmap, risks, index, entries, allIds, commits, now } = ctx;
+  const { raw, status, statusInfo, backlog, roadmap, risks, index, entries, allIds, commits, decisions, now } = ctx;
   const T = CONFIG.thresholds;
   const checks = [];
   const add = (level, id, title, detail, source, ref) => checks.push({ level, id, title, detail, source, ref: ref || null });
+
+  // --- Intercambio de decisiones (pedidos y respuestas, DEC-011)
+  if (decisions) checks.push(...decisions.checks);
 
   // --- Lectura de la memoria
   for (const file of CONFIG.requiredFiles) {

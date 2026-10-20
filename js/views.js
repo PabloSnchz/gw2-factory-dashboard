@@ -8,7 +8,7 @@ import { esc, mdToHtml, extractIds } from './parse.js';
 
 const WORKFLOW = ['PRODUCT', 'ARCHITECTURE', 'DEVELOPMENT', 'REVIEW', 'DOCUMENTATION'];
 const LEVEL_LABEL = { critical: 'Crítico', warn: 'Atención', info: 'Info', ok: 'OK' };
-const KIND_LABEL = { DEC: 'Decisión', LES: 'Lección', FEAT: 'Funcionalidad', BL: 'Backlog', RSK: 'Riesgo' };
+const KIND_LABEL = { DEC: 'Decisión', LES: 'Lección', FEAT: 'Funcionalidad', BL: 'Backlog', RSK: 'Riesgo', REQ: 'Pedido', RESP: 'Respuesta' };
 
 export const NAV = [
   { route: 'hoy', label: 'Hoy', icon: '◉' },
@@ -50,7 +50,7 @@ function levelDot(level) { return `<span class="dot dot-${level}" aria-hidden="t
 
 /** Convierte IDs conocidos dentro de texto YA escapado en links internos. */
 function linkIds(escaped, model) {
-  return escaped.replace(/\b(DEC|LES|FEAT|BL|RSK)-\d{3}\b/g, (id) =>
+  return escaped.replace(/\b(DEC|LES|FEAT|BL|RSK|REQ|RESP)-\d{3}\b/g, (id) =>
     model.allIds.has(id) ? `<a class="idref" href="#/item/${id}">${id}</a>` : `<span class="idref idref-missing" title="No existe en la memoria">${id}</span>`);
 }
 
