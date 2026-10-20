@@ -31,6 +31,8 @@ export const CONFIG = {
     statusStaleHours: 48,     // status.md sin actualizar con trabajo en curso
     statusDeadHours: 168,     // 7 días: la memoria dejó de reflejar la realidad
     proposalWaitDays: 7,      // una propuesta esperando decisión humana
+    requestWaitDays: 7,       // un pedido abierto sin respuesta de Pablo
+    responseUnprocessedHours: 48, // una respuesta de Pablo sin procesar por la Factory
     devIdleDays: 7,           // sin commits en DEV
     apiLowRemaining: 10,      // cuota de API casi agotada
   },
