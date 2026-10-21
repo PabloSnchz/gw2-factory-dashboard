@@ -52,7 +52,7 @@ test('tarjetas: la acción recomendada es el botón principal y va primero', asy
   assert.equal(firstBtn[1], 'gds-button--primary');
   assert.equal(firstBtn[2], 'Ya lo hice');
   assert.equal((card.slice(0, card.indexOf('</article>')).match(/gds-button--primary/g) || []).length, 1, 'un solo botón principal por tarjeta');
-  assert.ok(html.includes('La Factory recomienda'));
+  assert.ok(html.includes('Shiruvana recomienda'), 'la recomendación la dice Shiruvana (DEC-024)');
 });
 
 /* ------------------------------------------------------------ lenguaje */
