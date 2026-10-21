@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Gato Design System (GDS) — tokens v1.0.0
+   Gato Design System (GDS) — tokens v1.1.0
    Fuente de verdad: gds/GDS_FOUNDATION.md · Decisión: DEC-010
 
    Tres niveles:
@@ -132,6 +132,9 @@
   --gds-size-icon-sm: 16px;      /* íconos dentro de badges y metadatos */
   --gds-size-icon-md: 1.25em;    /* íconos junto a texto: escalan con la fuente */
   --gds-size-control: 16px;      /* radio y checkbox nativos */
+  --gds-size-avatar-sm: 40px;    /* voz de Shiruvana en pantallas angostas (DEC-024) */
+  --gds-size-avatar-md: 48px;    /* recomendación, advertencia, explicación */
+  --gds-size-avatar-lg: 56px;    /* resumen de sesión, decisión importante */
 
   /* ------------------------------------------------------------------ TIPOGRAFÍA */
   --gds-font-family-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
