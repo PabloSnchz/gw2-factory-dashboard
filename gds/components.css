@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Gato Design System (GDS) — componentes v1.0.1
+   Gato Design System (GDS) — componentes v1.1.0
    Regla: este archivo solo usa tokens semánticos o de componente (--gds-color-*,
    --gds-space-*, --gds-font-*, ...). Nunca primitivos (--gds-p-*) ni valores hex.
    Excepción única: 1px en .gds-visually-hidden (patrón estándar de accesibilidad).
@@ -135,6 +135,41 @@ a.gds-card:hover { border-color: var(--gds-color-border-accent); }
 .gds-callout--accent > .gds-icon { color: var(--gds-color-icon-accent); }
 .gds-callout__title { font: var(--gds-font-title-2); }
 .gds-callout__body { font: var(--gds-font-body-2); color: var(--gds-color-text-secondary); margin-top: var(--gds-space-1); }
+
+/* ---------------------------------------------------------------- voz de Shiruvana (DEC-024)
+   Único componente con el avatar: marca que habla Shiruvana (recomienda, decide, advierte, explica, resume).
+   Los datos del sistema nunca la usan. El significado lo dan el rótulo y el ícono; el color acompaña. */
+.gds-voice {
+  display: grid; grid-template-columns: auto 1fr; gap: var(--gds-space-3); align-items: start;
+  padding: var(--gds-space-3) var(--gds-space-4); border-radius: var(--gds-radius-md);
+  background: var(--gds-color-surface-2); border-left: var(--gds-border-width-thick) solid var(--gds-color-border-accent);
+}
+.gds-voice--compact { grid-template-columns: minmax(0, 1fr); }
+.gds-voice__avatar {
+  display: block; width: var(--gds-size-avatar-md); height: var(--gds-size-avatar-md); object-fit: cover;
+  border-radius: var(--gds-radius-full); box-shadow: 0 0 0 var(--gds-border-width-strong) var(--gds-color-border-accent);
+}
+.gds-voice__avatar--lg { width: var(--gds-size-avatar-lg); height: var(--gds-size-avatar-lg); }
+.gds-voice__main { min-width: 0; display: grid; gap: var(--gds-space-1); }
+.gds-voice__label { display: flex; align-items: center; gap: var(--gds-space-2); font: var(--gds-font-label-1); color: var(--gds-color-text-primary); }
+.gds-voice__label > .gds-icon { color: var(--gds-color-icon-accent); }
+.gds-voice__meta { font: var(--gds-font-caption); color: var(--gds-color-text-muted); }
+.gds-voice__body { font: var(--gds-font-body-2); color: var(--gds-color-text-secondary); max-width: var(--gds-measure); }
+.gds-voice__body ul { margin: 0; padding-left: var(--gds-space-5); display: grid; gap: var(--gds-space-1); }
+.gds-voice--decidio { border-left-color: var(--gds-color-border-success); }
+.gds-voice--decidio .gds-voice__avatar { box-shadow: 0 0 0 var(--gds-border-width-strong) var(--gds-color-border-success); }
+.gds-voice--decidio .gds-voice__label > .gds-icon { color: var(--gds-color-icon-success); }
+.gds-voice--advierte { border-left-color: var(--gds-color-border-warning); }
+.gds-voice--advierte .gds-voice__avatar { box-shadow: 0 0 0 var(--gds-border-width-strong) var(--gds-color-border-warning); }
+.gds-voice--advierte .gds-voice__label > .gds-icon { color: var(--gds-color-icon-warning); }
+.gds-voice--critico { border-left-color: var(--gds-color-border-danger); }
+.gds-voice--critico .gds-voice__avatar { box-shadow: 0 0 0 var(--gds-border-width-strong) var(--gds-color-border-danger); }
+.gds-voice--critico .gds-voice__label > .gds-icon { color: var(--gds-color-icon-danger); }
+.gds-voice--resume, .gds-voice--explica { background: var(--gds-color-surface-1); }
+@media (max-width: 30em) {
+  .gds-voice__avatar { width: var(--gds-size-avatar-sm); height: var(--gds-size-avatar-sm); }
+  .gds-voice__avatar--lg { width: var(--gds-size-avatar-md); height: var(--gds-size-avatar-md); }
+}
 
 /* ---------------------------------------------------------------- pasos (stepper) */
 .gds-stepper { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--gds-space-2); }
