@@ -7,11 +7,14 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { parseTokens, allDeclarations, resolve, checkPairs, PAIRS } from '../gds/contrast.mjs';
 import { icon, brandMark, ICON_NAMES } from '../gds/icons.js';
+import { voice, VOICE_KINDS, SHIRUVANA_AVATAR } from '../gds/voice.js';
+import { createHash } from 'node:crypto';
 
 const read = p => readFileSync(new URL(`../${p}`, import.meta.url), 'utf8');
 const TOKENS_CSS = read('gds/tokens.css');
 const COMPONENTS_CSS = read('gds/components.css');
 const ICONS_JS = read('gds/icons.js');
+const VOICE_JS = read('gds/voice.js');
 const FOUNDATION = read('gds/GDS_FOUNDATION.md');
 const tokens = parseTokens(TOKENS_CSS);
 const stripComments = css => css.replace(/\/\*[\s\S]*?\*\//g, '');
@@ -103,6 +106,46 @@ test('íconos: decorativos (aria-hidden) y con color heredado', () => {
   }
   assert.equal(icon('no-existe'), icon('info'), 'fallback seguro');
   assert.doesNotMatch(brandMark(), /#[0-9a-f]{3,8}\b/i, 'la marca usa tokens');
+});
+
+/* ------------------------------------------------------------ marca y voz (DEC-024) */
+
+test('marca: el gato de Gato Negro Factory no cambia (DEC-024 §1)', () => {
+  // Huella del dibujo publicado en la cabecera. Si cambia, es una decisión de Pablo, no de la Factory.
+  const hash = createHash('sha256').update(brandMark(32)).digest('hex');
+  assert.equal(hash, 'b5181bd5b9d51042039e152cc7b7ae31053d478b22f68729e0d132c55c9218a3');
+  assert.doesNotMatch(VOICE_JS + stripComments(COMPONENTS_CSS.slice(COMPONENTS_CSS.indexOf('.gds-voice {'))), /brand-(frame|eyes)/,
+    'la voz no usa los tokens de la marca');
+});
+
+test('voz de Shiruvana: rótulo visible, ícono y avatar decorativo', () => {
+  assert.deepEqual(Object.values(VOICE_KINDS).map(k => k.label),
+    ['Shiruvana recomienda', 'Shiruvana decidió', 'Shiruvana advierte', 'Shiruvana advierte', 'Shiruvana explica', 'Shiruvana resume'],
+    'el rótulo siempre dice que habla Shiruvana');
+  for (const kind of Object.keys(VOICE_KINDS)) {
+    const html = voice({ kind, body: 'cuerpo', meta: '2026-10-21 · DEC-024' });
+    assert.match(html, new RegExp(`class="gds-voice gds-voice--${kind}"`), kind);
+    assert.ok(html.includes(VOICE_KINDS[kind].label), `${kind}: rótulo visible`);
+    assert.match(html, /<svg class="gds-icon[^"]*" viewBox="0 0 24 24" aria-hidden="true"/, `${kind}: ícono decorativo`);
+    assert.match(html, /<img class="gds-voice__avatar" src="data:image\/webp;base64,[^"]+" alt="" aria-hidden="true" width="48" height="48"/, `${kind}: avatar 48 px`);
+  }
+  assert.match(voice({ kind: 'resume', body: 'x', size: 'lg' }), /gds-voice__avatar--lg"[^>]* width="56" height="56"/, 'resumen 56 px');
+  const compact = voice({ kind: 'recomienda', body: 'x', avatar: false });
+  assert.ok(!compact.includes('<img'), 'sin avatar en el segundo mensaje de una sección');
+  assert.match(compact, /gds-voice--compact/);
+  assert.ok(compact.includes('Shiruvana recomienda'), 'sin avatar, el rótulo sigue diciendo quién habla');
+  assert.match(voice({ kind: 'no-existe', body: 'x' }), /gds-voice--explica/, 'tipo desconocido: explica');
+  assert.ok(voice({ kind: 'critico', body: 'x', suffix: 'Crítico<script>' }).includes('Shiruvana advierte · Críticoscript'), 'el sufijo no inyecta HTML');
+});
+
+test('voz de Shiruvana: avatar oficial liviano y tamaños con tokens', () => {
+  assert.match(SHIRUVANA_AVATAR, /^data:image\/webp;base64,[A-Za-z0-9+/]+=*$/);
+  assert.ok(SHIRUVANA_AVATAR.length < 8000, 'menos de 8 KB embebido');
+  for (const t of ['--gds-size-avatar-sm', '--gds-size-avatar-md', '--gds-size-avatar-lg']) assert.ok(t in tokens, t);
+  assert.deepEqual([tokens['--gds-size-avatar-sm'], tokens['--gds-size-avatar-md'], tokens['--gds-size-avatar-lg']], ['40px', '48px', '56px']);
+  assert.match(COMPONENTS_CSS, /\.gds-voice__avatar \{[^}]*width: var\(--gds-size-avatar-md\)/);
+  assert.match(COMPONENTS_CSS, /\.gds-voice__avatar--lg \{[^}]*width: var\(--gds-size-avatar-lg\)/);
+  assert.match(COMPONENTS_CSS, /@media \(max-width: 30em\) \{[^@]*\.gds-voice__avatar \{[^}]*var\(--gds-size-avatar-sm\)/, 'un escalón menos en pantallas angostas');
 });
 
 test('foundation: documenta principios, tokens, tipografía, espaciado, componentes y accesibilidad', () => {
