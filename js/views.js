@@ -6,6 +6,9 @@
  * - Ningún estado depende solo del color: siempre ícono + texto (WCAG 1.4.1).
  * - Los IDs internos (DEC, LES, BL, RSK, REQ) son referencias secundarias, nunca el contenido principal.
  * - Orden de la vista Hoy: lo que necesita a Pablo primero; el estado de la Factory después.
+ * - Marca y voz (DEC-024): la cabecera es la marca Gato Negro Factory y no cambia. Cuando Shiruvana
+ *   recomienda, advierte, decide o resume se usa voice() (gds/voice.js), con un solo avatar por sección.
+ *   Los datos del sistema (métricas, listas, tarjetas de datos) nunca llevan su avatar.
  */
 
 import { CONFIG, blobUrl, commitUrl, repoUrl } from './config.js';
@@ -13,6 +16,7 @@ import { esc, mdToHtml, extractIds } from './parse.js';
 import { responseActions, buildIssueUrl } from './respond.js';
 import { RESPONSES } from './decisions.js';
 import { icon, brandMark } from '../gds/icons.js';
+import { voice } from '../gds/voice.js';
 
 const WORKFLOW = [
   ['PRODUCT', 'Producto'], ['ARCHITECTURE', 'Arquitectura'], ['DEVELOPMENT', 'Desarrollo'],
@@ -165,7 +169,7 @@ function labeled(label, text, m) {
  * `level`/`title`: en Hoy la tarjeta es un h3 bajo "Necesita tu decisión" (h2); en el detalle de un pedido,
  * un h2 "Qué necesitás decidir" bajo el h1 del pedido (los niveles de título no se saltean, GDS §5).
  */
-function renderDecisionCard(h, m, first, { level = 'h3', title = null } = {}) {
+function renderDecisionCard(h, m, first, { level = 'h3', title = null, voiceAvatar = true } = {}) {
   const req = reqOf(m, h.id);
   const failed = (m.channel && m.channel.items || []).find(c => c.solicitud && c.solicitud === h.id);
   const why = req ? firstParagraph(req.porQueImporta) : h.pregunta;
@@ -185,8 +189,7 @@ function renderDecisionCard(h, m, first, { level = 'h3', title = null } = {}) {
     <${level} id="${esc(headId)}" class="gds-title-1">${title ? esc(title) : t(plainTitle(h.titulo), m)}</${level}>
     ${body}
     ${req && req.opciones && req.opciones.length ? `<ul class="decision__options gds-body-2">${req.opciones.map(o => `<li><strong>${esc(o.clave)}</strong> — ${t(o.texto, m)}</li>`).join('')}</ul>` : ''}
-    ${req && req.recomendacion ? `<div class="gds-callout gds-callout--accent">${icon('sparkle')}<div>
-      <p class="gds-callout__title">La Factory recomienda</p><p class="gds-callout__body">${t(req.recomendacion.texto, m)}</p></div></div>` : ''}
+    ${req && req.recomendacion ? voice({ kind: 'recomienda', body: `<p>${t(req.recomendacion.texto, m)}</p>`, avatar: voiceAvatar }) : ''}
     ${req && req.comoHacerlo ? `<details class="decision__how"><summary class="gds-label-1">Cómo hacerlo</summary><div class="md gds-body-2">${linkIdsInHtml(mdToHtml(req.comoHacerlo, () => '#'), m)}</div></details>` : ''}
     ${failed ? renderChannelItem(failed, m, true) : ''}
     ${req ? renderRespond(req, m) : `<p class="gds-caption gds-text-muted">${icon('info')} Se responde fuera del panel, en la conversación con la Factory.</p>`}
@@ -338,16 +341,18 @@ export function renderHome(m) {
 
   ${looseChannel.length ? `<div class="gds-stack--sm gds-stack">${looseChannel.map(c => renderChannelItem(c, m, false)).join('')}</div>` : ''}
 
+  ${renderWarnings(m)}
+
   <section class="gds-stack" aria-labelledby="human-title">
     <h2 id="human-title" class="gds-headline-2">Necesita tu decisión ${count(g.decision.length, 'decisiones')}</h2>
     ${g.decision.length
-      ? `<div class="decisions">${g.decision.map((h, i) => renderDecisionCard(h, m, i === 0)).join('')}</div>`
+      ? `<div class="decisions">${g.decision.map((h, i) => renderDecisionCard(h, m, i === 0, { voiceAvatar: i === 0 })).join('')}</div>`
       : `<div class="gds-callout gds-callout--success">${icon('check')}<div><p class="gds-callout__title">Nada que decidir.</p>
         <p class="gds-callout__body">Las decisiones técnicas las toma la Factory. Acá solo llegan decisiones de producto, negocio o estrategia, con contexto, impacto, recomendación y el motivo por el que te las pregunta.</p></div></div>`}
     ${g.accion.length || g.validacion.length ? `
     <h2 id="tasks-title" class="gds-title-1">Necesita tu mano ${count(g.accion.length + g.validacion.length, 'tareas')}</h2>
     <p class="gds-body-2 gds-text-secondary gds-measure">No hay nada que decidir: son cosas que solo vos podés hacer o mirar.</p>
-    <div class="decisions">${[...g.accion, ...g.validacion].map((h, i) => renderDecisionCard(h, m, !g.decision.length && i === 0)).join('')}</div>` : ''}
+    <div class="decisions">${[...g.accion, ...g.validacion].map((h, i) => renderDecisionCard(h, m, !g.decision.length && i === 0, { voiceAvatar: !g.decision.length && i === 0 })).join('')}</div>` : ''}
     ${renderAnswered(m)}
   </section>
 
@@ -373,6 +378,10 @@ export function renderHome(m) {
       </dl>
     </div>
   </section>
+
+  ${renderSessionSummary(m)}
+
+  ${renderDecided(m)}
 
   ${renderInfo(m)}
 
@@ -406,6 +415,62 @@ export function renderHome(m) {
   </section>
 
   ${renderEnvironments(m)}`;
+}
+
+/* ------------------------------------------------------------ voz de Shiruvana (DEC-024) */
+
+/** Advertencias de Shiruvana: riesgos CRÍTICOS abiertos, que detienen la Factory (DEC-023 §6). Un solo bloque, un avatar. */
+function renderWarnings(m) {
+  const crit = (m.risks || []).filter(r => r.estado === 'ABIERTO' && r.severidad === 'CRÍTICO');
+  if (!crit.length) return '';
+  return `<section class="gds-stack--sm gds-stack" aria-labelledby="warn-title">
+    <h2 id="warn-title" class="gds-visually-hidden">Advertencias</h2>
+    ${crit.map((r, i) => voice({
+      kind: 'critico', suffix: 'Crítico', avatar: i === 0,
+      body: `<p>${t(r.riesgo, m)}</p><p>Con un riesgo crítico abierto la Factory se detiene hasta resolverlo.</p>`,
+      meta: ref(r.id, m),
+    })).join('')}
+  </section>`;
+}
+
+/** Resumen de la última sesión: lo escribe Shiruvana en "## Resumen de la sesión" de status.md. Máximo 3 viñetas. */
+function renderSessionSummary(m) {
+  const items = (m.status && m.status.resumen) || [];
+  if (!items.length) return '';
+  const si = m.statusInfo;
+  return `<section class="gds-stack--sm gds-stack" aria-labelledby="summary-title">
+    <h2 id="summary-title" class="gds-title-1">Última sesión</h2>
+    ${voice({
+      kind: 'resume', size: 'lg',
+      body: `<ul>${items.slice(0, 3).map(x => `<li>${t(x, m)}</li>`).join('')}</ul>${items.length > 3 ? `<p class="gds-caption">Y ${items.length - 3} más en status.md.</p>` : ''}`,
+      meta: `status.md${si && si.actualizado ? ' · ' + esc(fmtDate(si.actualizado, true)) : ''}`,
+    })}
+  </section>`;
+}
+
+/**
+ * Decisiones que tomó la Factory sola. Las que decidió o aprobó Pablo no son de Shiruvana:
+ * se excluyen las que nombran a Pablo en su estado. La más reciente va con avatar (56 px); el resto, lista sin avatar.
+ */
+export function factoryDecisions(m) {
+  return (m.entries.DEC || [])
+    .filter(d => d.estadoCodigo === 'ACEPTADA' && !/Pablo/i.test(d.estado || ''))
+    .sort((a, b) => b.id.localeCompare(a.id));
+}
+
+function renderDecided(m) {
+  const [last, ...rest] = factoryDecisions(m);
+  if (!last) return '';
+  return `<section class="gds-stack--sm gds-stack" aria-labelledby="decided-title">
+    <h2 id="decided-title" class="gds-title-1">Decidido por la Factory</h2>
+    ${voice({
+      kind: 'decidio', size: 'lg',
+      body: `<p>${t(plainTitle(last.titulo), m)}</p>`,
+      meta: `${ref(last.id, m)}${last.fecha ? ' · ' + esc(fmtDate(last.fecha)) : ''}`,
+    })}
+    ${rest.length ? `<ul class="gds-list">${rest.slice(0, 2).map(d => `<li class="gds-list__item">${icon('check', 'is-success')}<div>
+      <p class="gds-body-2">${t(plainTitle(d.titulo), m)}</p><p class="gds-caption gds-text-muted">${ref(d.id, m)}</p></div></li>`).join('')}</ul>` : ''}
+  </section>`;
 }
 
 function metric(label, value, href) {
