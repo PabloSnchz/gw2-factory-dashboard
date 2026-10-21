@@ -2,6 +2,19 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionado SemVer.
 
+## [2.2.0] — 2026-10-21
+
+**La voz de Shiruvana** (BL-037, DEC-024, REQ-009): Gato Negro Factory sigue siendo la marca (la cabecera no cambia); Shiruvana, la operadora, tiene voz propia. Su avatar aparece solo cuando ella recomienda, advierte, decide o resume, nunca en datos del sistema.
+
+### Added
+- GDS 1.1.0: componente `.gds-voice` y `voice()` (`gds/voice.js`) con el avatar oficial (WebP de 112 px embebido, 3,9 KB) y tokens `--gds-size-avatar-sm/md/lg` (40/48/56 px). Sin colores ni pares de contraste nuevos.
+- Hoy: **advertencias** de Shiruvana cuando hay riesgos CRÍTICOS abiertos; **Última sesión** (el resumen de `status.md`, hasta 3 viñetas, avatar de 56 px); **Decidido por la Factory** (la última decisión técnica de la Factory con avatar de 56 px y las 2 anteriores como lista). Las decisiones de Pablo no se atribuyen a Shiruvana.
+- `parseStatus` lee `## Resumen de la sesión` (solo viñetas de primer nivel).
+- Tests: `tests/voice.test.mjs` (6) y 3 en `tests/gds.test.mjs`, incluida la huella de `brandMark()` para que la marca no cambie sin decisión de Pablo; 92 en total, 9/9 mutaciones de la vista y 8/8 del componente.
+
+### Changed
+- La recomendación de cada pedido dice **"Shiruvana recomienda"** (antes, un aviso "La Factory recomienda"). Con varios pedidos, solo el primero lleva el avatar: un avatar por sección visible.
+
 ## [2.1.0] — 2026-10-20
 
 **Soberanía de decisiones** (FACTORY-DASHBOARD-REFINEMENT-001, DEC-018): a Pablo solo le llegan como decisiones las de producto, negocio o estrategia. Lo técnico lo decide la Factory. Es MINOR porque el contrato v4 es compatible con v3.
