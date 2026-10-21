@@ -58,7 +58,7 @@ test('una decisión justificada llega a Pablo con contexto, impacto, motivo y re
   const html = V.renderHome(m);
   const card = html.slice(html.indexOf('aria-labelledby="dq-REQ-010"'));
   const body = card.slice(0, card.indexOf('</article>'));
-  for (const s of ['Decisión', 'Contexto', 'Impacto', 'Por qué te lo pregunto', 'La Factory recomienda', 'Aprobar A (recomendada)']) assert.ok(body.includes(s), s);
+  for (const s of ['Decisión', 'Contexto', 'Impacto', 'Por qué te lo pregunto', 'Shiruvana recomienda', 'Aprobar A (recomendada)']) assert.ok(body.includes(s), s);
   assert.ok(html.indexOf('dq-REQ-010') < html.indexOf('tasks-title'), 'las decisiones van antes que las tareas');
 });
 
