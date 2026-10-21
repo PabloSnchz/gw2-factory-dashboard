@@ -1,6 +1,6 @@
 # Gato Design System (GDS) — Fundamentos
 
-- Versión: 1.0.1 (2026-10-20)
+- Versión: 1.1.0 (2026-10-21)
 - Estado: EN USO — aplicado al Dashboard Factory desde FACTORY-001B MC-5.
 - Decisión: DEC-010 (gw2-factory-dev/ai-memory)
 - Primera aplicación: Dashboard Factory (FACTORY-001B, micro-ciclo MC-5). Después: la webapp Bóveda del Gato Negro.
@@ -275,6 +275,7 @@ Todos se construyen solo con tokens semánticos. Clases con prefijo `gds-`, modi
 | Referencia | `.gds-ref` | `--missing` | hover | ID interno como metadato secundario; tachado si no existe |
 | Tarjeta | `.gds-card` | `--inset`, `--accent`; `__header` | hover si es enlace | `--accent` solo para lo que necesita una decisión |
 | Aviso | `.gds-callout` | `--success`, `--warning`, `--danger`, `--info`, `--accent`; `__title`, `__body` | — | Ícono + título que dice qué pasó + cuerpo que dice qué hacer |
+| Voz de Shiruvana | `.gds-voice` | `--recomienda`, `--decidio`, `--advierte`, `--critico`, `--explica`, `--resume`, `--compact`; `__avatar` (`--lg`), `__main`, `__label`, `__body`, `__meta` | — | Único componente con el avatar de Shiruvana (DEC-024). Solo cuando ella recomienda, decide, advierte, explica o resume; nunca en datos, métricas, navegación ni tarjetas de datos. Rótulo visible + ícono; un avatar por sección visible. Se arma con `voice()` de `gds/voice.js` |
 | Pasos | `.gds-stepper` | `__step[data-state=done/current]` | hecho, actual, pendiente | Etapas del workflow; el actual con `aria-current="step"` |
 | Métrica | `.gds-metric` | `__value`, `__label` | hover si es enlace | Un número y qué significa; nunca un número solo |
 | Pestañas | `.gds-tabs`, `.gds-tab` | — | actual (`aria-current`/`aria-selected`), hover | Navegación entre vistas hermanas |
@@ -292,6 +293,24 @@ Todos se construyen solo con tokens semánticos. Clases con prefijo `gds-`, modi
 Íconos disponibles (`gds/icons.js`): `check`, `x`, `clock`, `alert`, `info`, `octagon`, `eye`, `compass`, `book`, `layers`, `pulse`, `shield`, `refresh`, `arrow`, `external`, `hand`, `sparkle`, `send`. Trazo de 2 px en grilla de 24 px. Un nombre desconocido devuelve `info` (nunca rompe la interfaz).
 
 Estado ↔ ícono (fijo en todo el ecosistema): éxito `check` · advertencia `alert` · peligro `octagon` · información `info` · necesita decisión `hand` · en espera `clock`.
+
+### 8.1 Marca y voz (DEC-024)
+
+- **La marca es Gato Negro Factory** y no cambia: `brandMark()` de `gds/icons.js` (bóveda obsidiana con marco arcano, gato negro y ojos ámbar), el nombre y el subtítulo de la cabecera. Sus tokens (`brand-frame`, `brand-eyes`) son solo para la marca.
+- **La voz es Shiruvana**, la operadora de la Factory. Su avatar oficial (aprobado por Pablo en REQ-009) aparece solo dentro de `.gds-voice`, nunca suelto ni como decoración.
+
+| Mensaje | Rótulo e ícono | Avatar | Borde |
+|---|---|---|---|
+| Recomendación | Shiruvana recomienda · `arrow` | `--gds-size-avatar-md` (48 px) | `border-accent` |
+| Decisión | Shiruvana decidió · `check` | 48 px; 56 px (`--gds-size-avatar-lg`) si es importante | `border-success` |
+| Advertencia | Shiruvana advierte · `alert` / `octagon` | 48 px | `border-warning` / `border-danger` |
+| Explicación | Shiruvana explica · `info` | 48 px | `border-accent` |
+| Resumen de sesión | Shiruvana resume · `sparkle` | 56 px | `border-accent` |
+
+- **Sin color nuevo:** el rótulo usa `text-primary` y el cuerpo `text-secondary` sobre `surface-1` o `surface-2`, pares ya verificados en §4. El color de estado va solo en el borde, el anillo del avatar y el ícono.
+- **Densidad:** el avatar ocupa una columna propia, alineada arriba; el mensaje no crece en alto. En pantallas de 30em o menos baja un escalón (`--gds-size-avatar-sm`, 40 px).
+- **Un avatar por sección visible:** los mensajes siguientes de la misma sección usan `--compact` (sin imagen, con rótulo, ícono y borde).
+- **Accesibilidad:** el avatar es decorativo (`alt=""`, `aria-hidden`); el rótulo visible dice quién habla.
 
 ## 9. Accesibilidad (WCAG 2.1 AA como mínimo)
 
@@ -335,6 +354,7 @@ El GDS también define cómo se habla:
 
 ### Historial de versiones
 
+- **1.1.0** (2026-10-21, MINOR) — Componente `.gds-voice` (voz de Shiruvana) y tokens `--gds-size-avatar-sm/md/lg` (40/48/56 px), según DEC-024. La marca no cambia. Sin pares de contraste nuevos.
 - **1.0.1** (2026-10-20, PATCH) — Botones y métricas usados como enlace (`<a class="gds-button…">`, `<a class="gds-metric">`) conservan el color de su variante: antes la regla `.gds a` (color de enlace) les ganaba por especificidad. Detectado al aplicar el GDS al panel (MC-5). Sin tokens nuevos ni pares de contraste nuevos.
 - **1.0.0** (2026-10-20) — Fundamentos: tokens en tres niveles, componentes, íconos, contraste calculado (DEC-010).
 
