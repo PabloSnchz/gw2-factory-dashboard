@@ -85,6 +85,8 @@ const STATUS_KEYS = {
   'decisiones pendientes de pablo': 'esperandoPablo',
   'para tu información': 'paraInfo',
   'para tu informacion': 'paraInfo',
+  'resumen de la sesión': 'resumen',
+  'resumen de la sesion': 'resumen',
 };
 
 /**
@@ -94,12 +96,13 @@ const STATUS_KEYS = {
  * Y secciones "## Esperando a Pablo" / "## Para tu información" / "## Bloqueos" con bullets.
  * En "Esperando a Pablo" cada línea declara su clase (contrato v4, DEC-018):
  *   "- [ID] Acción: …" · "- [ID] Validación: …" · "- [ID] Decisión: …" (solo con un pedido REQ) · "- [ID] Info: …"
+ * "## Resumen de la sesión" (DEC-024): solo las viñetas de primer nivel; las anidadas son detalle.
  */
 export function parseStatus(md) {
   const res = {
     estado: null, fase: null, tarea: null, motivo: null, etapa: null,
     inicio: null, actualizado: null, proxima: null,
-    bloqueos: [], esperandoPablo: [], paraInfo: [], unknownKeys: [],
+    bloqueos: [], esperandoPablo: [], paraInfo: [], resumen: [], unknownKeys: [],
   };
   if (md == null) return null;
   let current = null;
@@ -122,6 +125,7 @@ export function parseStatus(md) {
       continue;
     }
     const b = bulletText(line);
+    if (b && current === 'resumen' && /^\s/.test(line)) continue;
     if (b && current) assignStatus(res, current, b);
   }
   return res;
