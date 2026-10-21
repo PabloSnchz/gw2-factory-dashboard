@@ -29,6 +29,14 @@ test('status v1 (formato de la inicialización) sigue siendo legible', () => {
   assert.equal(s.proxima, 'Esperar');
 });
 
+test('status: resumen de la sesión con viñetas de primer nivel (DEC-024)', () => {
+  const md = '# STATUS\n\nEstado: IDLE\n\n## Resumen de la sesión\n\n- REQ-009 aprobada.\n- DEC-024:\n  - detalle anidado;\n  - otro detalle.\n- 3 micro-ciclos.\n\n## Esperando a Pablo\n\n- [FEAT-003] Validación: mirar DEV\n';
+  const s = parseStatus(md);
+  assert.deepEqual(s.resumen, ['REQ-009 aprobada.', 'DEC-024:', '3 micro-ciclos.']);
+  assert.equal(s.esperandoPablo.length, 1, 'la sección siguiente no se mezcla');
+  assert.deepEqual(parseStatus('Estado: IDLE\n').resumen, [], 'sin resumen: lista vacía');
+});
+
 test('status ausente devuelve null (nunca un objeto vacío engañoso)', () => {
   assert.equal(parseStatus(null), null);
 });
