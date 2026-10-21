@@ -12,12 +12,14 @@ Factory trabaja → el panel propone → Pablo responde → la Factory continúa
 
 | Vista | Pregunta que responde |
 |---|---|
-| **Hoy** | ¿Tengo que hacer algo? Una frase de resumen, una tarjeta por pendiente (por qué importa, qué recomienda la Factory, botones para responder), lo que ya respondiste, qué hace la Factory y por qué, qué debería preocuparme, qué pasó hoy y esta semana, cómo están DEV y PROD |
+| **Hoy** | ¿Tengo que hacer algo? Una frase de resumen, una tarjeta por pendiente (por qué importa, qué recomienda Shiruvana, botones para responder), lo que ya respondiste, qué hace la Factory y por qué, la última sesión y lo que decidió la Factory, qué debería preocuparme, qué pasó hoy y esta semana, cómo están DEV y PROD |
 | **Trabajo** | Etapas del plan y tareas: en curso, bloqueadas, listas, hechas |
 | **Conocimiento** | Decisiones, lecciones y funcionalidades, con detalle y "citado por" |
 | **Riesgos** | Críticos, altos, otros abiertos y mitigados |
 | **Actividad** | Commits y registros de memoria por día (24 h / 7 d / 30 d) |
 | **Salud** | Diferencias entre lo que la memoria dice y lo que se mide en GitHub, datos desactualizados, fuentes |
+
+**Marca y voz (DEC-024).** La marca es Gato Negro Factory: el gato de la cabecera no cambia. Cuando Shiruvana, la operadora de la Factory, recomienda, advierte, decide o resume, el mensaje lleva su avatar y el rótulo "Shiruvana …". Los datos del sistema nunca lo llevan, y hay un solo avatar por sección.
 
 ## Responder una decisión
 
@@ -35,7 +37,7 @@ Sin tokens ni secretos en el navegador: GitHub te identifica a vos. Detalle en [
 - Mide en GitHub: commits, protección de producción, diferencia DEV/PROD y respuestas del canal sin registrar. **6 llamadas a la API por lectura**, con caché de 10 minutos.
 - **Sin backend y sin scripts locales**: todo se calcula en el navegador.
 - Un dato que no se pudo leer aparece como **—** con el motivo, nunca como 0.
-- Visual: [Gato Design System](gds/GDS_FOUNDATION.md) 1.0.1. Contraste WCAG 2.1 AA calculado, estados con ícono y texto, navegación por teclado.
+- Visual: [Gato Design System](gds/GDS_FOUNDATION.md) 1.1.0. Contraste WCAG 2.1 AA calculado, estados con ícono y texto, navegación por teclado.
 
 ## Documentación
 
@@ -46,7 +48,7 @@ Sin tokens ni secretos en el navegador: GitHub te identifica a vos. Detalle en [
 - [docs/ANALISIS-HISTORICO.md](docs/ANALISIS-HISTORICO.md) — qué se conservó, qué se eliminó y qué se creó respecto de `gw2-agents-dashboard`.
 - [CHANGELOG.md](CHANGELOG.md)
 
-Decisiones oficiales en la memoria de la Factory: DEC-008 (panel nuevo), DEC-009 (contrato de datos), DEC-010 (GDS), DEC-011 (pedidos y respuestas), DEC-012 (canal), DEC-013 (Centro de Decisiones).
+Decisiones oficiales en la memoria de la Factory: DEC-008 (panel nuevo), DEC-009 (contrato de datos), DEC-010 (GDS), DEC-011 (pedidos y respuestas), DEC-012 (canal), DEC-013 (Centro de Decisiones), DEC-024 (marca y voz de Shiruvana).
 
 ## Desarrollo
 
