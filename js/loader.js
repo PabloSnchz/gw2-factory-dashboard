@@ -7,37 +7,70 @@
  *   1. commits de DEV   2. árbol de DEV   3. commits del dashboard
  *   4. rama main de PROD (protección)     5. comparación PROD...DEV
  *   6. issues abiertos de Pablo en DEV (respuestas del canal sin registrar, DEC-012)
+ *
+ * Caché (github.js 1.1.0): cada llamada usa un casillero fijo (slot) y guarda
+ * solo los campos que usa el panel (shape). La ventana de 30 días arranca a la
+ * medianoche UTC para que la ruta no cambie en cada carga.
  */
 
 /** Marca que el panel pone en cada issue de respuesta (js/respond.js). */
 const CHANNEL_MARKER = 'gds:decision-response';
+const DAY = 24 * 3600 * 1000;
 
 import { CONFIG } from './config.js';
 import { parseIndex } from './parse.js';
+
+/** Solo lo que model.js lee de un commit (mergeCommits). */
+export function slimCommits(list) {
+  if (!Array.isArray(list)) return list;
+  return list.map(x => {
+    const c = x && x.commit ? x.commit : {};
+    return {
+      sha: x && x.sha,
+      commit: {
+        message: c.message || '',
+        author: c.author ? { name: c.author.name, date: c.author.date } : undefined,
+        committer: c.committer ? { date: c.committer.date } : undefined,
+      },
+    };
+  });
+}
+
+/** Del árbol del repo, solo los .md de la memoria (lo único que usa el loader). */
+export function slimTree(memPrefix) {
+  return (tree) => (tree && Array.isArray(tree.tree)
+    ? { tree: tree.tree.filter(t => t.type === 'blob' && t.path.startsWith(memPrefix) && t.path.endsWith('.md')).map(t => ({ type: 'blob', path: t.path })) }
+    : tree);
+}
+
+export function sinceFor(now) {
+  return new Date(Math.floor((now - 30 * DAY) / DAY) * DAY).toISOString();
+}
 
 export async function loadAll(gh, now = Date.now()) {
   gh.resetState();
   const { owner, repos, memoryRoot } = CONFIG;
   const dev = repos.dev, dash = repos.dashboard, prod = repos.prod;
-  const since = new Date(now - 30 * 24 * 3600 * 1000).toISOString();
+  const since = sinceFor(now);
+  const memPrefix = memoryRoot + '/';
 
   const [devCommits, dashCommits, prodBranch, openIssues] = await Promise.all([
-    gh.api(`/repos/${owner}/${dev.name}/commits?sha=${dev.branch}&per_page=100&since=${since}`, { label: 'commits DEV' }),
-    gh.api(`/repos/${owner}/${dash.name}/commits?sha=${dash.branch}&per_page=100&since=${since}`, { label: 'commits dashboard', allow404: true }),
-    gh.api(`/repos/${owner}/${prod.name}/branches/${prod.branch}`, { label: 'rama de producción' }),
-    gh.api(`/repos/${owner}/${dev.name}/issues?state=open&creator=${owner}&per_page=30`, { label: 'respuestas en curso', allow404: true }),
+    gh.api(`/repos/${owner}/${dev.name}/commits?sha=${dev.branch}&per_page=100&since=${since}`, { label: 'commits DEV', slot: 'commits:dev', shape: slimCommits }),
+    gh.api(`/repos/${owner}/${dash.name}/commits?sha=${dash.branch}&per_page=100&since=${since}`, { label: 'commits dashboard', allow404: true, slot: 'commits:dashboard', shape: slimCommits }),
+    gh.api(`/repos/${owner}/${prod.name}/branches/${prod.branch}`, { label: 'rama de producción', slot: 'branch:prod' }),
+    gh.api(`/repos/${owner}/${dev.name}/issues?state=open&creator=${owner}&per_page=30`, { label: 'respuestas en curso', allow404: true, slot: 'issues:dev' }),
   ]);
 
   const ref = Array.isArray(devCommits) && devCommits[0] ? devCommits[0].sha : null;
 
   const [tree, compare] = await Promise.all([
-    ref ? gh.api(`/repos/${owner}/${dev.name}/git/trees/${ref}?recursive=1`, { label: 'árbol DEV' }) : undefined,
+    ref ? gh.api(`/repos/${owner}/${dev.name}/git/trees/${ref}?recursive=1`, { label: 'árbol DEV', slot: 'tree:dev', shape: slimTree(memPrefix) }) : undefined,
     ref && prodBranch && prodBranch.commit
-      ? gh.api(`/repos/${owner}/${dev.name}/compare/${prodBranch.commit.sha}...${ref}?per_page=1`, { label: 'DEV vs PROD', allow404: true })
+      ? gh.api(`/repos/${owner}/${dev.name}/compare/${prodBranch.commit.sha}...${ref}?per_page=1`, { label: 'DEV vs PROD', allow404: true, slot: 'compare:dev',
+        shape: c => (c ? { ahead_by: c.ahead_by, behind_by: c.behind_by, status: c.status } : c) })
       : undefined,
   ]);
 
-  const memPrefix = memoryRoot + '/';
   const treePaths = tree && Array.isArray(tree.tree)
     ? tree.tree.filter(t => t.type === 'blob' && t.path.startsWith(memPrefix) && t.path.endsWith('.md')).map(t => t.path.slice(memPrefix.length))
     : null;
