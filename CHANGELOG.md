@@ -2,6 +2,12 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionado SemVer.
 
+## [2.2.1] — 2026-10-31
+
+### Fixed
+- **La caché de la API llenaba el `localStorage` compartido** (`673a4cf`, LES-043 en gw2-factory-dev). `pablosnchz.github.io` es un solo origen para la Bóveda, DEV, este panel, la bio y La Guarida (~5 MB entre todos). Cada carga guardaba una clave nueva (la URL llevaba `since=<ahora>` o el SHA del árbol) de 190 a 400 KB y ninguna se borraba: llegó a 5,00 MB y La Guarida dejó de poder guardar favoritos. `js/github.js` 1.1.0: un casillero fijo por llamada (`slot`) que se sobrescribe, fresco solo con la misma ruta; `shape` guarda solo lo que el panel usa; al iniciar borra las claves viejas `gfd:api:/…`; si el storage está lleno libera solo su propia caché y reintenta (nunca toca claves de otras apps). `js/loader.js`: slots y shapes, ventana de 30 días desde la medianoche UTC.
+- Tests: `tests/cache.test.mjs` (8), 4/4 mutaciones detectadas. Validado por Pablo en Firefox.
+
 ## [2.2.0] — 2026-10-21
 
 **La voz de Shiruvana** (BL-037, DEC-024, REQ-009): Gato Negro Factory sigue siendo la marca (la cabecera no cambia); Shiruvana, la operadora, tiene voz propia. Su avatar aparece solo cuando ella recomienda, advierte, decide o resume, nunca en datos del sistema.
