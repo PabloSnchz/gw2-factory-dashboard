@@ -2,6 +2,17 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionado SemVer.
 
+## [2.3.0] — 2026-10-31
+
+**Mi cara nueva** (BL-085 y BL-087; DEC-048 en gw2-factory-dev, decidida por Pablo): la figura ilustrada es la imagen oficial de Shiruvana en todo el ecosistema. Las reglas de cuándo aparece no cambian (DEC-024).
+
+### Changed
+- `gds/voice.js`: `SHIRUVANA_AVATAR` es la cara de la pose «hola» (112 px, WebP), la misma que usa la Bóveda (`38bf038`).
+
+### Added
+- Una cara por tipo de mensaje, `SHIRUVANA_FACES` (`ca4267e`): recomienda = hola, decidió = guiño, advierte y crítico = ojo, explica = explica, resume = con el gato. Cada una ~3 KB embebida.
+- Tests: `tests/voice-faces.test.mjs` (2). Las imágenes se copiaron como texto y se verificaron por huella (LES-044 en gw2-factory-dev).
+
 ## [2.2.1] — 2026-10-31
 
 ### Fixed
