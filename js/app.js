@@ -5,6 +5,7 @@
  * - Al cambiar de vista, el foco pasa al contenido principal (el lector de pantalla anuncia la vista nueva).
  * - El resultado de cada lectura se anuncia en una región aria-live.
  * - Después de Refrescar, el foco vuelve al botón (el encabezado se vuelve a dibujar).
+ * Mi globo con el gato (js/globo.js) se monta después de cada dibujo con lectura.
  */
 
 import { CONFIG } from './config.js';
@@ -12,6 +13,7 @@ import { createGitHub } from './github.js';
 import { loadAll } from './loader.js';
 import { buildModel } from './model.js';
 import * as V from './views.js';
+import { montarGlobo } from './globo.js';
 
 const gh = createGitHub({
   owner: CONFIG.owner,
@@ -54,6 +56,7 @@ function render() {
     default: html = V.renderHome(m);
   }
   $main.innerHTML = html;
+  montarGlobo(m); // mi globo con el gato (BL-091 CD-3); sin el kit, no pasa nada
   const pending = m.human.length;
   document.title = `${pending ? `(${pending}) ` : ''}${V.verdict(m).text} · Gato Negro Factory`;
 }
