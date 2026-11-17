@@ -1,8 +1,8 @@
 {
   "name": "gw2-factory-dashboard",
-  "version": "1.0.0",
+  "version": "3.0.0",
   "private": true,
-  "description": "Centro de observación de Gato Negro Factory. Sin dependencias ni build.",
+  "description": "Centro de mando de Gato Negro Factory. Sin dependencias ni build.",
   "type": "module",
   "scripts": {
     "test": "node --test tests/*.test.mjs"
