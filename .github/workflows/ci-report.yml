@@ -1,0 +1,96 @@
+# Informe del CI para la Factory (BL-091).
+# La Factory no puede leer los logs de Actions. Este workflow corre la suite en cada push a main
+# y, si falla, deja la salida completa en ci/ULTIMO.md. Cuando vuelve a verde, lo marca verde.
+#
+# Seguridad: solo en este repo y solo con pushes del dueño; nada del evento entra a un comando;
+# el único archivo que commitea es ci/ULTIMO.md (verificado antes del commit).
+
+name: ci-report
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'ci/**'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ci-report
+  cancel-in-progress: false
+
+jobs:
+  report:
+    if: >-
+      github.repository == 'PabloSnchz/gw2-factory-dashboard' &&
+      github.actor == github.repository_owner
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Correr la suite
+        id: suite
+        run: |
+          set +e
+          node --test --test-reporter=spec tests/*.test.mjs > "$RUNNER_TEMP/out.txt" 2>&1
+          echo "code=$?" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Escribir ci/ULTIMO.md
+        id: write
+        run: |
+          mkdir -p ci
+          prev=""
+          [ -f ci/ULTIMO.md ] && prev=$(head -n 1 ci/ULTIMO.md)
+          if [ "${{ steps.suite.outputs.code }}" != "0" ]; then
+            {
+              echo "# CI: FALLA"
+              echo
+              echo "- Commit: $GITHUB_SHA"
+              echo "- Fecha: $(date -u +%Y-%m-%dT%H:%MZ)"
+              echo
+              echo "## Fallas"
+              echo
+              echo '```'
+              grep -n -E "✖|not ok|AssertionError|Error:|expected|actual" "$RUNNER_TEMP/out.txt" | head -n 200
+              echo '```'
+              echo
+              echo "## Salida (últimos 60 KB)"
+              echo
+              echo '```'
+              tail -c 60000 "$RUNNER_TEMP/out.txt"
+              echo '```'
+            } > ci/ULTIMO.md
+            echo "commit=1" >> "$GITHUB_OUTPUT"
+          elif [ "$prev" != "# CI: VERDE" ]; then
+            {
+              echo "# CI: VERDE"
+              echo
+              echo "- Commit: $GITHUB_SHA"
+              echo "- Fecha: $(date -u +%Y-%m-%dT%H:%MZ)"
+              echo
+              grep -E "^ℹ (tests|pass|fail)" "$RUNNER_TEMP/out.txt"
+            } > ci/ULTIMO.md
+            echo "commit=1" >> "$GITHUB_OUTPUT"
+          else
+            echo "commit=0" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit del informe
+        if: steps.write.outputs.commit == '1'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- ci/ULTIMO.md
+          if git diff --cached --name-only | grep -vx 'ci/ULTIMO.md'; then echo "Cambios no esperados"; exit 1; fi
+          git diff --cached --quiet && exit 0
+          git commit -m "ci-report: ci/ULTIMO.md"
+          git push origin HEAD:main || { git pull --rebase origin main && git push origin HEAD:main; }
