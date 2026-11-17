@@ -1,0 +1,561 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="color-scheme" content="dark">
+<title>CD-0 · El Centro en el universo Shiruvana · Propuesta</title>
+<!-- BL-091 CD-0 (2026-11-17). Maqueta: no toca el panel real ni lee la memoria; los datos son de ejemplo
+     (los de «Hoy» son reales de esta noche). Caras, poses y gato salen de la-guarida publicada (mismo origen). -->
+<style>
+  :root {
+    --bg: #0B0B10; --s1: #15151D; --s2: #1C1C26; --line: #2A2A38; --text: #EDEDF2; --muted: #A6A6B8;
+    --amber: #E8B34B; --violet: #9B82FF; --teal: #2EC4B6; --red: #FF6B6B; --r: 14px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { background: #05060A; color: var(--text); font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  button { font: inherit; }
+  a { color: inherit; }
+  :focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+
+  /* ============ barra de la propuesta (no es parte del Centro) ============ */
+  .pr { position: sticky; top: 0; z-index: 100; background: #05060A; border-bottom: 1px solid #262B38; padding: 10px 16px; display: grid; gap: 8px; }
+  .pr-top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+  .pr h1 { margin: 0; font-size: 1rem; }
+  .pr h1 span { color: var(--amber); }
+  .pr-top p { margin: 0; color: var(--muted); font-size: .85rem; flex: 1; min-width: 240px; }
+  .pr-dec { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; }
+  .pr-d { display: flex; align-items: center; gap: 6px; font-size: .82rem; }
+  .pr-d b { color: var(--amber); font-size: .78rem; }
+  .pr-d .lbl { color: var(--muted); }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+  .seg button { border: 0; background: transparent; color: var(--muted); padding: 4px 10px; cursor: pointer; font-size: .8rem; }
+  .seg button[aria-pressed="true"] { background: var(--amber); color: #111; font-weight: 700; }
+  .seg .rec { font-size: .65rem; margin-left: 4px; opacity: .8; }
+  .pr-sim { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pr-sim button { border: 1px solid var(--line); background: #11131A; color: var(--text); border-radius: 8px; padding: 4px 10px; font-size: .78rem; cursor: pointer; }
+  .pr-sim button:hover { border-color: var(--violet); }
+
+  .lienzo { padding: 18px 0 40px; display: flex; justify-content: center; }
+  .marco { width: 100%; max-width: 1920px; }
+  .marco.movil { max-width: 390px; border: 1px solid var(--line); border-radius: 24px; overflow: hidden; }
+
+  /* ============ el Centro, en el universo Shiruvana ============ */
+  .cv { position: relative; isolation: isolate; min-height: 1100px; overflow: hidden; padding-bottom: 140px;
+    background:
+      radial-gradient(40% 40% at 88% 4%, rgba(155,130,255,.20), transparent 70%),
+      radial-gradient(35% 30% at 6% 30%, rgba(232,179,75,.08), transparent 70%),
+      linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px) 0 0 / 100% 48px,
+      linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px) 0 0 / 48px 100%,
+      var(--bg); }
+  .chispas { position: absolute; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+  .chispas i { position: absolute; bottom: -10px; width: 3px; height: 3px; border-radius: 50%; opacity: 0; background: var(--amber); box-shadow: 0 0 8px var(--amber);
+    left: calc(3% + var(--i) * 7%); animation: chispa calc(9s + var(--i) * .5s) linear calc(var(--i) * -1s) infinite; }
+  .chispas i:nth-child(3n) { background: var(--violet); box-shadow: 0 0 8px var(--violet); }
+
+  /* cabecera en una línea, como La Guarida (ESC-7) */
+  .cab { display: flex; align-items: center; gap: 18px; padding: 14px 26px; }
+  .marca { display: flex; align-items: center; gap: 10px; white-space: nowrap; }
+  .marca .logo { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: #000; box-shadow: 0 0 0 2px var(--amber); font-size: 17px; }
+  .marca b { display: block; font-weight: 800; letter-spacing: -.01em; }
+  .marca small { display: block; color: var(--muted); font-size: .72rem; letter-spacing: .14em; text-transform: uppercase; }
+  .caps { display: flex; gap: 2px; margin: 0 auto; padding: 4px; border-radius: 999px; border: 1px solid var(--line); background: rgba(21,21,29,.75); backdrop-filter: blur(8px); }
+  .caps a { padding: 6px 14px; border-radius: 999px; color: var(--muted); text-decoration: none; font-size: .85rem; white-space: nowrap; display: flex; gap: 6px; align-items: center; }
+  .caps a:hover { color: var(--text); }
+  .caps a.on { background: var(--amber); color: #111; font-weight: 700; }
+  .caps a i { font-style: normal; font-size: .7rem; font-weight: 800; min-width: 18px; padding: 0 5px; border-radius: 999px; background: var(--violet); color: #111; text-align: center; }
+  .caps a.on i { background: #111; color: var(--amber); }
+  .meta { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: .78rem; white-space: nowrap; }
+  .meta .pulso { width: 8px; height: 8px; border-radius: 50%; background: var(--teal); box-shadow: 0 0 10px var(--teal); animation: late 2s ease-in-out infinite; }
+  .btn-ref { border: 1px solid var(--line); background: rgba(21,21,29,.8); color: var(--text); border-radius: 10px; padding: 6px 10px; cursor: pointer; font-size: .8rem; }
+
+  .ante { margin: 0 0 6px; font-size: .72rem; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--amber); }
+  .ante.v { color: var(--violet); } .ante.t { color: var(--teal); }
+  h2.tt { margin: 0 0 14px; font-size: 1.35rem; font-weight: 800; letter-spacing: -.01em; }
+
+  /* 01 · Ahora */
+  .ahora { display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: end; padding: 22px 26px 26px; }
+  .ahora h1 { margin: 0; font-size: clamp(1.8rem, 3.2vw, 2.8rem); font-weight: 800; line-height: 1.1; letter-spacing: -.02em; max-width: 22ch; }
+  .ahora h1 em { font-style: normal; color: var(--amber); }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); background: rgba(21,21,29,.8); font-size: .78rem; }
+  .chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--c, var(--muted)); }
+  .cifras { display: flex; gap: 26px; }
+  .cifra b { display: block; font-size: 2.6rem; font-weight: 800; line-height: 1; color: var(--amber); font-variant-numeric: tabular-nums; }
+  .cifra span { color: var(--muted); font-size: .78rem; }
+  .cifra.cero b { color: var(--muted); }
+
+  /* aviso crítico (simulación) */
+  .critico { display: none; margin: 0 26px 18px; padding: 12px 16px; border-radius: var(--r); border: 1px solid rgba(255,107,107,.5); background: rgba(255,107,107,.08); gap: 12px; align-items: center; }
+  .cv.con-critico .critico { display: flex; }
+  .critico img { width: 40px; height: 40px; border-radius: 50%; box-shadow: 0 0 0 2px var(--red); }
+  .critico p { margin: 0; font-size: .9rem; }
+
+  /* mesa de mando (D1) */
+  .mesa { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(320px, 1fr); gap: 22px; padding: 0 26px; align-items: start; }
+  .cv[data-hoy="columna"] .mesa { grid-template-columns: minmax(0, 860px); justify-content: center; }
+  .col { display: grid; gap: 22px; min-width: 0; }
+  .pn { border-radius: var(--r); border: 1px solid var(--line); background: rgba(21,21,29,.86); backdrop-filter: blur(4px); padding: 18px; position: relative; animation: sube .5s calc(var(--i, 0) * .08s) both; }
+
+  /* tarjetas de pedido */
+  .pedidos { display: grid; gap: 14px; }
+  .pd { border-radius: 12px; background: var(--s2); border: 1px solid var(--line); padding: 16px; display: grid; gap: 10px; position: relative; }
+  .pd.dec { border-left: 3px solid var(--amber); }
+  .pd.val { border-left: 3px solid var(--teal); }
+  .pd.acc { border-left: 3px solid var(--violet); }
+  .pd.nuevo { animation: llega .7s ease both; }
+  .pd .top { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: .75rem; color: var(--muted); }
+  .pd .clase { font-weight: 800; letter-spacing: .14em; text-transform: uppercase; font-size: .68rem; }
+  .pd.dec .clase { color: var(--amber); } .pd.val .clase { color: var(--teal); } .pd.acc .clase { color: var(--violet); }
+  .pd h3 { margin: 0; font-size: 1.08rem; font-weight: 800; }
+  .pd p { margin: 0; font-size: .9rem; color: #D6D6E0; }
+  .piezas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .piezas div { padding: 10px; border-radius: 10px; background: rgba(255,255,255,.03); font-size: .82rem; }
+  .piezas b { display: block; font-size: .68rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+  .voz { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: 12px; background: rgba(155,130,255,.08); border: 1px solid rgba(155,130,255,.25); }
+  .voz img { width: 36px; height: 36px; border-radius: 50%; box-shadow: 0 0 0 2px var(--amber); flex: none; }
+  .voz b { display: block; font-size: .68rem; letter-spacing: .18em; color: var(--amber); }
+  .voz span { font-size: .88rem; }
+  .cv[data-voz="globo"] .pd .voz img { display: none; }
+  .cv[data-voz="globo"] .pd .voz { background: transparent; border-color: var(--line); }
+  .botones { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .bt { border: 1px solid var(--line); background: transparent; color: var(--text); border-radius: 10px; padding: 7px 12px; cursor: pointer; font-size: .85rem; text-decoration: none; }
+  .bt.si { background: var(--amber); border-color: var(--amber); color: #111; font-weight: 700; }
+  .bt:hover { border-color: var(--violet); }
+  .botones small { color: var(--muted); font-size: .75rem; }
+  .plegable { display: none; }
+  .cv[data-responder="plegado"] .botones { display: none; }
+  .cv[data-responder="plegado"] .plegable { display: inline-flex; }
+  .cv[data-responder="plegado"] .pd.abierta .botones { display: flex; }
+  .cv[data-responder="plegado"] .pd.abierta .plegable { display: none; }
+
+  /* sin pendientes */
+  .vacio { display: none; grid-template-columns: 150px 1fr; gap: 16px; align-items: end; min-height: 210px; }
+  .cv.sin .vacio { display: grid; }
+  .cv.sin .pedidos, .cv.sin .resp-hint { display: none; }
+  .vacio p { margin: 0 0 24px; }
+  .vacio p b { display: block; font-size: 1.15rem; font-weight: 800; margin-bottom: 4px; }
+  .vacio p span { color: var(--muted); font-size: .88rem; }
+  .pose { display: block; mix-blend-mode: lighten; -webkit-mask-image: linear-gradient(to top, transparent 0, #000 14%); mask-image: linear-gradient(to top, transparent 0, #000 14%); }
+  .vacio .pose { width: 150px; height: auto; }
+
+  /* ya respondiste */
+  .resp { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 6px; }
+  .resp li { display: flex; gap: 10px; align-items: baseline; font-size: .85rem; padding: 8px 10px; border-radius: 10px; background: rgba(46,196,182,.06); }
+  .resp li::before { content: "✓"; color: var(--teal); font-weight: 800; }
+  .resp li small { color: var(--muted); margin-left: auto; white-space: nowrap; }
+  .resp li.nuevo { animation: llega .7s ease both; }
+
+  /* 03 · La Factory ahora */
+  .tarea { margin: 0 0 6px; font-size: 1.1rem; font-weight: 800; }
+  .porque { margin: 0 0 16px; color: var(--muted); font-size: .88rem; }
+  .etapas { list-style: none; margin: 0 0 16px; padding: 0; display: grid; grid-template-columns: repeat(5, 1fr); position: relative; }
+  .etapas::before { content: ""; position: absolute; left: 10%; right: 10%; top: 7px; height: 2px; background: var(--line); }
+  .etapas li { position: relative; display: grid; justify-items: center; gap: 6px; font-size: .66rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); text-align: center; }
+  .etapas li::before { content: ""; width: 14px; height: 14px; border-radius: 50%; background: var(--s1); border: 2px solid var(--line); z-index: 1; }
+  .etapas li.ok::before { background: var(--teal); border-color: var(--teal); }
+  .etapas li.ya { color: var(--amber); font-weight: 800; }
+  .etapas li.ya::before { background: var(--amber); border-color: var(--amber); box-shadow: 0 0 0 5px rgba(232,179,75,.18); animation: late 2s ease-in-out infinite; }
+  .datos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .datos div { padding: 10px; border-radius: 10px; background: var(--s2); }
+  .datos b { display: block; font-size: 1.4rem; font-weight: 800; color: var(--amber); font-variant-numeric: tabular-nums; }
+  .datos span { color: var(--muted); font-size: .75rem; }
+  .datos .ancho { grid-column: 1 / -1; }
+  .datos .ancho b { font-size: .92rem; color: var(--text); font-weight: 600; }
+
+  /* 04 · Hoy: línea de tiempo */
+  .linea { list-style: none; margin: 0; padding: 0 0 0 18px; position: relative; display: grid; gap: 12px; }
+  .linea::before { content: ""; position: absolute; left: 5px; top: 6px; bottom: 6px; width: 2px; background: linear-gradient(var(--amber), var(--violet), transparent); }
+  .linea li { position: relative; font-size: .86rem; }
+  .linea li::before { content: ""; position: absolute; left: -18px; top: 6px; width: 12px; height: 12px; border-radius: 50%; background: var(--bg); border: 2px solid var(--amber); }
+  .linea li.v::before { border-color: var(--violet); } .linea li.t::before { border-color: var(--teal); }
+  .linea time { display: block; color: var(--muted); font-size: .72rem; font-variant-numeric: tabular-nums; }
+  .linea code { color: var(--violet); font-size: .78rem; }
+
+  /* 05 · Entornos como puertas, 06 · Números */
+  .abajo { padding: 22px 26px 0; display: grid; gap: 22px; }
+  .puertas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .puerta { display: grid; gap: 4px; padding: 16px; border-radius: var(--r); border: 1px solid var(--line); background: rgba(21,21,29,.86); text-decoration: none; transition: border-color .2s, box-shadow .2s, transform .2s; }
+  .puerta:hover { border-color: var(--violet); box-shadow: 0 0 0 1px var(--violet), 0 8px 24px rgba(155,130,255,.2); transform: translateY(-2px); }
+  .puerta b { font-size: .7rem; letter-spacing: .2em; color: var(--c); }
+  .puerta strong { font-weight: 800; }
+  .puerta span { color: var(--muted); font-size: .82rem; }
+  .numeros { display: grid; grid-template-columns: repeat(8, 1fr); gap: 10px; }
+  .numeros a { padding: 12px; border-radius: 12px; background: rgba(21,21,29,.86); border: 1px solid var(--line); text-decoration: none; }
+  .numeros b { display: block; font-size: 1.7rem; font-weight: 800; color: var(--amber); line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .numeros span { color: var(--muted); font-size: .74rem; }
+
+  /* yo: pose asomada en la Factory (D2 globo) */
+  .asoma { position: absolute; right: 8px; bottom: 0; width: 120px; height: auto; pointer-events: none; opacity: .95; }
+  .cv[data-voz="tarjeta"] .asoma { display: none; }
+  .cv[data-voz="globo"] .datos { margin-right: 118px; }
+  .marco.movil .cv .datos { margin-right: 0; }
+
+  /* globo con el gato (kit de La Guarida) */
+  .globo { position: absolute; right: 22px; bottom: 22px; z-index: 5; width: min(390px, calc(100% - 44px)); display: flex; gap: 12px; align-items: flex-start;
+    padding: 14px 16px; border-radius: 18px; border: 1px solid var(--line); background: rgba(21,21,29,.95); box-shadow: 0 12px 40px rgba(0,0,0,.5); backdrop-filter: blur(6px); animation: sube .4s both; }
+  .cv[data-voz="tarjeta"] .globo { display: none; }
+  .globo .cara { width: 44px; height: 44px; border-radius: 50%; box-shadow: 0 0 0 2px var(--amber); background: #000; flex: none; }
+  .globo .dice { min-width: 0; flex: 1; }
+  .globo .nombre { margin: 0; font-size: .7rem; letter-spacing: .18em; color: var(--amber); font-weight: 700; }
+  .globo .texto { margin: 2px 0 0; font-size: .9rem; }
+  .globo .cerrar { border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 1rem; padding: 0 2px; }
+  .gato { position: absolute; bottom: calc(100% - 12px); right: 16px; width: 92px; border: 0; padding: 0; background: none; cursor: pointer; filter: drop-shadow(0 6px 10px rgba(0,0,0,.5)); }
+  .gato img { display: block; width: 100%; height: auto; }
+  .gato.salta img { animation: salta .6s ease both; }
+  .gato-dice { position: absolute; bottom: calc(100% + 34px); right: 118px; padding: 5px 11px; border-radius: 12px; background: var(--amber); color: #111; font-weight: 600; font-size: .8rem; white-space: nowrap; }
+  .gato-dice:empty { display: none; }
+  .globo.plegado { width: auto; padding: 8px; border-radius: 999px; }
+  .globo.plegado .dice, .globo.plegado .cerrar { display: none; }
+  .globo.plegado .gato { right: -10px; width: 64px; }
+  .globo.plegado .gato-dice { right: 60px; }
+
+  /* celular */
+  .marco.movil .cab { flex-wrap: wrap; gap: 10px; padding: 10px 12px; }
+  .marco.movil .caps { order: 3; width: 100%; margin: 0; overflow-x: auto; }
+  .marco.movil .meta { margin-left: auto; } .marco.movil .meta span:not(.pulso) { display: none; }
+  .marco.movil .ahora { grid-template-columns: 1fr; padding: 16px 12px 20px; }
+  .marco.movil .cifras { gap: 18px; } .marco.movil .cifra b { font-size: 2rem; }
+  .marco.movil .mesa { grid-template-columns: 1fr; padding: 0 12px; }
+  .marco.movil .piezas { grid-template-columns: 1fr; }
+  .marco.movil .abajo { padding: 22px 12px 0; }
+  .marco.movil .puertas { grid-template-columns: 1fr; }
+  .marco.movil .numeros { grid-template-columns: repeat(2, 1fr); }
+  .marco.movil .critico { margin: 0 12px 16px; }
+  .marco.movil .globo { right: 12px; left: 12px; bottom: 12px; width: auto; }
+  .marco.movil .globo.plegado { left: auto; }
+  .marco.movil .asoma { display: none; }
+  .marco.movil .vacio { grid-template-columns: 100px 1fr; } .marco.movil .vacio .pose { width: 100px; }
+  @media (max-width: 900px) { .mesa { grid-template-columns: 1fr !important; } .numeros { grid-template-columns: repeat(4, 1fr); } .ahora { grid-template-columns: 1fr; } }
+
+  .notas { max-width: 980px; margin: 0 auto 60px; padding: 0 16px; color: #C9CED8; font-size: .9rem; }
+  .notas h2 { font-size: 1.1rem; color: var(--text); }
+  .notas li { margin-bottom: 6px; }
+  .notas b { color: var(--text); }
+
+  @keyframes chispa { 0% { transform: translateY(0); opacity: 0; } 10% { opacity: .6; } 80% { opacity: .4; } 100% { transform: translateY(-120vh); opacity: 0; } }
+  @keyframes sube { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+  @keyframes llega { 0% { opacity: 0; transform: translateX(-16px); box-shadow: 0 0 0 2px var(--amber); } 60% { opacity: 1; transform: none; } 100% { box-shadow: none; } }
+  @keyframes salta { 0%, 100% { transform: none; } 40% { transform: translateY(-12px) rotate(-4deg); } }
+  @keyframes late { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } .chispas { display: none; } }
+</style>
+</head>
+<body>
+
+<div class="pr" role="region" aria-label="Controles de la propuesta">
+  <div class="pr-top">
+    <h1><span>CD-0</span> · El Centro en el universo Shiruvana</h1>
+    <p>Maqueta: no toca el panel real ni lee la memoria. Elegí cada decisión y mirá el cambio al instante; lo que recomiendo está marcado con ★.</p>
+    <div class="seg" role="group" aria-label="Ancho" id="anchos">
+      <button type="button" data-ancho="pc" aria-pressed="true">Compu</button>
+      <button type="button" data-ancho="movil" aria-pressed="false">Celular</button>
+    </div>
+  </div>
+  <div class="pr-dec">
+    <div class="pr-d"><b>D1</b><span class="lbl">Hoy</span>
+      <div class="seg" role="group" aria-label="D1 Hoy" data-d="hoy">
+        <button type="button" data-v="mesa" aria-pressed="true">Mesa de mando<span class="rec">★</span></button>
+        <button type="button" data-v="columna" aria-pressed="false">Una columna, como hoy</button>
+      </div>
+    </div>
+    <div class="pr-d"><b>D2</b><span class="lbl">Dónde te hablo</span>
+      <div class="seg" role="group" aria-label="D2 Dónde te hablo" data-d="voz">
+        <button type="button" data-v="globo" aria-pressed="true">Globo con el gato<span class="rec">★</span></button>
+        <button type="button" data-v="tarjeta" aria-pressed="false">Mi cara en cada tarjeta</button>
+      </div>
+    </div>
+    <div class="pr-d"><b>D3</b><span class="lbl">Botones para responder</span>
+      <div class="seg" role="group" aria-label="D3 Botones para responder" data-d="responder">
+        <button type="button" data-v="vista" aria-pressed="true">A la vista<span class="rec">★</span></button>
+        <button type="button" data-v="plegado" aria-pressed="false">Detrás de «Responder»</button>
+      </div>
+    </div>
+    <div class="pr-d"><b>D4</b><span class="lbl">Nombre</span>
+      <div class="seg" role="group" aria-label="D4 Nombre" data-d="nombre">
+        <button type="button" data-v="mando" aria-pressed="true">Centro de mando<span class="rec">★</span></button>
+        <button type="button" data-v="decisiones" aria-pressed="false">Centro de decisiones</button>
+      </div>
+    </div>
+  </div>
+  <div class="pr-sim" role="group" aria-label="Probar">
+    <button type="button" data-sim="llega">📥 Llega un pedido</button>
+    <button type="button" data-sim="respondo">✅ Respondo el primero</button>
+    <button type="button" data-sim="sin">🌙 Sin pendientes</button>
+    <button type="button" data-sim="critico">⛔ Riesgo crítico</button>
+    <button type="button" data-sim="plegar">⇲ Plegar o desplegar mi globo</button>
+  </div>
+</div>
+
+<div class="lienzo">
+  <div class="marco" id="marco">
+    <div class="cv" id="cv" data-hoy="mesa" data-voz="globo" data-responder="vista">
+      <div class="chispas" id="chispas" aria-hidden="true"></div>
+
+      <header class="cab">
+        <a class="marca" href="#hoy"><span class="logo" aria-hidden="true">🐈‍⬛</span><span><b>Gato Negro Factory</b><small id="nombre">Centro de mando</small></span></a>
+        <nav class="caps" aria-label="Secciones">
+          <a href="#hoy" class="on">Hoy <i id="navHoy">2</i></a><a href="#t">Trabajo</a><a href="#c">Conocimiento</a><a href="#r">Riesgos <i>3</i></a><a href="#a">Actividad</a><a href="#s">Salud</a>
+        </nav>
+        <div class="meta"><span class="pulso" aria-hidden="true"></span><span>Leído hace 1 min · <code>@40c7d2a</code></span><button type="button" class="btn-ref">↻ Refrescar</button></div>
+      </header>
+
+      <section class="ahora" aria-labelledby="veredicto">
+        <div>
+          <p class="ante">01 · Ahora</p>
+          <h1 id="veredicto">Hay <em>1 decisión</em> esperándote</h1>
+          <div class="chips" id="chips">
+            <span class="chip" style="--c: var(--amber)">1 decisión</span>
+            <span class="chip" style="--c: var(--teal)">1 para validar</span>
+            <span class="chip" style="--c: var(--teal)">Factory: trabajando</span>
+          </div>
+        </div>
+        <div class="cifras" aria-label="En números">
+          <div class="cifra" id="cfPend"><b>2</b><span>te esperan</span></div>
+          <div class="cifra cero"><b>0</b><span>bloqueados</span></div>
+          <div class="cifra"><b>3</b><span>riesgos abiertos</span></div>
+        </div>
+      </section>
+
+      <div class="critico" role="alert">
+        <img src="https://pablosnchz.github.io/la-guarida/assets/brand/shiruvana/shiruvana-ojo-cara-128.webp" alt="" width="40" height="40">
+        <p><b>Crítico:</b> producción quedó sin protección en <code>main</code>. Con un riesgo crítico abierto la Factory se detiene hasta resolverlo. <a href="#r">RSK-0XX</a></p>
+      </div>
+
+      <div class="mesa">
+        <div class="col">
+          <section class="pn" style="--i:1" aria-labelledby="te-toca">
+            <p class="ante">02 · Te toca</p>
+            <h2 class="tt" id="te-toca">Lo que solo vos podés hacer</h2>
+            <div class="pedidos" id="pedidos">
+              <article class="pd dec">
+                <div class="top"><span class="clase">Decisión</span><span>Prioridad alta</span><span>· esperando 2 h</span></div>
+                <h3>¿Cuándo te aviso desde La Guarida?</h3>
+                <div class="piezas">
+                  <div><b>Contexto</b>El globo de La Guarida ya dice el último backup; podría decir también si te espera algo acá.</div>
+                  <div><b>Impacto</b>Te enterás sin abrir el Centro; un aviso de más cansa.</div>
+                  <div><b>Por qué te pregunto</b>Es tu día a día: cuánto te interrumpo lo decidís vos.</div>
+                </div>
+                <div class="voz"><img src="https://pablosnchz.github.io/la-guarida/assets/brand/shiruvana/shiruvana-hola-cara-128.webp" alt="" width="36" height="36"><div><b>SHIRUVANA RECOMIENDA</b><span>Solo con decisiones. Las validaciones las ves cuando entrás.</span></div></div>
+                <button type="button" class="bt plegable" data-abrir>Responder ▾</button>
+                <div class="botones"><a class="bt si" href="#hoy">Solo decisiones (recomendada) ↗</a><a class="bt" href="#hoy">Decisiones y validaciones ↗</a><a class="bt" href="#hoy">Posponer 7 días ↗</a><small class="resp-hint">Se abre GitHub con tu respuesta lista.</small></div>
+              </article>
+              <article class="pd val">
+                <div class="top"><span class="clase">Para validar</span><span>· esperando 3 min</span></div>
+                <h3>CD-0: esta maqueta</h3>
+                <p>Elegí las cuatro decisiones de arriba. Con tu OK arranco CD-1.</p>
+                <button type="button" class="bt plegable" data-abrir>Responder ▾</button>
+                <div class="botones"><a class="bt si" href="#hoy">Está bien ↗</a><a class="bt" href="#hoy">Hay que cambiar algo ↗</a></div>
+              </article>
+            </div>
+            <div class="vacio">
+              <img class="pose" src="https://pablosnchz.github.io/la-guarida/assets/brand/shiruvana/cuerpo-sentada.webp" alt="Shiruvana sentada, con el gato robot en miniatura" width="640" height="954">
+              <p><b>Nada te espera.</b><span>Las decisiones técnicas las tomo yo. Acá solo llegan las de producto, con contexto, impacto y mi recomendación.</span></p>
+            </div>
+            <ul class="resp" id="resp" aria-label="Ya respondiste">
+              <li>BIO-1: tu Link in Bio en el universo Shiruvana <small>Validado · 03:24</small></li>
+              <li>ESC-7: la cabecera de La Guarida en una línea <small>Validado · 03:16</small></li>
+            </ul>
+          </section>
+
+          <section class="pn" style="--i:3" aria-labelledby="hoy-t">
+            <p class="ante v">04 · Hoy</p>
+            <h2 class="tt" id="hoy-t">Lo que pasó</h2>
+            <ol class="linea">
+              <li><time>03:27</time>Arranqué CD-0: la maqueta del Centro.</li>
+              <li class="t"><time>03:24</time>Validaste BIO-1 · tu Link in Bio quedó en el universo Shiruvana <code>2da12f0</code></li>
+              <li class="v"><time>03:16</time>Cerraste La Guarida (ESC-0 a ESC-7).</li>
+              <li><time>03:10</time>ESC-7 · cabecera en una sola línea en pantallas anchas <code>a801c71</code></li>
+              <li class="t"><time>02:56</time>ESC-6 · relojes y «Resets GW2» arreglados <code>d27ec6f</code></li>
+            </ol>
+          </section>
+        </div>
+
+        <div class="col">
+          <section class="pn" style="--i:2" aria-labelledby="factory-t">
+            <p class="ante t">03 · La Factory ahora</p>
+            <h2 class="tt" id="factory-t">Qué estoy haciendo</h2>
+            <p class="tarea">BL-091 · El Centro en mi universo</p>
+            <p class="porque"><b>Por qué:</b> La Guarida, mi sitio y tu bio ya hablan el mismo idioma; el Centro es el último que queda con el estilo viejo.</p>
+            <ol class="etapas" aria-label="Etapa del trabajo">
+              <li class="ok">Product</li><li class="ok">Architecture</li><li class="ya" aria-current="step">Development</li><li>Review</li><li>Docs</li>
+            </ol>
+            <div class="datos">
+              <div><b>6 h 12 m</b><span>en ejecución</span></div>
+              <div><b>1 min</b><span>desde la última actualización</span></div>
+              <div class="ancho"><b>Con tu OK: CD-1, el escenario (fondo, cabecera y antetítulos) sin tocar los datos.</b><span>próxima acción</span></div>
+            </div>
+            <img class="pose asoma" src="https://pablosnchz.github.io/la-guarida/assets/brand/shiruvana/cuerpo-pensando.webp" alt="" width="640" height="954">
+          </section>
+
+          <section class="pn" style="--i:4" aria-labelledby="preocupa-t">
+            <p class="ante v">Ojo</p>
+            <h2 class="tt" id="preocupa-t">Qué debería preocuparte</h2>
+            <ol class="linea">
+              <li class="v"><time>Riesgo alto</time>La caché de la API comparte los 5 MB de pablosnchz.github.io con La Guarida.</li>
+              <li class="v"><time>Salud</time>Los datos de La Bóveda tienen más de 7 días.</li>
+            </ol>
+          </section>
+        </div>
+      </div>
+
+      <div class="abajo">
+        <section aria-labelledby="ent-t">
+          <p class="ante t">05 · Entornos</p>
+          <h2 class="tt" id="ent-t">Dónde vive cada cosa</h2>
+          <div class="puertas">
+            <a class="puerta" href="#hoy" style="--c: var(--teal)"><b>DEV</b><strong>gw2-factory-dev</strong><span>Último commit hace 3 min · 12 por delante de producción</span></a>
+            <a class="puerta" href="#hoy" style="--c: var(--amber)"><b>PRODUCCIÓN</b><strong>gw2-wallet-ligero</strong><span>Solo lectura. Pasar algo a producción es decisión tuya.</span></a>
+            <a class="puerta" href="#hoy" style="--c: var(--violet)"><b>PANEL</b><strong>gw2-factory-dashboard</strong><span>Último commit hace 2 min</span></a>
+          </div>
+        </section>
+        <section aria-labelledby="num-t">
+          <p class="ante">06 · En números</p>
+          <h2 class="tt" id="num-t">La Factory entera</h2>
+          <div class="numeros">
+            <a href="#t"><b>4</b><span>listo para hacer</span></a><a href="#t"><b>1</b><span>en curso</span></a><a href="#t"><b>0</b><span>bloqueado</span></a><a href="#t"><b>87</b><span>hecho</span></a>
+            <a href="#r"><b>3</b><span>riesgos abiertos</span></a><a href="#c"><b>52</b><span>decisiones</span></a><a href="#c"><b>44</b><span>lecciones</span></a><a href="#c"><b>31</b><span>funcionalidades</span></a>
+          </div>
+        </section>
+      </div>
+
+      <div class="globo" id="globo" role="status" aria-live="polite">
+        <button type="button" class="gato" id="gato" aria-label="Tocar al gato robot"><img id="gatoImg" src="https://pablosnchz.github.io/la-guarida/assets/brand/gato/gato-sentado.webp" alt="El gato robot, sentado" width="320" height="320"></button>
+        <span class="gato-dice" id="gatoDice"></span>
+        <img class="cara" id="cara" src="https://pablosnchz.github.io/la-guarida/assets/brand/shiruvana/shiruvana-hola-cara-128.webp" alt="" width="44" height="44">
+        <div class="dice">
+          <p class="nombre">SHIRUVANA</p>
+          <p class="texto" id="texto">Te espera una decisión: cuándo te aviso desde La Guarida. Te recomiendo «solo decisiones».</p>
+        </div>
+        <button type="button" class="cerrar" data-sim="plegar" aria-label="Plegar">⇲</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section class="notas">
+  <h2>Qué cambia y qué no</h2>
+  <ul>
+    <li><b>Lo que no cambia:</b> los datos, las seis vistas, cómo respondés (el botón abre GitHub con la respuesta lista) y la regla de que un dato que no se pudo leer aparece como «—» con el motivo, nunca como 0. Producción sigue en solo lectura.</li>
+    <li><b>El universo es el mismo de La Guarida y tu bio:</b> mi paleta, cuadrícula y chispas de fondo, antetítulos numerados (01 · Ahora … 06 · En números), títulos en 800, cifras en ámbar, líneas de tiempo con puntos y entornos como puertas.</li>
+    <li><b>D1 Hoy.</b> «Mesa de mando»: a la izquierda lo que te toca y lo que pasó; a la derecha qué estoy haciendo y qué debería preocuparte. Lo importante entra en la primera pantalla. «Una columna» es el orden de hoy, con el estilo nuevo.</li>
+    <li><b>D2 Dónde te hablo.</b> Con el globo hay un solo lugar donde hablo, con el gato encima, y mi cara deja de repetirse en cada tarjeta (la recomendación sigue ahí, rotulada). Se pliega y recuerda cómo lo dejaste, como en La Guarida. El gato camina cuando llega un pedido y festeja cuando respondés.</li>
+    <li><b>D3 Botones.</b> A la vista: un toque y respondés. «Detrás de Responder» limpia la tarjeta pero suma un clic a cada respuesta.</li>
+    <li><b>D4 Nombre.</b> Vos le decís «centro de mando» y con la mesa de mando le queda mejor. Cambia el rótulo y el título de la pestaña; la dirección no se toca, así que tus favoritos siguen andando.</li>
+    <li><b>Esto lo decido yo:</b> el kit de escena (globo, gato, recorte de mis poses sin fondo) deja de vivir solo en La Guarida y pasa al repo <code>shiruvana</code> con versión fija, para que los dos lo usen igual. Las imágenes ya están publicadas: <b>no tenés que subir nada</b>.</li>
+    <li><b>Datos:</b> «04 · Hoy» y «Ya respondiste» son reales de esta noche; los pedidos, riesgos y números son de ejemplo para que veas cada estado.</li>
+    <li><b>Plan:</b> CD-1 escenario y cabecera · CD-2 Hoy como mesa de mando · CD-3 globo y gato · CD-4 las otras cinco vistas · CD-5 celular y revisión final.</li>
+  </ul>
+</section>
+
+<script>
+(function () {
+  'use strict';
+  var C = 'https://pablosnchz.github.io/la-guarida/assets/brand/shiruvana/shiruvana-';
+  var G = 'https://pablosnchz.github.io/la-guarida/assets/brand/gato/gato-';
+  var $ = function (id) { return document.getElementById(id); };
+  var cv = $('cv'), marco = $('marco'), globo = $('globo'), texto = $('texto'), cara = $('cara');
+  var gatoImg = $('gatoImg'), gatoDice = $('gatoDice'), pedidos = $('pedidos'), resp = $('resp');
+  var toques = 0, t1 = null, nuevos = 0;
+  var FRASES = ['Prrr… bip.', 'Miau. Compilando.', 'Ojo ámbar, sistema estable.', 'Bip bip. Todo verde.'];
+
+  for (var k = 0; k < 14; k++) { var i = document.createElement('i'); i.style.setProperty('--i', k); $('chispas').appendChild(i); }
+
+  function marcar(grupo, boton) {
+    Array.prototype.forEach.call(grupo.querySelectorAll('button'), function (b) { b.setAttribute('aria-pressed', String(b === boton)); });
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('[data-d]'), function (grupo) {
+    grupo.addEventListener('click', function (ev) {
+      var b = ev.target.closest('button'); if (!b) return;
+      marcar(grupo, b);
+      var d = grupo.getAttribute('data-d'), v = b.getAttribute('data-v');
+      if (d === 'nombre') { $('nombre').textContent = v === 'mando' ? 'Centro de mando' : 'Centro de decisiones'; return; }
+      cv.setAttribute('data-' + d, v);
+    });
+  });
+  $('anchos').addEventListener('click', function (ev) {
+    var b = ev.target.closest('button'); if (!b) return;
+    marcar($('anchos'), b);
+    marco.classList.toggle('movil', b.getAttribute('data-ancho') === 'movil');
+  });
+
+  function decir(t, c) { texto.textContent = t; cara.src = C + c + '-cara-128.webp'; globo.classList.remove('plegado'); }
+  function gato(pose, frase) {
+    gatoImg.src = G + pose + '.webp';
+    gatoDice.textContent = frase || '';
+    var btn = $('gato'); btn.classList.remove('salta'); void btn.offsetWidth; if (pose === 'festeja') btn.classList.add('salta');
+    clearTimeout(t1);
+    t1 = setTimeout(function () { gatoImg.src = G + 'sentado.webp'; gatoDice.textContent = ''; }, 1800);
+  }
+  $('gato').addEventListener('click', function () {
+    toques++;
+    gato('festeja', toques === 5 ? 'Basta, que estoy trabajando.' : FRASES[(toques > 5 ? toques - 2 : toques - 1) % FRASES.length]);
+  });
+
+  function contar() {
+    var n = pedidos.querySelectorAll('.pd').length;
+    var dec = pedidos.querySelectorAll('.pd.dec').length;
+    $('navHoy').textContent = n; $('navHoy').style.display = n ? '' : 'none';
+    $('cfPend').querySelector('b').textContent = n; $('cfPend').classList.toggle('cero', !n);
+    cv.classList.toggle('sin', !n);
+    $('veredicto').innerHTML = dec ? 'Hay <em>' + dec + (dec === 1 ? ' decisión</em> esperándote' : ' decisiones</em> esperándote')
+      : n ? 'Nada que decidir: te ' + (n === 1 ? 'espera <em>1 tarea</em>' : 'esperan <em>' + n + ' tareas</em>')
+      : 'Estoy trabajando: <em>nada</em> necesita tu decisión';
+    $('chips').innerHTML = (dec ? '<span class="chip" style="--c: var(--amber)">' + dec + (dec === 1 ? ' decisión' : ' decisiones') + '</span>' : '<span class="chip" style="--c: var(--teal)">Sin decisiones pendientes</span>')
+      + (n - dec ? '<span class="chip" style="--c: var(--teal)">' + (n - dec) + ' para validar</span>' : '')
+      + '<span class="chip" style="--c: var(--teal)">Factory: trabajando</span>';
+    document.title = (n ? '(' + n + ') ' : '') + 'CD-0 · El Centro en el universo Shiruvana';
+  }
+
+  var SIM = {
+    llega: function () {
+      nuevos++;
+      var a = document.createElement('article');
+      a.className = 'pd acc nuevo';
+      a.innerHTML = '<div class="top"><span class="clase">Acción tuya</span><span>· recién llegado</span></div>'
+        + '<h3>Subí las imágenes del gato nuevo' + (nuevos > 1 ? ' (' + nuevos + ')' : '') + '</h3>'
+        + '<p>Van a <code>assets/brand/gato/</code>. Sin eso no puedo seguir con el paso siguiente.</p>'
+        + '<button type="button" class="bt plegable" data-abrir>Responder ▾</button>'
+        + '<div class="botones"><a class="bt si" href="#hoy">Ya lo hice ↗</a><a class="bt" href="#hoy">Posponer 7 días ↗</a></div>';
+      pedidos.insertBefore(a, pedidos.firstChild);
+      contar();
+      decir('Llegó algo para vos: necesito que subas unas imágenes. Te lo dejé arriba de todo.', 'explica');
+      gato('camina', '¡Miau! Llegó algo.');
+    },
+    respondo: function () {
+      var p = pedidos.querySelector('.pd');
+      if (!p) { decir('No queda nada por responder. Andá a descansar, yo sigo.', 'guino'); gato('sentado', 'Zzz… bip.'); return; }
+      var titulo = p.querySelector('h3').textContent;
+      p.remove();
+      var li = document.createElement('li'); li.className = 'nuevo';
+      li.innerHTML = '<span></span><small>Registrándose · ahora</small>';
+      li.firstChild.textContent = titulo;
+      resp.insertBefore(li, resp.firstChild);
+      contar();
+      decir('¡Listo! Registré tu respuesta a «' + titulo + '». Sigo con lo mío.', 'festeja');
+      gato('festeja', '¡Bip!');
+    },
+    sin: function () {
+      pedidos.innerHTML = ''; contar();
+      decir('Nada te espera. Si querés ver qué hice hoy, está en «04 · Hoy».', 'guino');
+      gato('sentado');
+    },
+    critico: function () {
+      var on = cv.classList.toggle('con-critico');
+      if (on) { decir('Ojo: producción quedó sin protección. Me detengo hasta que lo resolvamos.', 'ojo'); gato('camina', '¡Alerta!'); }
+      else { decir('Resuelto. Vuelvo a trabajar.', 'festeja'); gato('festeja'); }
+    },
+    plegar: function () { globo.classList.toggle('plegado'); }
+  };
+  document.addEventListener('click', function (ev) {
+    var s = ev.target.closest('[data-sim]'); if (s) { SIM[s.getAttribute('data-sim')](); return; }
+    var ab = ev.target.closest('[data-abrir]'); if (ab) { ab.closest('.pd').classList.add('abierta'); return; }
+    var a = ev.target.closest('.pd a.bt'); if (a) { ev.preventDefault(); decir('En el panel real esto abre GitHub con tu respuesta lista. En la maqueta probá «Respondo el primero».', 'explica'); }
+  });
+  contar();
+})();
+</script>
+</body>
+</html>
