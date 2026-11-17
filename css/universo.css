@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Centro de mando — piel «Universo Shiruvana» v1.1.0 (BL-091 CD-1 fondo y cabecera · CD-2 Mesa de mando)
+   Centro de mando — piel «Universo Shiruvana» v1.2.0 (BL-091 CD-1 fondo y cabecera · CD-2 Mesa de mando · CD-3 globo)
    Se carga ÚLTIMA (tokens → componentes → disposición → universo).
 
    Qué hace:
@@ -220,6 +220,19 @@ body.gds {
 .uv-numeros .gds-metric__value { font-size: 1.7rem; font-weight: 800; line-height: 1.1; color: var(--uv-amber); font-variant-numeric: tabular-nums; }
 .uv-numeros a.gds-metric:hover { border-color: var(--uv-violet); }
 
+/* ------------------------------------------------------------ 5. mi globo con el gato (CD-3, kit de shiruvana) */
+/* El globo es fijo abajo a la derecha: que no tape lo último de la página. */
+body.svk-con-globo .app-main { padding-bottom: 160px; }
+/* D2: con el globo a la vista, las tarjetas no repiten mi cara (habla el globo). Sin kit, quedan como antes. */
+body.svk-con-globo .decision .gds-voice__avatar { display: none; }
+body.svk-con-globo .decision .gds-voice { grid-template-columns: minmax(0, 1fr); }
+/* Nada que decidir: yo sentada al costado (pose sin fondo del kit; hasta que está lista, solo el texto). */
+body.svk-p-sentada #human-title + .gds-callout--success {
+  min-height: 132px; padding-right: 112px;
+  background-image: var(--svk-p-sentada); background-repeat: no-repeat;
+  background-position: right var(--gds-space-3) bottom; background-size: auto 124px;
+}
+
 /* ------------------------------------------------------------ pantallas chicas */
 @media (max-width: 1080px) {
   .app-nav.gds-tabs { justify-self: stretch; overflow-x: auto; scrollbar-width: none; }
@@ -230,6 +243,7 @@ body.gds {
 @media (max-width: 640px) {
   .app-bar { padding: var(--gds-space-2) var(--gds-space-4); }
   .uv-lectura { display: none; }
+  body.svk-p-sentada #human-title + .gds-callout--success { padding-right: var(--gds-space-4); background-image: none; }
 }
 
 /* ------------------------------------------------------------ movimiento */
