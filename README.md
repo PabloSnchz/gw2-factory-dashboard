@@ -1,4 +1,4 @@
-# 🐈‍⬛ Gato Negro Factory — Centro de Decisiones
+# 🐈‍⬛ Gato Negro Factory — Centro de mando
 
 El lugar donde Pablo y la Factory trabajan juntos. En menos de 60 segundos responde **qué necesita tu decisión, qué está haciendo la Factory y por qué, qué hizo hoy y esta semana, y qué está bloqueado**. Y permite responder desde el mismo lugar.
 
@@ -38,6 +38,7 @@ Sin tokens ni secretos en el navegador: GitHub te identifica a vos. Detalle en [
 - **Sin backend y sin scripts locales**: todo se calcula en el navegador.
 - Un dato que no se pudo leer aparece como **—** con el motivo, nunca como 0.
 - Visual: [Gato Design System](gds/GDS_FOUNDATION.md) 1.1.0. Contraste WCAG 2.1 AA calculado, estados con ícono y texto, navegación por teclado.
+- Piel «Universo Shiruvana» (`css/universo.css`, BL-091): la paleta, el fondo y las cabeceras numeradas del sitio de Shiruvana sobre el GDS. Su globo con el gato (`js/globo.js`) usa el kit del repo [shiruvana](https://github.com/PabloSnchz/shiruvana/tree/main/kit) con versión fija; si el kit no carga, el panel sigue igual, sin globo.
 
 ## Documentación
 
@@ -57,6 +58,8 @@ node --test tests/*.test.mjs     # Node 20+; sin npm install
 ```
 
 Los tests usan la memoria real (`tests/fixtures/ai-memory/`) y simulan GitHub: cuota agotada, canal con errores, contraste, reglas del GDS, accesibilidad y textos dorados compartidos con el workflow de respuestas.
+
+En cada push a `main`, `.github/workflows/ci-report.yml` corre la suite y deja el resultado en `ci/ULTIMO.md`.
 
 Para probar localmente: servir la carpeta con cualquier servidor estático (`python3 -m http.server`) y abrir `http://localhost:8000`.
 
