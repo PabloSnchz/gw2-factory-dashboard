@@ -325,10 +325,15 @@ export function renderHome(m) {
   const channel = (m.channel && m.channel.items) || [];
   const looseChannel = channel.filter(c => !m.human.some(h => h.id === c.solicitud));
   const g = byClase(m);
+  const openRisks = (m.risks || []).filter(r => r.estado === 'ABIERTO').length;
 
+  // Mesa de mando (BL-091 D1): 01 · Ahora arriba; a la izquierda lo que te toca (02) y lo que pasó (03),
+  // a la derecha qué hace la Factory (04) y qué debería preocuparte; abajo entornos (05) y números (06).
+  // La numeración sigue el orden del documento: se ve y se escucha igual.
   return `
-  <section class="verdict gds-stack--sm gds-stack" aria-labelledby="verdict-title">
-    <p class="gds-label-2 gds-text-muted">Resumen</p>
+  <section class="verdict uv-ahora" aria-labelledby="verdict-title">
+    <div class="gds-stack--sm gds-stack">
+    <p class="uv-ante">01 · Ahora</p>
     <h1 id="verdict-title" class="gds-headline-1">${esc(v.text)}</h1>
     <div class="gds-cluster">
       ${g.decision.length ? statusChip(plural(g.decision.length, 'decisión', 'decisiones'), 'warning', 'compass') : statusChip('Sin decisiones pendientes', 'success', 'check')}
@@ -338,13 +343,20 @@ export function renderHome(m) {
       ${blocked ? statusChip(`${blocked} bloqueado${blocked > 1 ? 's' : ''}`, 'warning', 'alert') : ''}
       ${levelChip(st.level, 'Factory: ' + st.text)}
     </div>
+    </div>
+    <div class="uv-cifras" role="group" aria-label="En números">
+      ${cifra(m.human.length, 'te esperan')}${cifra(blocked, blocked === 1 ? 'bloqueado' : 'bloqueados')}${cifra(openRisks, 'riesgos abiertos')}
+    </div>
   </section>
 
   ${looseChannel.length ? `<div class="gds-stack--sm gds-stack">${looseChannel.map(c => renderChannelItem(c, m, false)).join('')}</div>` : ''}
 
   ${renderWarnings(m)}
 
-  <section class="gds-stack" aria-labelledby="human-title">
+  <div class="uv-mesa">
+  <div class="uv-col">
+  <section class="gds-stack uv-panel" aria-labelledby="human-title">
+    <p class="uv-ante">02 · Te toca</p>
     <h2 id="human-title" class="gds-headline-2">Necesita tu decisión ${count(g.decision.length, 'decisiones')}</h2>
     ${g.decision.length
       ? `<div class="decisions">${g.decision.map((h, i) => renderDecisionCard(h, m, i === 0, { voiceAvatar: i === 0 })).join('')}</div>`
@@ -357,7 +369,18 @@ export function renderHome(m) {
     ${renderAnswered(m)}
   </section>
 
+  <div class="uv-hoy gds-stack--sm gds-stack">
+    <p class="uv-ante uv-ante--v">03 · Hoy y esta semana</p>
+    <div class="gds-grid">
+      ${renderPeriod('Hoy', a.commitsToday, a.memoryToday, a.doneToday, m)}
+      ${renderPeriod('Esta semana', a.commitsWeek, a.memoryWeek, a.doneWeek, m)}
+    </div>
+  </div>
+  </div>
+
+  <div class="uv-col">
   <section class="gds-card factory" aria-labelledby="factory-title">
+    <p class="uv-ante uv-ante--t">04 · La Factory ahora</p>
     <div class="gds-card__header">
       <h2 id="factory-title" class="gds-title-1">¿Qué está haciendo la Factory?</h2>
       <div class="gds-cluster">${levelChip(st.level, st.text)}${m.fase ? `<a class="gds-ref" href="#/trabajo">${esc(m.fase.id)} · ${esc(m.fase.nombre)}</a>` : ''}</div>
@@ -395,13 +418,14 @@ export function renderHome(m) {
       ${m.concerns.length > 6 ? `<p class="more gds-body-2"><a href="#/salud">Ver ${m.concerns.length - 6} más en Salud y Riesgos</a></p>` : ''}`
     : empty('Sin riesgos altos abiertos ni problemas de salud.')}
   </section>
-
-  <div class="gds-grid">
-    ${renderPeriod('Hoy', a.commitsToday, a.memoryToday, a.doneToday, m)}
-    ${renderPeriod('Esta semana', a.commitsWeek, a.memoryWeek, a.doneWeek, m)}
+  </div>
   </div>
 
-  <section aria-labelledby="metrics-title">
+  <div class="uv-abajo">
+  ${renderEnvironments(m)}
+
+  <section class="uv-numeros" aria-labelledby="metrics-title">
+    <p class="uv-ante">06 · En números</p>
     <h2 id="metrics-title" class="gds-visually-hidden">Números</h2>
     <div class="metrics">
       ${metric('Listo para hacer', (b.READY || []).length, '#/trabajo')}
@@ -414,8 +438,12 @@ export function renderHome(m) {
       ${metric('Funcionalidades', (m.entries.FEAT || []).length, '#/conocimiento/feat')}
     </div>
   </section>
+  </div>`;
+}
 
-  ${renderEnvironments(m)}`;
+/** Cifra grande en ámbar (en gris si es cero): la cuenta y su rótulo, leídos juntos. */
+function cifra(n, label) {
+  return `<p class="uv-cifra${n ? '' : ' uv-cifra--cero'}"><b>${n}</b><span>${esc(label)}</span></p>`;
 }
 
 /* ------------------------------------------------------------ voz de Shiruvana (DEC-024) */
@@ -500,7 +528,8 @@ function unprotectedChip(m) {
 function renderEnvironments(m) {
   const p = m.prod, c = m.compare;
   const lastOf = (repo) => m.commits.find(x => x.repo === repo);
-  return `<section class="gds-card" aria-labelledby="env-title">
+  return `<section class="gds-card uv-entornos" aria-labelledby="env-title">
+    <p class="uv-ante uv-ante--v">05 · Entornos</p>
     <div class="gds-card__header"><h2 id="env-title" class="gds-title-1">Entornos</h2><span class="gds-caption gds-text-muted">medido en GitHub</span></div>
     <div class="gds-grid">
       <div class="gds-card gds-card--inset gds-stack--sm gds-stack">
