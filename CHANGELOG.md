@@ -2,6 +2,25 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionado SemVer.
 
+## [3.0.0] — 2026-11-17
+
+**El Centro de mando, en el universo de Shiruvana** (BL-091, micro-ciclos CD-0 a CD-5; la maqueta CD-0 la aprobó Pablo con las cuatro recomendadas: Mesa de mando, globo con el gato, botones a la vista y «Centro de mando»). Es MAJOR porque cambian el nombre y la estructura de la vista principal, y el panel suma un recurso de otro sitio (el kit de Shiruvana, con versión fija).
+
+### Changed
+- Nombre: **«Centro de mando»** (antes «Centro de decisiones»). La dirección es la misma: los favoritos siguen andando.
+- `css/universo.css` 1.4.0, cargada última: la paleta del sitio de Shiruvana sobre el GDS (los componentes la heredan sin tocarlos), fondo con cuadrícula, resplandores y 12 chispas, cabecera en una línea con el gato en un aro ámbar, pestañas en cápsula (la actual en ámbar) y un latido. El contraste AA se sigue calculando con la paleta nueva.
+- **Hoy como Mesa de mando**: 01 · Ahora con tres cifras en ámbar; a la izquierda 02 · Te toca y 03 · Hoy y esta semana; a la derecha 04 · La Factory ahora (etapas como línea con puntos) y Qué debería preocuparte; abajo 05 · Entornos (como puertas) y 06 · En números. La numeración sigue el orden de lectura. En pantallas de hasta 1080 px, una sola columna.
+- **Trabajo, Conocimiento, Riesgos, Actividad y Salud** abren con antetítulo «01 · …», título y cifras en ámbar; las etapas del plan y la actividad son líneas de tiempo con puntos; el tablero y los niveles de riesgo y salud llevan su color (siempre con texto e ícono). Las frases de conteo de Actividad y Salud pasaron a cifras.
+- **Celular**: las etapas de la Factory se leen como línea de tiempo vertical (la línea horizontal cruzaba el primer punto); sin desenfoque detrás de cada tarjeta (hacía saltar el scroll); cifras más chicas; el efecto de «puerta» de Entornos solo con mouse.
+
+### Added
+- **El globo de Shiruvana con el gato** (`js/globo.js` sobre `shiruvana/kit/escena-kit.js` 1.0.0): dice lo más urgente (respuesta sin registrar → riesgo crítico → decisiones → tareas → en qué sigue la Factory); el gato festeja cuando baja lo pendiente y camina cuando llega algo nuevo o aparece un riesgo crítico. Se pliega y recuerda el plegado en `gfd:globo:v1` (clave nueva de `localStorage`). Con el globo a la vista, las tarjetas no repiten el avatar. Si el kit no carga, el panel sigue igual, sin globo.
+- `.github/workflows/ci-report.yml`: corre la suite en cada push a `main` y deja el resultado en `ci/ULTIMO.md` (VERDE con el conteo o FALLA con la salida), para que la Factory lo pueda leer.
+- Tests: `tests/universo.test.mjs` (14) y `tests/globo.test.mjs`; 124 en total, en verde, con mutaciones detectadas en cada micro-ciclo.
+
+### Known
+- La revisión fue por código, tests, contraste calculado y mutaciones; la validación visual es de Pablo en el navegador: validó CD-0 a CD-4 micro-ciclo por micro-ciclo; CD-5 (celular) se valida en su teléfono.
+
 ## [2.3.0] — 2026-10-31
 
 **Mi cara nueva** (BL-085 y BL-087; DEC-048 en gw2-factory-dev, decidida por Pablo): la figura ilustrada es la imagen oficial de Shiruvana en todo el ecosistema. Las reglas de cuándo aparece no cambian (DEC-024).
