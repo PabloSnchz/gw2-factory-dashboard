@@ -201,3 +201,20 @@ test('vistas: líneas de tiempo con puntos, tablero y niveles con su color', asy
   const chica = UV.slice(UV.indexOf('@media (max-width: 1080px)'));
   assert.match(chica.slice(0, chica.indexOf('}\n}') + 3), /\.uv-head \{ grid-template-columns: minmax\(0, 1fr\); \}/, 'en pantallas chicas, una columna');
 });
+
+/* ------------------------------------------------------------ CD-5: celular */
+
+test('celular: etapas en vertical, sin desenfoque por tarjeta, cifras más chicas y puertas sin hover pegado', () => {
+  const ini = UV.indexOf('@media (max-width: 640px)');
+  assert.ok(ini > 0, 'existe el bloque del celular');
+  const cel = UV.slice(ini, UV.indexOf('}\n}', ini) + 3);
+  assert.match(cel, /\.factory \.gds-stepper::before \{[^}]*width: 2px; height: auto;/, 'la línea de las etapas pasa a vertical');
+  assert.match(cel, /\.factory \.gds-stepper__step::before \{ position: absolute;/, 'el punto va a la izquierda del texto');
+  assert.match(cel, /\.factory \.gds-stepper__step \{ justify-items: start; text-align: left; \}/);
+  assert.match(cel, /\.gds-card, \.uv-panel, \.uv-numeros \.gds-metric \{ -webkit-backdrop-filter: none; backdrop-filter: none; \}/, 'sin desenfoque por tarjeta');
+  assert.match(cel, /\.uv-cifra b \{ font-size: 2rem; \}/);
+  // El efecto de «puerta» solo con mouse: fuera de @media (hover: hover) no hay :hover que mueva la tarjeta.
+  const sinHover = UV.replace(/@media \(hover: hover\) \{[\s\S]*?\}\n\}/, '').replace(/@media \(prefers-reduced-motion: reduce\)[\s\S]*$/, '');
+  assert.doesNotMatch(sinHover, /\.uv-entornos \.gds-card--inset:hover/, 'el hover de las puertas vive en @media (hover: hover)');
+  assert.match(UV, /@media \(hover: hover\) \{\s*\.uv-entornos \.gds-card--inset:hover \{[^}]*translateY\(-2px\)/);
+});
