@@ -202,6 +202,49 @@ test('vistas: líneas de tiempo con puntos, tablero y niveles con su color', asy
   assert.match(chica.slice(0, chica.indexOf('}\n}') + 3), /\.uv-head \{ grid-template-columns: minmax\(0, 1fr\); \}/, 'en pantallas chicas, una columna');
 });
 
+/* ------------------------------------------------------------ 3.0.1: textos largos de status.md */
+
+test('resumen: si entra, todo; si no, la primera oración; si es muy larga, cortada en una palabra entera con «…»', () => {
+  assert.equal(V.resumen('Hola. Chau.'), 'Hola. Chau.', 'un texto corto se muestra entero');
+  assert.equal(V.resumen('Hola. Chau.', 8), 'Hola.');
+  assert.equal(V.resumen('  Uno  dos\n tres  '), 'Uno dos tres', 'espacios normalizados');
+  assert.equal(V.resumen('Versión v1.0.0 lista. Sigue.', 25), 'Versión v1.0.0 lista.', 'un punto entre cifras no corta');
+  const largo = 'palabra '.repeat(60) + 'fin.';
+  const r = V.resumen(largo, 100);
+  assert.ok(r.length <= 101 && r.endsWith('…') && !r.includes('  '), r);
+  assert.ok(largo.startsWith(r.slice(0, -1)), 'es el comienzo del texto');
+  assert.ok(r.slice(0, -1).split(' ').every(w => w === 'palabra'), 'corta en una palabra entera');
+  assert.equal(V.resumen(''), '');
+});
+
+test('04 · La Factory ahora: con textos de miles de caracteres, el resumen arriba y el resto plegado con scroll propio', async () => {
+  const { m } = await home();
+  const larga = (n, x) => `${x} primera oración. ` + `detalle ${x} `.repeat(n);
+  m.status = { ...m.status, tarea: 'BL-091 — ' + larga(400, 'tarea'), motivo: larga(300, 'motivo'), proxima: larga(500, 'proxima') };
+  const html = V.renderHome(m);
+  const card = html.slice(html.indexOf('<section class="gds-card factory"'), html.indexOf('</section>', html.indexOf('factory-title')));
+  assert.match(card, /<p class="gds-headline-2">tarea primera oración\.<\/p>/, 'el título es solo la primera oración, sin el ID');
+  assert.match(card, /<strong class="gds-label-1">Por qué:<\/strong> motivo primera oración\.<\/p>/);
+  assert.match(card, /<dt>Próxima acción<\/dt><dd>proxima primera oración\./);
+  const plegados = [...card.matchAll(/<details class="uv-mas"><summary class="gds-caption">([^<]+)<\/summary>\s*<div class="uv-mas__txt gds-body-2" tabindex="0" role="region" aria-label="([^"]+)">([\s\S]*?)<\/div><\/details>/g)];
+  assert.deepEqual(plegados.map(p => p[1]), ['Ver la tarea completa', 'Ver el motivo completo', 'Ver la próxima acción completa']);
+  assert.equal(new Set(plegados.map(p => p[2])).size, 3, 'cada región con su nombre');
+  for (const p of plegados) assert.ok(p[3].length > 2000, 'adentro está el texto completo');
+  const fuera = card.replace(/<details class="uv-mas">[\s\S]*?<\/details>/g, '');
+  assert.ok(fuera.length < 6000, `a la vista queda poco texto (${fuera.length})`);
+  assert.match(UV, /\.uv-mas__txt \{[^}]*max-height: 40vh; overflow-y: auto;/, 'el texto completo se desplaza adentro');
+  assert.match(UV, /\.uv-mas summary \{[^}]*min-height: var\(--gds-target-min\)/, 'el «Ver…» se puede tocar con el dedo');
+});
+
+test('04 · La Factory ahora: con textos cortos no hay nada plegado', async () => {
+  const { m } = await home();
+  m.status = { ...m.status, tarea: 'BL-100 — Algo corto', motivo: 'Porque sí. Y por esto también.', proxima: 'Seguir.' };
+  const html = V.renderHome(m);
+  assert.doesNotMatch(html, /class="uv-mas"/);
+  assert.match(html, /<p class="gds-headline-2">Algo corto<\/p>/);
+  assert.match(html, /Por qué:<\/strong> Porque sí\. Y por esto también\.<\/p>/, 'dos oraciones cortas se ven enteras');
+});
+
 /* ------------------------------------------------------------ CD-5: celular */
 
 test('celular: etapas en vertical, sin desenfoque por tarjeta, cifras más chicas y puertas sin hover pegado', () => {
