@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Centro de mando — piel «Universo Shiruvana» v1.3.0 (BL-091 CD-1 fondo y cabecera · CD-2 Mesa de mando · CD-3 globo · CD-4 las otras vistas)
+   Centro de mando — piel «Universo Shiruvana» v1.4.0 (BL-091 CD-1 fondo y cabecera · CD-2 Mesa de mando · CD-3 globo · CD-4 las otras vistas · CD-5 celular)
    Se carga ÚLTIMA (tokens → componentes → disposición → universo).
 
    Qué hace:
@@ -212,7 +212,10 @@ body.gds {
 
 /* 05 · entornos como puertas */
 .uv-entornos .gds-card--inset { border: var(--gds-border-width) solid var(--uv-line); transition: border-color var(--gds-motion-base), box-shadow var(--gds-motion-base), transform var(--gds-motion-base); }
-.uv-entornos .gds-card--inset:hover { border-color: var(--uv-violet); box-shadow: 0 0 0 1px var(--uv-violet), 0 8px 24px var(--uv-glow-door); transform: translateY(-2px); }
+/* solo con mouse: en el celular un toque no deja la puerta «levantada» */
+@media (hover: hover) {
+  .uv-entornos .gds-card--inset:hover { border-color: var(--uv-violet); box-shadow: 0 0 0 1px var(--uv-violet), 0 8px 24px var(--uv-glow-door); transform: translateY(-2px); }
+}
 
 /* 06 · números en ámbar */
 .uv-numeros { display: grid; gap: var(--gds-space-3); }
@@ -283,6 +286,16 @@ body.svk-p-sentada #human-title + .gds-callout--success {
   .app-bar { padding: var(--gds-space-2) var(--gds-space-4); }
   .uv-lectura { display: none; }
   body.svk-p-sentada #human-title + .gds-callout--success { padding-right: var(--gds-space-4); background-image: none; }
+  /* CD-5: app.css ya apila las etapas; la línea pasa a vertical (horizontal cruzaba el primer punto) y el punto va al costado */
+  .factory .gds-stepper { padding-left: 18px; gap: var(--gds-space-2); }
+  .factory .gds-stepper::before { left: 4px; right: auto; top: 6px; bottom: 6px; width: 2px; height: auto; }
+  .factory .gds-stepper__step { justify-items: start; text-align: left; }
+  .factory .gds-stepper__step::before { position: absolute; left: -20px; top: 2px; }
+  /* CD-5: sin desenfoque detrás de cada tarjeta (en el celular hace saltar el scroll); el panel ya es casi opaco */
+  .gds-card, .uv-panel, .uv-numeros .gds-metric { -webkit-backdrop-filter: none; backdrop-filter: none; }
+  /* CD-5: cifras más chicas para que entren de a tres por fila */
+  .uv-cifras { gap: var(--gds-space-4); }
+  .uv-cifra b { font-size: 2rem; }
 }
 
 /* ------------------------------------------------------------ movimiento */
