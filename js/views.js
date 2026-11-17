@@ -1,5 +1,6 @@
 /**
- * js/views.js — Vistas del Centro de Decisiones. Funciones puras: modelo → string HTML.
+ * js/views.js — Vistas del Centro de mando (antes «Centro de decisiones»). Funciones puras: modelo → string HTML.
+ * Piel «Universo Shiruvana» (BL-091): clases uv-* estilizadas en css/universo.css.
  *
  * Construidas con el Gato Design System (gds/components.css, gds/icons.js):
  * - Todo texto proveniente de la memoria se escapa (esc) antes de insertarse.
@@ -260,16 +261,16 @@ export function renderHeader(model, route, loading) {
   const st = model ? humanStatus(model.statusInfo.code) : null;
   return `
   <div class="app-bar">
-    <a class="brand" href="#/hoy" aria-label="Gato Negro Factory — inicio">
-      ${brandMark(32)}
-      <span><strong class="gds-title-2">Gato Negro Factory</strong><span class="gds-caption gds-text-muted">Centro de decisiones</span></span>
+    <a class="brand" href="#/hoy" aria-label="Gato Negro Factory — Centro de mando, inicio">
+      <span class="uv-logo">${brandMark(32)}</span>
+      <span><strong class="gds-title-2">Gato Negro Factory</strong><span class="uv-sub">Centro de mando</span></span>
     </a>
     <nav class="app-nav gds-tabs" aria-label="Secciones">
       ${NAV.map(n => `<a href="#/${n.route}" class="gds-tab"${route === n.route ? ' aria-current="page"' : ''}>${icon(n.icon)}${n.label}${model && counts[n.route] ? ' ' + count(counts[n.route], pillLabel[n.route]) : ''}</a>`).join('')}
     </nav>
     <div class="app-meta gds-cluster">
-      ${model ? `${levelChip(st.level, st.text)}
-        <span class="gds-caption gds-text-muted">Leído ${esc(relTime(Date.now() - model.generatedAt))}
+      ${model ? `<span class="uv-pulso" aria-hidden="true"></span>${levelChip(st.level, st.text)}
+        <span class="uv-lectura gds-caption gds-text-muted">Leído ${esc(relTime(Date.now() - model.generatedAt))}
         ${model.ref ? `· <a class="gds-ref" href="${commitUrl('dev', model.ref)}" target="_blank" rel="noopener" title="Commit de la memoria leída">@${esc(model.ref.slice(0, 7))}</a>` : '· rama main'}</span>` : ''}
       <button id="btn-refresh" type="button" class="gds-button gds-button--secondary gds-button--sm" ${loading ? 'disabled aria-busy="true"' : ''}>${icon('refresh')}${loading ? 'Leyendo…' : 'Refrescar'}</button>
     </div>
