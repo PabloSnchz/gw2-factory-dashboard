@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Centro de mando — piel «Universo Shiruvana» v1.0.0 (BL-091 CD-1)
+   Centro de mando — piel «Universo Shiruvana» v1.1.0 (BL-091 CD-1 fondo y cabecera · CD-2 Mesa de mando)
    Se carga ÚLTIMA (tokens → componentes → disposición → universo).
 
    Qué hace:
@@ -41,6 +41,9 @@
   --uv-tint-violet: rgba(155, 130, 255, 0.14);
   --uv-ring-teal:   rgba(46, 196, 182, 0.55);
   --uv-shadow:      rgba(0, 0, 0, 0.45);
+  --uv-panel:       rgba(21, 21, 29, 0.86);
+  --uv-ring-amber:  rgba(232, 179, 75, 0.18);
+  --uv-glow-door:   rgba(155, 130, 255, 0.20);
 
   --uv-grid-step: 48px;
   --uv-header-blur: 10px;
@@ -153,10 +156,76 @@ body.gds {
 /* el contenido respira sobre el escenario */
 .app-footer { border-top-color: var(--uv-line); }
 
+/* ------------------------------------------------------------ 4. Hoy: Mesa de mando (CD-2) */
+.app-main { max-width: 1600px; }
+.app-main h1, .app-main h2 { font-weight: 800; letter-spacing: -0.01em; }
+
+/* antetítulos numerados, como en mi sitio */
+.uv-ante { margin: 0; font: var(--gds-font-label-2); font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--uv-amber); }
+.uv-ante--v { color: var(--uv-violet); }
+.uv-ante--t { color: var(--uv-teal); }
+
+/* 01 · Ahora: el veredicto grande y tres cifras en ámbar */
+.uv-ahora { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--gds-space-5); align-items: end; padding-bottom: var(--gds-space-2); }
+.uv-ahora h1 { font-size: clamp(1.8rem, 3.2vw, 2.8rem); line-height: 1.1; letter-spacing: -0.02em; max-width: 22ch; }
+.uv-cifras { display: flex; flex-wrap: wrap; gap: var(--gds-space-5); }
+.uv-cifra { margin: 0; display: grid; gap: var(--gds-space-1); }
+.uv-cifra b { font-size: 2.6rem; font-weight: 800; line-height: 1; color: var(--uv-amber); font-variant-numeric: tabular-nums; }
+.uv-cifra span { font: var(--gds-font-caption); color: var(--gds-color-text-muted); }
+.uv-cifra--cero b { color: var(--gds-color-text-muted); }
+
+/* la mesa: dos columnas */
+.uv-mesa { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(320px, 1fr); gap: var(--gds-space-5); align-items: start; }
+.uv-col { display: grid; gap: var(--gds-space-5); min-width: 0; align-content: start; }
+.uv-col .gds-grid { grid-template-columns: minmax(0, 1fr); }
+.uv-abajo { display: grid; gap: var(--gds-space-5); }
+
+/* paneles translúcidos sobre la cuadrícula */
+.gds-card, .uv-panel, .uv-numeros .gds-metric {
+  background: var(--uv-panel);
+  -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+  border-color: var(--uv-line);
+  border-radius: 14px;
+}
+.uv-panel { border: var(--gds-border-width) solid var(--uv-line); padding: var(--gds-card-padding); }
+.gds-card--inset { background: var(--gds-color-surface-2); -webkit-backdrop-filter: none; backdrop-filter: none; }
+.gds-card--accent { border-color: var(--uv-amber); box-shadow: 0 0 0 1px var(--uv-ring-amber); }
+.factory > .uv-ante, .uv-entornos > .uv-ante { margin-bottom: var(--gds-space-2); }
+
+/* 04 · etapas como línea con puntos; la actual late en ámbar */
+.factory .gds-stepper { position: relative; gap: 0; }
+.factory .gds-stepper::before { content: ""; position: absolute; left: 10%; right: 10%; top: 7px; height: 2px; background: var(--uv-line); }
+.factory .gds-stepper__step { position: relative; display: grid; justify-items: center; gap: var(--gds-space-2); padding: 0; background: none; border: 0; text-align: center; font: var(--gds-font-caption); letter-spacing: 0.06em; text-transform: uppercase; }
+.factory .gds-stepper__step .gds-icon { display: none; }
+.factory .gds-stepper__step::before { content: ""; width: 14px; height: 14px; border-radius: 50%; background: var(--uv-s1); border: 2px solid var(--uv-line-2); z-index: 1; }
+.factory .gds-stepper__step[data-state="done"]::before { background: var(--uv-teal); border-color: var(--uv-teal); }
+.factory .gds-stepper__step[data-state="current"] { color: var(--uv-amber); font-weight: 800; background: none; }
+.factory .gds-stepper__step[data-state="current"]::before { background: var(--uv-amber); border-color: var(--uv-amber); box-shadow: 0 0 0 5px var(--uv-ring-amber); animation: uv-late 2s ease-in-out infinite; }
+.factory .gds-stepper__step span:last-child { white-space: normal; }
+
+/* 03 · Hoy: líneas de tiempo con puntos */
+.uv-hoy .gds-timeline { position: relative; padding-left: 18px; gap: var(--gds-space-3); }
+.uv-hoy .gds-timeline::before { content: ""; position: absolute; left: 5px; top: 6px; bottom: 6px; width: 2px; background: linear-gradient(var(--uv-amber), var(--uv-violet), transparent); }
+.uv-hoy .gds-timeline__item { position: relative; grid-template-columns: minmax(0, 1fr); gap: 0; }
+.uv-hoy .gds-timeline__item::before { content: ""; position: absolute; left: -18px; top: 6px; width: 12px; height: 12px; border-radius: 50%; background: var(--uv-bg); border: 2px solid var(--uv-amber); }
+.uv-hoy .gds-timeline__time { font-family: inherit; }
+
+/* 05 · entornos como puertas */
+.uv-entornos .gds-card--inset { border: var(--gds-border-width) solid var(--uv-line); transition: border-color var(--gds-motion-base), box-shadow var(--gds-motion-base), transform var(--gds-motion-base); }
+.uv-entornos .gds-card--inset:hover { border-color: var(--uv-violet); box-shadow: 0 0 0 1px var(--uv-violet), 0 8px 24px var(--uv-glow-door); transform: translateY(-2px); }
+
+/* 06 · números en ámbar */
+.uv-numeros { display: grid; gap: var(--gds-space-3); }
+.uv-numeros .metrics { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+.uv-numeros .gds-metric__value { font-size: 1.7rem; font-weight: 800; line-height: 1.1; color: var(--uv-amber); font-variant-numeric: tabular-nums; }
+.uv-numeros a.gds-metric:hover { border-color: var(--uv-violet); }
+
 /* ------------------------------------------------------------ pantallas chicas */
 @media (max-width: 1080px) {
   .app-nav.gds-tabs { justify-self: stretch; overflow-x: auto; scrollbar-width: none; }
   .app-meta { flex-wrap: wrap; }
+  .uv-mesa { grid-template-columns: minmax(0, 1fr); }
+  .uv-ahora { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 640px) {
   .app-bar { padding: var(--gds-space-2) var(--gds-space-4); }
@@ -170,4 +239,7 @@ body.gds {
   .uv-chispas { display: none; }
   .uv-pulso { animation: none; }
   .app-nav .gds-tab { transition: none; }
+  .factory .gds-stepper__step[data-state="current"]::before { animation: none; }
+  .uv-entornos .gds-card--inset { transition: none; }
+  .uv-entornos .gds-card--inset:hover { transform: none; }
 }
