@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Centro de mando — piel «Universo Shiruvana» v1.4.0 (BL-091 CD-1 fondo y cabecera · CD-2 Mesa de mando · CD-3 globo · CD-4 las otras vistas · CD-5 celular)
+   Centro de mando — piel «Universo Shiruvana» v1.5.0 (BL-091 CD-1 fondo y cabecera · CD-2 Mesa de mando · CD-3 globo · CD-4 las otras vistas · CD-5 celular · 3.0.1 textos largos plegados)
    Se carga ÚLTIMA (tokens → componentes → disposición → universo).
 
    Qué hace:
@@ -202,6 +202,15 @@ body.gds {
 .factory .gds-stepper__step[data-state="current"] { color: var(--uv-amber); font-weight: 800; background: none; }
 .factory .gds-stepper__step[data-state="current"]::before { background: var(--uv-amber); border-color: var(--uv-amber); box-shadow: 0 0 0 5px var(--uv-ring-amber); animation: uv-late 2s ease-in-out infinite; }
 .factory .gds-stepper__step span:last-child { white-space: normal; }
+
+/* 04 · textos largos de status.md: la primera oración arriba; el resto plegado y con scroll propio (no estira la columna) */
+.uv-mas summary { display: inline-flex; align-items: center; min-height: var(--gds-target-min); cursor: pointer; color: var(--gds-color-text-link); }
+.uv-mas__txt {
+  margin-top: var(--gds-space-2); max-height: 40vh; overflow-y: auto; overscroll-behavior: contain; overflow-wrap: anywhere;
+  padding: var(--gds-space-3); border: var(--gds-border-width) solid var(--uv-line); border-radius: var(--gds-radius-md);
+  background: var(--gds-color-surface-2); color: var(--gds-color-text-secondary);
+}
+.uv-mas__txt:focus-visible { outline: 2px solid var(--gds-color-focus); outline-offset: 2px; }
 
 /* 03 · Hoy: líneas de tiempo con puntos */
 .uv-hoy .gds-timeline { position: relative; padding-left: 18px; gap: var(--gds-space-3); }
