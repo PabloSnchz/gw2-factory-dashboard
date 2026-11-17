@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Centro de mando — piel «Universo Shiruvana» v1.2.0 (BL-091 CD-1 fondo y cabecera · CD-2 Mesa de mando · CD-3 globo)
+   Centro de mando — piel «Universo Shiruvana» v1.3.0 (BL-091 CD-1 fondo y cabecera · CD-2 Mesa de mando · CD-3 globo · CD-4 las otras vistas)
    Se carga ÚLTIMA (tokens → componentes → disposición → universo).
 
    Qué hace:
@@ -233,12 +233,51 @@ body.svk-p-sentada #human-title + .gds-callout--success {
   background-position: right var(--gds-space-3) bottom; background-size: auto 124px;
 }
 
+/* ------------------------------------------------------------ 6. las otras vistas (CD-4) */
+/* Cabecera de cada vista: antetítulo, título y bajada a la izquierda; cifras en ámbar a la derecha */
+.uv-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--gds-space-5); align-items: end; }
+.uv-head h1 { font-size: clamp(1.8rem, 3vw, 2.4rem); line-height: 1.1; letter-spacing: -0.02em; }
+
+/* Pestañas dentro de una vista (Conocimiento, Actividad): cápsula como la de arriba */
+.app-main .gds-tabs {
+  width: fit-content; max-width: 100%; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none;
+  gap: var(--gds-space-optical); padding: var(--gds-space-1);
+  border: var(--gds-border-width) solid var(--uv-line); border-radius: var(--gds-radius-full); background: var(--uv-glass-pill);
+}
+.app-main .gds-tab { min-height: var(--gds-button-height-sm); padding: 0 var(--gds-space-3); border-radius: var(--gds-radius-full); border-bottom: 0; margin-bottom: 0; white-space: nowrap; }
+.gds .app-main a.gds-tab { color: var(--gds-color-text-muted); }
+.gds .app-main a.gds-tab:hover { color: var(--gds-color-text-primary); }
+.gds .app-main a.gds-tab[aria-current="page"] { background: var(--uv-amber); color: var(--uv-ink); font-weight: 700; }
+.app-main a.gds-tab[aria-current="page"] .gds-count { background: var(--uv-ink); color: var(--uv-amber); }
+
+/* Líneas de tiempo con puntos (Actividad y Etapas del plan), como en mi sitio */
+.uv-linea { position: relative; padding-left: 18px; gap: var(--gds-space-3); }
+.uv-linea::before { content: ""; position: absolute; left: 5px; top: 6px; bottom: 6px; width: 2px; background: linear-gradient(var(--uv-amber), var(--uv-violet), transparent); }
+.uv-linea > li { position: relative; }
+.uv-linea > li::before { content: ""; position: absolute; left: -18px; top: 6px; width: 12px; height: 12px; border-radius: 50%; background: var(--uv-bg); border: 2px solid var(--uv-amber); }
+.gds-list.uv-linea > li::before { top: var(--gds-space-4); border-color: var(--uv-violet); }
+
+/* Tablero: cada columna con la línea de su estado arriba */
+.board__col { border-top: var(--gds-border-width-thick) solid var(--uv-line-2); }
+.board__col--in_progress { border-top-color: var(--uv-amber); }
+.board__col--blocked { border-top-color: var(--gds-color-border-danger); }
+.board__col--ready { border-top-color: var(--uv-violet); }
+.board__col--done { border-top-color: var(--uv-teal); }
+
+/* Riesgos y Salud: la línea de arriba dice el nivel (el texto y el ícono también lo dicen) */
+.uv-nivel { border-top: var(--gds-border-width-thick) solid var(--uv-line-2); }
+.uv-nivel--critical { border-top-color: var(--gds-color-border-danger); }
+.uv-nivel--warn { border-top-color: var(--uv-amber); }
+.uv-nivel--info { border-top-color: var(--uv-violet); }
+.uv-nivel--ok { border-top-color: var(--uv-teal); }
+
 /* ------------------------------------------------------------ pantallas chicas */
 @media (max-width: 1080px) {
   .app-nav.gds-tabs { justify-self: stretch; overflow-x: auto; scrollbar-width: none; }
   .app-meta { flex-wrap: wrap; }
   .uv-mesa { grid-template-columns: minmax(0, 1fr); }
   .uv-ahora { grid-template-columns: minmax(0, 1fr); }
+  .uv-head { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 640px) {
   .app-bar { padding: var(--gds-space-2) var(--gds-space-4); }
