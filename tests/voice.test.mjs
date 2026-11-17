@@ -115,7 +115,7 @@ test('voz: solo decisiones de la Factory; las de Pablo no son "Shiruvana decidi�
 test('voz: nunca en la cabecera, las métricas ni sin nada que decir', async () => {
   const m = await model(files());
   const header = V.renderHeader(m, 'hoy', false);
-  assert.ok(header.includes('gds-brand-mark') && header.includes('Gato Negro Factory') && header.includes('Centro de decisiones'), 'la marca sigue en la cabecera');
+  assert.ok(header.includes('gds-brand-mark') && header.includes('Gato Negro Factory') && header.includes('Centro de mando'), 'la marca sigue en la cabecera (rótulo «Centro de mando», D4 de BL-091)');
   assert.ok(!header.includes('gds-voice'), 'la cabecera no lleva a Shiruvana');
   const html = V.renderHome(m);
   const metrics = html.slice(html.indexOf('id="metrics-title"'));
