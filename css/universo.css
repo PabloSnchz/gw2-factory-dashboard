@@ -1,0 +1,173 @@
+/* ==========================================================================
+   Centro de mando — piel «Universo Shiruvana» v1.0.0 (BL-091 CD-1)
+   Se carga ÚLTIMA (tokens → componentes → disposición → universo).
+
+   Qué hace:
+     1. Declara la paleta de mi sitio (--uv-*) en un único bloque :root.
+     2. Reasigna los colores semánticos del GDS (--gds-color-*) a esa paleta
+        dentro de body.gds: todos los componentes la heredan sin tocarlos.
+     3. Dibuja el fondo (cuadrícula, resplandores y chispas) y la cabecera en una línea.
+
+   Reglas (tests/universo.test.mjs):
+     - hex y rgba SOLO dentro del primer :root y solo como --uv-*;
+     - toda var(--uv-*) / var(--gds-*) usada existe;
+     - los pares de contraste del GDS (gds/contrast.mjs) siguen cumpliendo AA con la paleta nueva;
+     - con movimiento reducido no hay chispas ni latidos.
+   ========================================================================== */
+
+:root {
+  /* Paleta del sitio de Shiruvana (la misma de La Guarida y la bio) */
+  --uv-bg:      #0B0B10;
+  --uv-s1:      #15151D;
+  --uv-s2:      #1C1C26;
+  --uv-s3:      #2A2A38;
+  --uv-line:    #2A2A38;
+  --uv-line-2:  #3A3A4E;
+  --uv-control: #737390;
+  --uv-text:    #EDEDF2;
+  --uv-text-2:  #CFCFDB;
+  --uv-muted:   #A6A6B8;
+  --uv-amber:   #E8B34B;
+  --uv-violet:  #9B82FF;
+  --uv-teal:    #2EC4B6;
+  --uv-ink:     #111117;
+
+  /* Transparencias del escenario */
+  --uv-glow-violet: rgba(155, 130, 255, 0.20);
+  --uv-glow-amber:  rgba(232, 179, 75, 0.08);
+  --uv-grid:        rgba(255, 255, 255, 0.025);
+  --uv-glass:       rgba(11, 11, 16, 0.78);
+  --uv-glass-pill:  rgba(21, 21, 29, 0.75);
+  --uv-tint-violet: rgba(155, 130, 255, 0.14);
+  --uv-ring-teal:   rgba(46, 196, 182, 0.55);
+  --uv-shadow:      rgba(0, 0, 0, 0.45);
+
+  --uv-grid-step: 48px;
+  --uv-header-blur: 10px;
+}
+
+/* ------------------------------------------------------------ 1. el GDS habla con mi paleta */
+body.gds {
+  --gds-color-bg:             var(--uv-bg);
+  --gds-color-surface-1:      var(--uv-s1);
+  --gds-color-surface-2:      var(--uv-s2);
+  --gds-color-surface-3:      var(--uv-s3);
+  --gds-color-fill-neutral:       var(--uv-s2);
+  --gds-color-fill-neutral-hover: var(--uv-s3);
+  --gds-color-border-subtle:  var(--uv-line);
+  --gds-color-border-default: var(--uv-line-2);
+  --gds-color-border-control: var(--uv-control);
+  --gds-color-border-accent:  var(--uv-violet);
+  --gds-color-focus:          var(--uv-amber);
+  --gds-color-text-primary:   var(--uv-text);
+  --gds-color-text-secondary: var(--uv-text-2);
+  --gds-color-text-muted:     var(--uv-muted);
+  --gds-color-text-accent:    var(--uv-violet);
+  --gds-color-text-link:      var(--uv-violet);
+  --gds-color-icon-accent:    var(--uv-violet);
+  --gds-color-tint-primary:   var(--uv-tint-violet);
+}
+
+/* ------------------------------------------------------------ 2. fondo: cuadrícula + resplandores */
+body.gds {
+  min-height: 100vh;
+  background:
+    radial-gradient(40% 40% at 88% 4%, var(--uv-glow-violet), transparent 70%),
+    radial-gradient(35% 30% at 6% 30%, var(--uv-glow-amber), transparent 70%),
+    linear-gradient(var(--uv-grid) 1px, transparent 1px) 0 0 / 100% var(--uv-grid-step),
+    linear-gradient(90deg, var(--uv-grid) 1px, transparent 1px) 0 0 / var(--uv-grid-step) 100%,
+    var(--uv-bg);
+  background-attachment: fixed;
+}
+
+/* chispas: 12 puntos que suben despacio, detrás de todo */
+.uv-chispas { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+.uv-chispas i {
+  position: absolute; bottom: -10px; width: 3px; height: 3px; border-radius: 50%; opacity: 0;
+  background: var(--uv-amber); box-shadow: 0 0 8px var(--uv-amber);
+  left: calc(3% + var(--chispa-i, 0) * 8%);
+  animation: uv-chispa calc(9s + var(--chispa-i, 0) * 0.5s) linear calc(var(--chispa-i, 0) * -1s) infinite;
+}
+.uv-chispas i:nth-child(3n) { background: var(--uv-violet); box-shadow: 0 0 8px var(--uv-violet); }
+.uv-chispas i:nth-child(1)  { --chispa-i: 0; }
+.uv-chispas i:nth-child(2)  { --chispa-i: 1; }
+.uv-chispas i:nth-child(3)  { --chispa-i: 2; }
+.uv-chispas i:nth-child(4)  { --chispa-i: 3; }
+.uv-chispas i:nth-child(5)  { --chispa-i: 4; }
+.uv-chispas i:nth-child(6)  { --chispa-i: 5; }
+.uv-chispas i:nth-child(7)  { --chispa-i: 6; }
+.uv-chispas i:nth-child(8)  { --chispa-i: 7; }
+.uv-chispas i:nth-child(9)  { --chispa-i: 8; }
+.uv-chispas i:nth-child(10) { --chispa-i: 9; }
+.uv-chispas i:nth-child(11) { --chispa-i: 10; }
+.uv-chispas i:nth-child(12) { --chispa-i: 11; }
+
+/* ------------------------------------------------------------ 3. cabecera en una línea */
+.app-header {
+  background: var(--uv-glass);
+  -webkit-backdrop-filter: blur(var(--uv-header-blur));
+  backdrop-filter: blur(var(--uv-header-blur));
+  border-bottom-color: var(--uv-line);
+}
+.app-bar { max-width: none; padding: var(--gds-space-3) var(--gds-space-5); gap: var(--gds-space-3) var(--gds-space-5); }
+
+/* marca: el gato en un aro ámbar, rótulo en versalitas */
+.brand { gap: var(--gds-space-3); white-space: nowrap; }
+.uv-logo {
+  display: grid; place-items: center; width: var(--gds-target-min); height: var(--gds-target-min); flex: none;
+  border-radius: var(--gds-radius-full); background: var(--uv-ink);
+  box-shadow: 0 0 0 var(--gds-border-width-strong) var(--uv-amber);
+}
+.uv-logo svg { width: var(--gds-space-6); height: var(--gds-space-6); }
+.brand strong { font-weight: 800; letter-spacing: -0.01em; }
+.uv-sub {
+  font: var(--gds-font-label-2); letter-spacing: 0.14em; text-transform: uppercase; color: var(--gds-color-text-muted);
+}
+
+/* pestañas como cápsula; la actual en ámbar */
+.app-nav.gds-tabs {
+  justify-self: center; flex-wrap: nowrap; gap: var(--gds-space-optical); padding: var(--gds-space-1);
+  border: var(--gds-border-width) solid var(--uv-line); border-radius: var(--gds-radius-full);
+  background: var(--uv-glass-pill);
+}
+.app-nav .gds-tab {
+  min-height: var(--gds-button-height-sm); padding: 0 var(--gds-space-3);
+  border-radius: var(--gds-radius-full); border-bottom: 0; margin-bottom: 0; white-space: nowrap;
+  transition: background-color var(--gds-motion-fast), color var(--gds-motion-fast);
+}
+.gds .app-nav a.gds-tab { color: var(--gds-color-text-muted); }
+.gds .app-nav a.gds-tab:hover { color: var(--gds-color-text-primary); }
+.gds .app-nav a.gds-tab[aria-current="page"] { background: var(--uv-amber); color: var(--uv-ink); font-weight: 700; }
+.app-nav .gds-count { background: var(--uv-violet); color: var(--uv-ink); font-weight: 800; min-width: 18px; text-align: center; }
+.app-nav a.gds-tab[aria-current="page"] .gds-count { background: var(--uv-ink); color: var(--uv-amber); }
+
+/* a la derecha: latido, lectura y Refrescar */
+.app-meta { flex-wrap: nowrap; white-space: nowrap; }
+.uv-pulso {
+  width: 8px; height: 8px; border-radius: 50%; flex: none;
+  background: var(--uv-teal); box-shadow: 0 0 10px var(--uv-ring-teal);
+  animation: uv-late 2s ease-in-out infinite;
+}
+.app-meta .gds-button--secondary { border-radius: var(--gds-radius-md); background: var(--uv-glass-pill); border-color: var(--uv-line-2); }
+
+/* el contenido respira sobre el escenario */
+.app-footer { border-top-color: var(--uv-line); }
+
+/* ------------------------------------------------------------ pantallas chicas */
+@media (max-width: 1080px) {
+  .app-nav.gds-tabs { justify-self: stretch; overflow-x: auto; scrollbar-width: none; }
+  .app-meta { flex-wrap: wrap; }
+}
+@media (max-width: 640px) {
+  .app-bar { padding: var(--gds-space-2) var(--gds-space-4); }
+  .uv-lectura { display: none; }
+}
+
+/* ------------------------------------------------------------ movimiento */
+@keyframes uv-chispa { 0% { transform: translateY(0); opacity: 0; } 10% { opacity: 0.6; } 80% { opacity: 0.4; } 100% { transform: translateY(-120vh); opacity: 0; } }
+@keyframes uv-late { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+@media (prefers-reduced-motion: reduce) {
+  .uv-chispas { display: none; }
+  .uv-pulso { animation: none; }
+  .app-nav .gds-tab { transition: none; }
+}
