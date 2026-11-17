@@ -7,6 +7,11 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { parseTokens, checkPairs } from '../gds/contrast.mjs';
+import { createGitHub, memoryStorage } from '../js/github.js';
+import { loadAll } from '../js/loader.js';
+import { buildModel } from '../js/model.js';
+import * as V from '../js/views.js';
+import { readMemory, mockFetch, NOW } from './helpers.mjs';
 
 const read = p => readFileSync(new URL(`../${p}`, import.meta.url), 'utf8');
 const strip = css => css.replace(/\/\*[\s\S]*?\*\//g, '');
@@ -27,7 +32,7 @@ function overrides() {
 
 test('paleta: colores literales solo en el primer :root y solo como --uv-*', () => {
   assert.ok(ROOT, 'existe el bloque :root');
-  const names = [...ROOT[1].matchAll(/(--[\w-]+)\s*:/g)].map(x => x[1]);
+  const names = [...ROOT[1].matchAll(/([\w-]+)\s*:\s*[^;]+;/g)].map(x => x[1]);
   assert.deepEqual(names.filter(n => !n.startsWith('--uv-')), [], 'el :root solo declara --uv-*');
   assert.doesNotMatch(REST, /#[0-9a-fA-F]{3,8}\b/, 'sin hex fuera de la paleta');
   assert.doesNotMatch(REST, /\b(rgb|rgba|hsl|hsla)\(/, 'sin rgb/hsl fuera de la paleta');
@@ -91,4 +96,54 @@ test('cabecera: «Centro de mando», marca con aro y latido decorativo', () => {
   assert.doesNotMatch(head, /Centro de decisiones/, 'el rótulo viejo ya no aparece');
   assert.match(head, /<span class="uv-pulso" aria-hidden="true"><\/span>/);
   for (const cls of ['uv-logo', 'uv-sub', 'uv-pulso', 'uv-lectura']) assert.match(UV, new RegExp(`\\.${cls}\\b`), `${cls} tiene estilo`);
+});
+
+/* ------------------------------------------------------------ CD-2: Hoy como Mesa de mando (D1) */
+
+async function home() {
+  const gh = createGitHub({ owner: 'PabloSnchz', fetchImpl: mockFetch(readMemory()), storage: memoryStorage(), now: () => NOW, ttlMs: 1, prefix: 't:' });
+  const m = buildModel(await loadAll(gh, NOW));
+  return { m, html: V.renderHome(m) };
+}
+
+test('mesa: 01 · Ahora arriba y dos columnas; lo tuyo a la izquierda, la Factory a la derecha', async () => {
+  const { html } = await home();
+  assert.equal((html.match(/<div class="uv-mesa">/g) || []).length, 1, 'una sola mesa');
+  const cols = html.split('<div class="uv-col">');
+  assert.equal(cols.length, 3, 'dos columnas');
+  const [, left, right] = cols;
+  assert.ok(html.indexOf('verdict-title') < html.indexOf('uv-mesa'), 'el veredicto va arriba de la mesa');
+  for (const id of ['human-title']) assert.ok(left.includes(`id="${id}"`), `${id} en la izquierda`);
+  assert.ok(left.includes('uv-hoy') && left.includes('Esta semana'), 'lo que pasó, en la izquierda');
+  for (const id of ['factory-title', 'concerns-title']) assert.ok(right.includes(`id="${id}"`), `${id} en la derecha`);
+  assert.ok(!left.includes('factory-title') && !right.includes('human-title'), 'nada cruzado');
+  const abajo = html.slice(html.indexOf('<div class="uv-abajo">'));
+  assert.ok(abajo.includes('id="env-title"') && abajo.includes('id="metrics-title"'), 'entornos y números abajo');
+  assert.ok(abajo.indexOf('env-title') < abajo.indexOf('metrics-title'), '05 antes que 06');
+});
+
+test('mesa: antetítulos 01 a 06, cada uno una sola vez', async () => {
+  const { html } = await home();
+  const antes = [...html.matchAll(/<p class="uv-ante[^"]*">(\d\d) · ([^<]+)<\/p>/g)].map(x => x[1]);
+  assert.deepEqual(antes, ['01', '02', '03', '04', '05', '06'], 'en orden de lectura: el lector de pantalla los oye en el mismo orden');
+});
+
+test('mesa: tres cifras; «te esperan» es la cantidad de pendientes y el cero va en gris', async () => {
+  const { m, html } = await home();
+  const cifras = [...html.matchAll(/<p class="uv-cifra( uv-cifra--cero)?"><b>(\d+)<\/b><span>([^<]+)<\/span><\/p>/g)];
+  assert.equal(cifras.length, 3);
+  assert.equal(Number(cifras[0][2]), m.human.length);
+  assert.equal(cifras[0][3], 'te esperan');
+  for (const c of cifras) assert.equal(Boolean(c[1]), Number(c[2]) === 0, `${c[3]}: gris solo si es cero`);
+  assert.match(html, /<div class="uv-cifras" role="group" aria-label="En números">/);
+});
+
+test('mesa: estilos — dos columnas que se apilan en pantallas chicas, cifras en ámbar', () => {
+  assert.match(UV, /\.uv-mesa\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1\.55fr\) minmax\(320px, 1fr\)/);
+  const chica = UV.slice(UV.indexOf('@media (max-width: 1080px)'));
+  assert.match(chica.slice(0, chica.indexOf('}\n}') + 3), /\.uv-mesa\s*\{\s*grid-template-columns:\s*minmax\(0, 1fr\)/, 'en ≤ 1080 px una columna');
+  assert.match(UV, /\.uv-cifra b\s*\{[^}]*color:\s*var\(--uv-amber\)/);
+  assert.match(UV, /\.uv-cifra--cero b\s*\{[^}]*color:\s*var\(--gds-color-text-muted\)/);
+  const rm = UV.slice(UV.indexOf('@media (prefers-reduced-motion: reduce)'));
+  assert.match(rm, /data-state="current"\]::before\s*\{\s*animation:\s*none/, 'la etapa actual no late con movimiento reducido');
 });
