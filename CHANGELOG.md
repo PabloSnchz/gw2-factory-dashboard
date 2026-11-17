@@ -2,6 +2,12 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionado SemVer.
 
+## [3.0.1] — 2026-11-17
+
+### Fixed
+- **«04 · La Factory ahora» se estiraba sin fin** (lo vio Pablo en el teléfono): la tarea, el motivo y la próxima acción de `status.md` traen miles de caracteres de historial y la tarjeta los mostraba enteros, así que todo lo demás de la columna derecha quedaba muy abajo. Ahora cada uno muestra su primera oración (o el texto entero si es corto) y el resto queda plegado en «Ver la tarea completa», «Ver el motivo completo» y «Ver la próxima acción completa», con scroll propio de hasta 40 % de la pantalla. `js/views.js` (`resumen()`), `css/universo.css` 1.5.0.
+- Tests: 3 nuevos en `tests/universo.test.mjs` (127 en total), 14/14 mutaciones detectadas.
+
 ## [3.0.0] — 2026-11-17
 
 **El Centro de mando, en el universo de Shiruvana** (BL-091, micro-ciclos CD-0 a CD-5; la maqueta CD-0 la aprobó Pablo con las cuatro recomendadas: Mesa de mando, globo con el gato, botones a la vista y «Centro de mando»). Es MAJOR porque cambian el nombre y la estructura de la vista principal, y el panel suma un recurso de otro sitio (el kit de Shiruvana, con versión fija).
