@@ -90,6 +90,36 @@ export function plainTitle(text) {
   return String(text || '').replace(/^(\[?(DEC|LES|FEAT|BL|RSK|REQ|RESP)-\d{3}\]?\s*[—:\-–]?\s*)+/, '').trim();
 }
 
+/**
+ * Resumen de un texto largo de status.md (la tarea, el motivo, la próxima acción pueden traer miles de
+ * caracteres de historial): si entra en `max`, el texto entero; si no, la primera oración, cortada en una
+ * palabra entera con «…» si también pasa de `max`.
+ */
+export const RESUMEN_MAX = 220;
+export function resumen(text, max = RESUMEN_MAX) {
+  const s = String(text || '').replace(/\s+/g, ' ').trim();
+  if (s.length <= max) return s;
+  const primera = (s.match(/^.+?[.!?](?=\s|$)/) || [s])[0];
+  if (primera.length <= max) return primera;
+  const cut = primera.slice(0, max);
+  const sp = cut.lastIndexOf(' ');
+  return (sp > max * 0.6 ? cut.slice(0, sp) : cut).replace(/[\s,.;:—-]+$/, '') + '…';
+}
+
+/** El texto completo, plegado debajo del resumen (solo si el resumen no lo dice todo). Se desplaza adentro, no estira la página. */
+const DETALLE = {
+  tarea: ['Ver la tarea completa', 'Tarea actual, texto completo'],
+  motivo: ['Ver el motivo completo', 'Motivo, texto completo'],
+  proxima: ['Ver la próxima acción completa', 'Próxima acción, texto completo'],
+};
+function detalle(text, max, que, m) {
+  const s = String(text || '').replace(/\s+/g, ' ').trim();
+  if (resumen(s, max) === s) return '';
+  const [ver, nombre] = DETALLE[que];
+  return `<details class="uv-mas"><summary class="gds-caption">${esc(ver)}</summary>
+    <div class="uv-mas__txt gds-body-2" tabindex="0" role="region" aria-label="${esc(nombre)}">${t(s, m)}</div></details>`;
+}
+
 /** Primer párrafo de un texto markdown, en una línea (para resúmenes). */
 function firstParagraph(md) {
   return String(md || '').trim().split(/\n\s*\n/)[0].replace(/^\s*[-*]\s+/gm, '').replace(/\s*\n\s*/g, ' ').trim();
@@ -386,8 +416,14 @@ export function renderHome(m) {
       <div class="gds-cluster">${levelChip(st.level, st.text)}${m.fase ? `<a class="gds-ref" href="#/trabajo">${esc(m.fase.id)} · ${esc(m.fase.nombre)}</a>` : ''}</div>
     </div>
     <div class="gds-stack">
-      <p class="gds-headline-2">${s.tarea ? t(plainTitle(s.tarea), m) : na('status.md no declara tarea')}</p>
-      <p class="gds-body-1 gds-text-secondary gds-measure"><strong class="gds-label-1">Por qué:</strong> ${s.motivo ? t(s.motivo, m) : na('falta "Motivo:" en status.md')}</p>
+      <div class="gds-stack--sm gds-stack">
+        <p class="gds-headline-2">${s.tarea ? t(resumen(plainTitle(s.tarea), 140), m) : na('status.md no declara tarea')}</p>
+        ${s.tarea ? detalle(plainTitle(s.tarea), 140, 'tarea', m) : ''}
+      </div>
+      <div class="gds-stack--sm gds-stack">
+        <p class="gds-body-1 gds-text-secondary gds-measure"><strong class="gds-label-1">Por qué:</strong> ${s.motivo ? t(resumen(s.motivo), m) : na('falta "Motivo:" en status.md')}</p>
+        ${s.motivo ? detalle(s.motivo, RESUMEN_MAX, 'motivo', m) : ''}
+      </div>
       <ol class="gds-stepper" aria-label="Etapa del trabajo">
         ${WORKFLOW.map(([w, label], i) => {
           const state = stageIdx === -1 ? 'todo' : i < stageIdx || (i === stageIdx && stageDone) ? 'done' : i === stageIdx ? 'current' : 'todo';
@@ -398,7 +434,7 @@ export function renderHome(m) {
       <dl class="facts">
         <div><dt>Tiempo en ejecución</dt><dd>${si.inicio ? esc(duration(si.enEjecucionMs)) + ` <span class="gds-caption gds-text-muted">desde ${esc(fmtDate(si.inicio, true))}</span>` : na('falta "Inicio:" en status.md')}</dd></div>
         <div><dt>Última actualización</dt><dd>${si.actualizado ? esc(relTime(si.desdeActualizacionMs)) : na()}</dd></div>
-        <div class="facts__wide"><dt>Próxima acción</dt><dd>${s.proxima ? t(s.proxima, m) : na()}</dd></div>
+        <div class="facts__wide"><dt>Próxima acción</dt><dd>${s.proxima ? t(resumen(s.proxima), m) + detalle(s.proxima, RESUMEN_MAX, 'proxima', m) : na()}</dd></div>
       </dl>
     </div>
   </section>
