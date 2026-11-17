@@ -446,6 +446,22 @@ function cifra(n, label) {
   return `<p class="uv-cifra${n ? '' : ' uv-cifra--cero'}"><b>${n}</b><span>${esc(label)}</span></p>`;
 }
 
+/**
+ * Cabecera de una vista en el universo (CD-4): antetítulo, el único h1, bajada y cifras en ámbar.
+ * `sub` y `extra` son HTML ya escapado; `cifras` son pares [número, rótulo].
+ */
+function pageHead(ante, title, sub, cifras = [], extra = '') {
+  return `<header class="page-head uv-head">
+    <div class="gds-stack--sm gds-stack">
+      <p class="uv-ante">${esc(ante)}</p>
+      <h1 class="gds-headline-1">${esc(title)}</h1>
+      ${sub ? `<div class="gds-body-2 gds-text-secondary">${sub}</div>` : ''}
+      ${extra}
+    </div>
+    ${cifras.length ? `<div class="uv-cifras" role="group" aria-label="En números">${cifras.map(([n, l]) => cifra(n, l)).join('')}</div>` : ''}
+  </header>`;
+}
+
 /* ------------------------------------------------------------ voz de Shiruvana (DEC-024) */
 
 /** Advertencias de Shiruvana: riesgos CRÍTICOS abiertos, que detienen la Factory (DEC-023 §6). Un solo bloque, un avatar. */
@@ -559,10 +575,12 @@ export function renderWork(m) {
     ['IN_PROGRESS', 'En curso', 'arrow'], ['BLOCKED', 'Bloqueado', 'alert'], ['READY', 'Listo para hacer', 'clock'], ['DONE', 'Hecho', 'check'],
   ];
   return `
-  <header class="page-head gds-stack--sm gds-stack"><h1 class="gds-headline-1">Trabajo</h1><p class="gds-body-2 gds-text-secondary">Hacia dónde va la Factory y en qué está cada tarea.</p></header>
+  ${pageHead('01 · El plan', 'Trabajo', 'Hacia dónde va la Factory y en qué está cada tarea.',
+    b ? [[b.IN_PROGRESS.length, 'en curso'], [b.BLOCKED.length, b.BLOCKED.length === 1 ? 'bloqueada' : 'bloqueadas'], [b.READY.length, 'listas para hacer'], [b.DONE.length, 'hechas']] : [])}
   <section class="gds-card" aria-labelledby="roadmap-title">
+    <p class="uv-ante uv-ante--v">02 · Etapas</p>
     <div class="gds-card__header"><h2 id="roadmap-title" class="gds-title-1">Etapas del plan</h2></div>
-    ${m.roadmap && m.roadmap.length ? `<ol class="gds-list">${m.roadmap.map(p => {
+    ${m.roadmap && m.roadmap.length ? `<ol class="gds-list uv-linea">${m.roadmap.map(p => {
       const lvl = /CURSO/.test(p.estado) ? ['accent', 'arrow', 'En curso'] : /HECH|COMPLET|DONE/.test(p.estado) ? ['success', 'check', 'Hecha'] : ['', 'clock', p.estado ? p.estado.charAt(0) + p.estado.slice(1).toLowerCase() : 'Sin estado'];
       return `<li class="gds-list__item">${icon(lvl[1])}<div class="gds-stack--sm gds-stack">
         <p class="gds-cluster"><strong class="gds-title-2">${esc(p.nombre)}</strong>${statusChip(lvl[2], lvl[0], lvl[1])}<span class="gds-ref">${esc(p.id)}</span></p>
@@ -570,8 +588,9 @@ export function renderWork(m) {
         <p class="gds-caption gds-text-secondary"><strong>Termina cuando:</strong> ${t(p.criterio, m)}</p></div></li>`;
     }).join('')}</ol>` : na('roadmap.md no disponible')}
   </section>
-  ${b ? `<div class="board">${cols.map(([k, label, ic]) => `
-    <section class="gds-card board__col" aria-labelledby="col-${k}">
+  ${b ? `<p class="uv-ante uv-ante--t">03 · Tablero</p>
+  <div class="board">${cols.map(([k, label, ic]) => `
+    <section class="gds-card board__col board__col--${k.toLowerCase()}" aria-labelledby="col-${k}">
       <div class="gds-card__header"><h2 id="col-${k}" class="gds-title-2">${icon(ic)} ${label} ${count(b[k].length)}</h2></div>
       ${b[k].length ? `<ul class="gds-list">${b[k].map(it => `
         <li class="gds-list__item ticket"><div class="gds-stack--sm gds-stack">
@@ -591,7 +610,8 @@ export function renderKnowledge(m, sub) {
   const resumen = new Map(Object.values(m.index || {}).flat().filter(x => x && x.id).map(x => [x.id, x.resumen]));
   const backlinks = buildBacklinks(m);
   return `
-  <header class="page-head gds-stack--sm gds-stack"><h1 class="gds-headline-1">Conocimiento</h1><p class="gds-body-2 gds-text-secondary">Lo que la Factory decidió, aprendió y construyó.</p></header>
+  ${pageHead('01 · Lo que sé', 'Conocimiento', 'Lo que la Factory decidió, aprendió y construyó.',
+    tabs.map(x => [(m.entries[x.prefix] || []).length, x.label.toLowerCase()]))}
   <nav class="gds-tabs" aria-label="Tipo de registro">${tabs.map(x => `<a href="#/conocimiento/${x.key}" class="gds-tab"${x === active ? ' aria-current="page"' : ''}>${esc(x.label)} ${count((m.entries[x.prefix] || []).length)}</a>`).join('')}</nav>
   ${list.length ? `<div class="gds-grid">${list.slice().reverse().map(e => `
     <a class="gds-card gds-stack--sm gds-stack" href="#/item/${esc(e.id || '')}">
@@ -685,8 +705,9 @@ export function renderRisks(m) {
     ['Mitigados o cerrados', risks.filter(r => r.estado !== 'ABIERTO'), 'ok'],
   ];
   return `
-  <header class="page-head gds-stack--sm gds-stack"><h1 class="gds-headline-1">Riesgos</h1><p class="gds-body-2 gds-text-secondary">${open.length} abiertos · ${risks.length - open.length} mitigados o cerrados.</p></header>
-  ${groups.map(([title, list, lvl], gi) => `<section class="gds-card" aria-labelledby="rg-${gi}">
+  ${pageHead('01 · Lo que vigilo', 'Riesgos', `${open.length} abiertos · ${risks.length - open.length} mitigados o cerrados.`,
+    [[groups[0][1].length, 'críticos abiertos'], [groups[1][1].length, 'altos abiertos'], [groups[2][1].length, 'otros abiertos']])}
+  ${groups.map(([title, list, lvl], gi) => `<section class="gds-card uv-nivel uv-nivel--${lvl}" aria-labelledby="rg-${gi}">
     <div class="gds-card__header"><h2 id="rg-${gi}" class="gds-title-1">${icon(LEVEL[lvl].icon, 'is-' + LEVEL[lvl].variant)} ${esc(title)} ${count(list.length)}</h2></div>
     ${list.length ? `<div class="gds-table-wrap"><table class="gds-table"><thead><tr><th scope="col">Riesgo</th><th scope="col">Severidad</th><th scope="col">Qué se hace</th><th scope="col">Responsable</th></tr></thead><tbody>
       ${list.map(r => `<tr><td>${t(r.riesgo, m)} ${ref(r.id, m)}</td><td>${prioChip(r.severidad)}</td><td>${t(r.mitigacion, m)}</td><td>${esc(r.responsable)}</td></tr>`).join('')}
@@ -717,14 +738,14 @@ export function renderActivity(m, range) {
   const devCount = m.commits.filter(c => c.repo === 'dev' && c.date.getTime() >= from).length;
   const dashCount = m.commits.filter(c => c.repo === 'dashboard' && c.date.getTime() >= from).length;
 
+  const memCount = events.length - devCount - dashCount;
   return `
-  <header class="page-head gds-stack--sm gds-stack"><h1 class="gds-headline-1">Actividad</h1>
-    <nav class="gds-tabs" aria-label="Período">${Object.keys(RANGES).map(k => `<a href="#/actividad/${k}" class="gds-tab"${k === r ? ' aria-current="page"' : ''}>${RANGE_LABEL[k]}</a>`).join('')}</nav>
-    <p class="gds-body-2 gds-text-secondary">${devCount} commits en DEV · ${dashCount} en el panel · ${events.length - devCount - dashCount} registros de memoria.</p>
-  </header>
+  ${pageHead('01 · Lo que pasó', 'Actividad', `${RANGE_LABEL[r]}.`,
+    [[devCount, 'commits en DEV'], [dashCount, 'commits en el panel'], [memCount, 'registros de memoria']],
+    `<nav class="gds-tabs" aria-label="Período">${Object.keys(RANGES).map(k => `<a href="#/actividad/${k}" class="gds-tab"${k === r ? ' aria-current="page"' : ''}>${RANGE_LABEL[k]}</a>`).join('')}</nav>`)}
   ${events.length ? [...byDay.entries()].map(([day, list]) => `<section class="gds-card" aria-label="${esc(day)}">
     <div class="gds-card__header"><h2 class="gds-title-1">${esc(day)}</h2></div>
-    <ul class="gds-timeline">${list.map(e => `<li class="gds-timeline__item"><span class="gds-timeline__time">${e.time ? esc(e.date.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })) : 'día'}</span><span>${e.html}</span></li>`).join('')}</ul>
+    <ul class="gds-timeline uv-linea">${list.map(e => `<li class="gds-timeline__item"><span class="gds-timeline__time">${e.time ? esc(e.date.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })) : 'día'}</span><span>${e.html}</span></li>`).join('')}</ul>
   </section>`).join('') : empty('Sin actividad en el período.')}`;
 }
 
@@ -737,13 +758,12 @@ export function renderHealth(m) {
   const GROUP_TITLE = { critical: 'Críticos', warn: 'Para revisar', info: 'Informativos' };
   const headline = h.level === 'ok' ? 'Sin problemas detectados' : h.level === 'critical' ? 'Hay problemas críticos' : 'Hay puntos para revisar';
   return `
-  <header class="page-head gds-stack--sm gds-stack"><h1 class="gds-headline-1">Salud</h1>
-    <p class="gds-cluster">${levelChip(h.level, headline)}<span class="gds-caption gds-text-muted">${h.counts.critical || 0} críticos · ${h.counts.warn || 0} para revisar · ${h.counts.info || 0} informativos</span></p>
-  </header>
+  ${pageHead('01 · Cómo estoy', 'Salud', `<p class="gds-cluster">${levelChip(h.level, headline)}</p>`,
+    [[h.counts.critical || 0, 'críticos'], [h.counts.warn || 0, 'para revisar'], [h.counts.info || 0, 'informativos']])}
   ${groups.map(g => {
     const list = h.checks.filter(c => c.level === g);
     if (!list.length) return '';
-    return `<section class="gds-card" aria-labelledby="hg-${g}"><div class="gds-card__header"><h2 id="hg-${g}" class="gds-title-1">${icon(LEVEL[g].icon, 'is-' + LEVEL[g].variant)} ${GROUP_TITLE[g]} ${count(list.length)}</h2></div>
+    return `<section class="gds-card uv-nivel uv-nivel--${g}" aria-labelledby="hg-${g}"><div class="gds-card__header"><h2 id="hg-${g}" class="gds-title-1">${icon(LEVEL[g].icon, 'is-' + LEVEL[g].variant)} ${GROUP_TITLE[g]} ${count(list.length)}</h2></div>
       <ul class="gds-list">${list.map(c => `<li class="gds-list__item">${icon(LEVEL[g].icon, 'is-' + LEVEL[g].variant)}<div class="gds-stack--sm gds-stack">
         <p class="gds-label-1">${t(c.title, m)}</p>
         ${c.detail ? `<p class="gds-body-2 gds-text-secondary">${t(c.detail, m)}</p>` : ''}
