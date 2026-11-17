@@ -147,3 +147,57 @@ test('mesa: estilos — dos columnas que se apilan en pantallas chicas, cifras e
   const rm = UV.slice(UV.indexOf('@media (prefers-reduced-motion: reduce)'));
   assert.match(rm, /data-state="current"\]::before\s*\{\s*animation:\s*none/, 'la etapa actual no late con movimiento reducido');
 });
+
+/* ------------------------------------------------------------ CD-4: las otras cinco vistas */
+
+async function vistas() {
+  const { m } = await home();
+  return { m, v: {
+    trabajo: V.renderWork(m), conocimiento: V.renderKnowledge(m, 'dec'), riesgos: V.renderRisks(m),
+    actividad: V.renderActivity(m, '7d'), salud: V.renderHealth(m),
+  } };
+}
+const head = html => html.slice(html.indexOf('<header class="page-head uv-head">'), html.indexOf('</header>') + 9);
+
+test('vistas: cada una abre con «01 · …», su único h1 y tres o más cifras en ámbar', async () => {
+  const { v } = await vistas();
+  const antes = { trabajo: '01 · El plan', conocimiento: '01 · Lo que sé', riesgos: '01 · Lo que vigilo', actividad: '01 · Lo que pasó', salud: '01 · Cómo estoy' };
+  for (const [k, html] of Object.entries(v)) {
+    const h = head(html);
+    assert.ok(h.length > 40, `${k}: cabecera del universo`);
+    assert.ok(h.includes(`<p class="uv-ante">${antes[k]}</p>`), `${k}: antetítulo`);
+    assert.equal((html.match(/<h1\b/g) || []).length, 1, `${k}: un solo h1`);
+    assert.ok(h.indexOf('uv-ante') < h.indexOf('<h1'), `${k}: el antetítulo va antes del título`);
+    assert.match(h, /<div class="uv-cifras" role="group" aria-label="En números">/, `${k}: cifras`);
+    assert.ok((h.match(/class="uv-cifra/g) || []).length >= 3, `${k}: al menos tres cifras`);
+    assert.ok(!/undefined|NaN/.test(h), `${k}: sin datos rotos`);
+  }
+});
+
+test('vistas: las cifras dicen lo mismo que la vista', async () => {
+  const { m, v } = await vistas();
+  const nums = h => [...head(h).matchAll(/<b>(\d+)<\/b><span>([^<]+)<\/span>/g)].map(x => [Number(x[1]), x[2]]);
+  const b = m.backlog;
+  assert.deepEqual(nums(v.trabajo).map(x => x[0]), [b.IN_PROGRESS.length, b.BLOCKED.length, b.READY.length, b.DONE.length]);
+  const crit = m.risks.filter(r => r.estado === 'ABIERTO' && r.severidad === 'CRÍTICO').length;
+  assert.deepEqual(nums(v.riesgos)[0], [crit, 'críticos abiertos']);
+  assert.deepEqual(nums(v.salud).map(x => x[0]), [m.health.counts.critical || 0, m.health.counts.warn || 0, m.health.counts.info || 0]);
+  assert.deepEqual(nums(v.conocimiento)[0][0], (m.entries.DEC || []).length);
+  assert.match(head(v.actividad), /<nav class="gds-tabs" aria-label="Período">/, 'el período se elige desde la cabecera');
+});
+
+test('vistas: líneas de tiempo con puntos, tablero y niveles con su color', async () => {
+  const { v } = await vistas();
+  assert.match(v.actividad, /<ul class="gds-timeline uv-linea">/);
+  assert.match(v.trabajo, /<ol class="gds-list uv-linea">/, 'etapas del plan como línea de tiempo');
+  for (const k of ['in_progress', 'blocked', 'ready', 'done']) {
+    assert.match(v.trabajo, new RegExp(`board__col board__col--${k}"`), k);
+    assert.match(UV, new RegExp(`\\.board__col--${k} \\{ border-top-color:`), `${k} tiene color`);
+  }
+  assert.match(v.riesgos, /class="gds-card uv-nivel uv-nivel--critical"/);
+  for (const n of ['critical', 'warn', 'info', 'ok']) assert.match(UV, new RegExp(`\\.uv-nivel--${n} \\{ border-top-color:`), n);
+  assert.match(UV, /\.uv-linea > li::before \{[^}]*border-radius: 50%/, 'punto en cada evento');
+  assert.match(UV, /\.gds \.app-main a\.gds-tab\[aria-current="page"\] \{ background: var\(--uv-amber\); color: var\(--uv-ink\)/, 'pestaña actual en ámbar, texto oscuro (10:1)');
+  const chica = UV.slice(UV.indexOf('@media (max-width: 1080px)'));
+  assert.match(chica.slice(0, chica.indexOf('}\n}') + 3), /\.uv-head \{ grid-template-columns: minmax\(0, 1fr\); \}/, 'en pantallas chicas, una columna');
+});
