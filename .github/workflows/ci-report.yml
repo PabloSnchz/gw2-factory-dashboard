@@ -1,6 +1,6 @@
 # Informe del CI para la Factory (BL-091).
 # La Factory no puede leer los logs de Actions. Este workflow corre la suite en cada push a main
-# y, si falla, deja la salida completa en ci/ULTIMO.md. Cuando vuelve a verde, lo marca verde.
+# y deja el resultado en ci/ULTIMO.md con el commit verificado: VERDE con el conteo o FALLA con la salida.
 #
 # Seguridad: solo en este repo y solo con pushes del dueño; nada del evento entra a un comando;
 # el único archivo que commitea es ci/ULTIMO.md (verificado antes del commit).
@@ -45,16 +45,13 @@ jobs:
           exit 0
 
       - name: Escribir ci/ULTIMO.md
-        id: write
         run: |
           mkdir -p ci
-          prev=""
-          [ -f ci/ULTIMO.md ] && prev=$(head -n 1 ci/ULTIMO.md)
           if [ "${{ steps.suite.outputs.code }}" != "0" ]; then
             {
               echo "# CI: FALLA"
               echo
-              echo "- Commit: $GITHUB_SHA"
+              echo "- Commit verificado: $(git rev-parse HEAD)"
               echo "- Fecha: $(date -u +%Y-%m-%dT%H:%MZ)"
               echo
               echo "## Fallas"
@@ -69,23 +66,18 @@ jobs:
               tail -c 60000 "$RUNNER_TEMP/out.txt"
               echo '```'
             } > ci/ULTIMO.md
-            echo "commit=1" >> "$GITHUB_OUTPUT"
-          elif [ "$prev" != "# CI: VERDE" ]; then
+          else
             {
               echo "# CI: VERDE"
               echo
-              echo "- Commit: $GITHUB_SHA"
+              echo "- Commit verificado: $(git rev-parse HEAD)"
               echo "- Fecha: $(date -u +%Y-%m-%dT%H:%MZ)"
               echo
               grep -E "^ℹ (tests|pass|fail)" "$RUNNER_TEMP/out.txt"
             } > ci/ULTIMO.md
-            echo "commit=1" >> "$GITHUB_OUTPUT"
-          else
-            echo "commit=0" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Commit del informe
-        if: steps.write.outputs.commit == '1'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
