@@ -10,6 +10,8 @@
  * - Marca y voz (DEC-024): la cabecera es la marca Gato Negro Factory y no cambia. Cuando Shiruvana
  *   recomienda, advierte, decide o resume se usa voice() (gds/voice.js), con un solo avatar por sección.
  *   Los datos del sistema (métricas, listas, tarjetas de datos) nunca llevan su avatar.
+ * - Dos dueñas (S-4b, DEC-053): lo de Shiruna llega con `duena` y su texto se escapa sin enlazar IDs
+ *   (sus IDs son suyos, no de mi memoria). Las piezas que se pueden filtrar llevan data-duena.
  */
 
 import { CONFIG, blobUrl, commitUrl, repoUrl } from './config.js';
@@ -18,6 +20,7 @@ import { responseActions, buildIssueUrl } from './respond.js';
 import { RESPONSES } from './decisions.js';
 import { icon, brandMark } from '../gds/icons.js';
 import { voice } from '../gds/voice.js';
+import { renderHija, renderFiltro, DUENA_MIA } from './hija.js';
 
 const WORKFLOW = [
   ['PRODUCT', 'Producto'], ['ARCHITECTURE', 'Arquitectura'], ['DEVELOPMENT', 'Desarrollo'],
@@ -211,20 +214,23 @@ function renderDecisionCard(h, m, first, { level = 'h3', title = null, voiceAvat
   const body = h.clase === 'decision' && req
     ? `<div class="gds-stack">${labeled('Contexto', req.quePaso, m)}${labeled('Impacto', req.porQueImporta, m)}${labeled('Por qué te lo pregunto', req.justificacion, m)}</div>`
     : (why && !(req && req.recomendacion && why === h.pregunta) ? `<p class="gds-body-2 gds-text-secondary gds-measure">${t(why, m)}</p>` : '');
-  return `<article class="gds-card decision${first ? ' gds-card--accent' : ''}" aria-labelledby="${esc(headId)}">
+  return `<article class="gds-card decision${first ? ' gds-card--accent' : ''}" aria-labelledby="${esc(headId)}" data-duena="${esc(h.duena ? h.duenaKey : DUENA_MIA)}">
     <div class="decision__meta gds-cluster">
       ${statusChip(cl.label, 'accent', cl.icon)}
+      ${h.duena ? statusChip('De ' + h.duena, 'info', 'info') : ''}
       ${prioChip(h.prioridad)}
       ${h.esperaMs != null ? `<span class="gds-caption gds-text-muted">${icon('clock')} Esperando ${esc(duration(h.esperaMs))}</span>` : ''}
     </div>
-    <${level} id="${esc(headId)}" class="gds-title-1">${title ? esc(title) : t(plainTitle(h.titulo), m)}</${level}>
+    <${level} id="${esc(headId)}" class="gds-title-1">${title ? esc(title) : h.duena ? esc(h.titulo) : t(plainTitle(h.titulo), m)}</${level}>
     ${body}
     ${req && req.opciones && req.opciones.length ? `<ul class="decision__options gds-body-2">${req.opciones.map(o => `<li><strong>${esc(o.clave)}</strong> — ${t(o.texto, m)}</li>`).join('')}</ul>` : ''}
     ${req && req.recomendacion ? voice({ kind: 'recomienda', body: `<p>${t(req.recomendacion.texto, m)}</p>`, avatar: voiceAvatar }) : ''}
     ${req && req.comoHacerlo ? `<details class="decision__how"><summary class="gds-label-1">Cómo hacerlo</summary><div class="md gds-body-2">${linkIdsInHtml(mdToHtml(req.comoHacerlo, () => '#'), m)}</div></details>` : ''}
     ${failed ? renderChannelItem(failed, m, true) : ''}
-    ${req ? renderRespond(req, m) : `<p class="gds-caption gds-text-muted">${icon('info')} Se responde fuera del panel, en la conversación con la Factory.</p>`}
-    <p class="gds-caption gds-text-muted decision__refs">${h.id ? `Detalle: ${ref(h.id, m, 'Ver detalle de ' + h.id)}` : ''}${extra.length ? ` · También resuelve: ${extra.map(r => ref(r, m)).join(', ')}` : ''}</p>
+    ${req ? renderRespond(req, m) : h.duena
+      ? `<p class="gds-caption gds-text-muted">${icon('info')} Se lo respondés a ${esc(h.duena)}, fuera del panel. <a href="${esc(h.url)}" target="_blank" rel="noopener">Ver su memoria</a></p>`
+      : `<p class="gds-caption gds-text-muted">${icon('info')} Se responde fuera del panel, en la conversación con la Factory.</p>`}
+    <p class="gds-caption gds-text-muted decision__refs">${h.duena ? (h.suId ? esc(h.duena + ' · ' + h.suId) : '') : `${h.id ? `Detalle: ${ref(h.id, m, 'Ver detalle de ' + h.id)}` : ''}${extra.length ? ` · También resuelve: ${extra.map(r => ref(r, m)).join(', ')}` : ''}`}</p>
   </article>`;
 }
 
@@ -253,9 +259,9 @@ function renderInfo(m) {
   return `<section class="gds-card" aria-labelledby="info-title">
     <div class="gds-card__header"><h2 id="info-title" class="gds-title-1">Para tu información ${count(list.length)}</h2></div>
     <p class="gds-caption gds-text-muted">No hace falta que hagas nada.</p>
-    <ul class="gds-list">${list.map(x => `<li class="gds-list__item">${icon('info')}<div>
-      <p class="gds-body-2">${t(x.titulo, m)}</p>
-      ${x.id ? `<p class="gds-caption gds-text-muted">${ref(x.id, m)}</p>` : ''}</div></li>`).join('')}</ul>
+    <ul class="gds-list">${list.map(x => `<li class="gds-list__item" data-duena="${esc(x.duena ? x.duenaKey : DUENA_MIA)}">${icon('info')}<div>
+      <p class="gds-body-2">${x.duena ? esc(x.titulo) : t(x.titulo, m)}</p>
+      ${x.duena ? `<p class="gds-caption gds-text-muted">${esc(x.duena + (x.suId ? ' · ' + x.suId : ''))}</p>` : x.id ? `<p class="gds-caption gds-text-muted">${ref(x.id, m)}</p>` : ''}</div></li>`).join('')}</ul>
   </section>`;
 }
 
@@ -379,6 +385,8 @@ export function renderHome(m) {
     </div>
   </section>
 
+  ${m.hija ? renderFiltro(m.hija) : ''}
+
   ${looseChannel.length ? `<div class="gds-stack--sm gds-stack">${looseChannel.map(c => renderChannelItem(c, m, false)).join('')}</div>` : ''}
 
   ${renderWarnings(m)}
@@ -409,7 +417,7 @@ export function renderHome(m) {
   </div>
 
   <div class="uv-col">
-  <section class="gds-card factory" aria-labelledby="factory-title">
+  <section class="gds-card factory" aria-labelledby="factory-title" data-duena="${DUENA_MIA}">
     <p class="uv-ante uv-ante--t">04 · La Factory ahora</p>
     <div class="gds-card__header">
       <h2 id="factory-title" class="gds-title-1">¿Qué está haciendo la Factory?</h2>
@@ -438,6 +446,8 @@ export function renderHome(m) {
       </dl>
     </div>
   </section>
+
+  ${m.hija ? renderHija(m.hija) : ''}
 
   ${renderSessionSummary(m)}
 
