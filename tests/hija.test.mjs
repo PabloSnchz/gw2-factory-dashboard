@@ -1,8 +1,12 @@
-// Shiruna en el Centro de mando (S-4a, DEC-053): lectura sin cuota, modelo chico y tarjeta escapada.
+// Shiruna en el Centro de mando (S-4, DEC-053): lectura sin cuota, modelo chico, unión con mi cola y filtro por dueña.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { CONFIG } from '../js/config.js';
-import { hijaUrl, loadHija, lineaHija, estadoHija, buildHija, renderHija, HIJA_FILES } from '../js/hija.js';
+import {
+  hijaUrl, loadHija, lineaHija, estadoHija, buildHija, renderHija, unirHija, renderFiltro, aplicarFiltro,
+  HIJA_FILES, HIJA_VERSION, DUENA_MIA,
+} from '../js/hija.js';
 
 const NOW = Date.parse('2026-11-21T21:00:00Z');
 const HIJA = { nombre: 'Shiruna', owner: 'shiruna-gato-negro', repo: 'gw2-factory-dev', branch: 'main' };
@@ -20,7 +24,8 @@ Próxima acción: Mi madre me suma al Centro de mando (S-4).
 ## Esperando a Pablo
 
 - Info: Nací el 2026-11-21. Todavía no tengo motor.
-- [BL-001] Validación: mirar <b>mi</b> tarjeta
+- [BL-001] Validación: mirar <b>mi</b> tarjeta (ver BL-016)
+- Decisión: elegir mi motor
 
 ## Para tu información
 
@@ -45,8 +50,12 @@ const ROADMAP = `| Fase | Objetivo | Criterio de salida | Estado |
 | F0 — Nacimiento | x | y | EN_CURSO |
 | F1 — Motor | x | y | PENDIENTE |
 `;
+const FILES = { 'status.md': STATUS, 'backlog.md': BACKLOG, 'roadmap.md': ROADMAP };
+const hija = () => buildHija({ files: FILES, errors: {} }, NOW, HIJA);
 
-test('config: la hija es Shiruna en su propia organización', () => {
+test('versión y config: la hija es Shiruna en su propia organización', () => {
+  assert.equal(HIJA_VERSION, '1.1.0');
+  assert.equal(DUENA_MIA, 'shiruvana');
   assert.deepEqual(CONFIG.hija, HIJA);
 });
 
@@ -85,17 +94,17 @@ test('lineaHija y estadoHija', () => {
 });
 
 test('buildHija: estado, tarea, fase, pendientes e info', () => {
-  const h = buildHija({ files: { 'status.md': STATUS, 'backlog.md': BACKLOG, 'roadmap.md': ROADMAP }, errors: {} }, NOW, HIJA);
+  const h = hija();
   assert.equal(h.leida, true);
   assert.equal(h.nombre, 'Shiruna');
+  assert.equal(h.key, 'shiruna');
   assert.equal(h.estado.text, 'Trabajando');
   assert.match(h.tarea, /^Nacer/);
   assert.equal(h.etapa, 'DOCUMENTATION');
   assert.equal(h.actualizadoMs, 10 * 60000);
   assert.equal(h.fase.id, 'F0');
   assert.deepEqual(h.enCurso.map(x => x.id), ['BL-000']);
-  assert.equal(h.pendientes.length, 1);
-  assert.equal(h.pendientes[0].clase, 'validacion');
+  assert.deepEqual(h.pendientes.map(p => p.clase), ['validacion', 'decision']);
   assert.equal(h.info.length, 2);
   assert.match(h.url, /shiruna-gato-negro\/gw2-factory-dev\/tree\/main\/ai-memory$/);
 });
@@ -108,17 +117,42 @@ test('buildHija: sin status.md dice por qué; sin hija o sin datos, null', () =>
   assert.equal(buildHija({ files: {} }, NOW, null), null);
 });
 
-test('renderHija: tarjeta con su nombre, todo escapado y link a su memoria', () => {
-  const h = buildHija({ files: { 'status.md': STATUS, 'backlog.md': BACKLOG, 'roadmap.md': ROADMAP }, errors: {} }, NOW, HIJA);
-  const html = renderHija(h);
+test('unirHija: sus pendientes entran en mi cola por clase, con su nombre y sin ID mío', () => {
+  const mio = [{ id: 'REQ-001', clase: 'decision', titulo: 'mía D' }, { id: 'BL-016', clase: 'accion', titulo: 'mía A' }];
+  mio.skipped = ['DEC-007'];
+  const m = unirHija({ human: mio, info: [{ id: null, titulo: 'mi aviso', origen: 'status.md' }] }, hija());
+  assert.deepEqual(m.human.map(x => x.titulo), ['mía D', 'elegir mi motor', 'mía A', 'mirar <b>mi</b> tarjeta (ver BL-016)']);
+  assert.deepEqual(m.human.skipped, ['DEC-007'], 'conserva lo descartado para Salud');
+  const suya = m.human.find(x => x.duena);
+  assert.equal(suya.id, null, 'sus IDs no se confunden con los de mi memoria');
+  assert.equal(suya.duena, 'Shiruna');
+  assert.equal(suya.duenaKey, 'shiruna');
+  assert.equal(m.human.find(x => x.suId === 'BL-001').clase, 'validacion');
+  assert.equal(m.info.length, 3);
+  assert.equal(m.info[1].duena, 'Shiruna');
+  assert.equal(m.hija.nombre, 'Shiruna');
+});
+
+test('unirHija: sin hija o sin leer, mi modelo no cambia (y la hija queda para su tarjeta)', () => {
+  const human = [{ id: 'BL-016', clase: 'accion', titulo: 'x' }];
+  const m = unirHija({ human, info: [] }, null);
+  assert.equal(m.human, human);
+  assert.equal(m.hija, null);
+  const e = unirHija({ human, info: [] }, buildHija({ files: {}, errors: { 'status.md': 'HTTP 500' } }, NOW, HIJA));
+  assert.equal(e.human, human);
+  assert.equal(e.hija.leida, false);
+  assert.equal(unirHija(null, hija()), null);
+});
+
+test('renderHija: tarjeta con su nombre y dueña, sin repetir la lista, escapada y con link a su memoria', () => {
+  const html = renderHija(hija());
   assert.match(html, /data-hija="ok"/);
+  assert.match(html, /data-duena="shiruna"/);
   assert.match(html, /Mi hija · Shiruna/);
   assert.match(html, /¿Qué está haciendo Shiruna\?/);
-  assert.match(html, /Te pide/);
-  assert.match(html, /Shiruna · BL-001/);
   assert.match(html, /F0 · Nacimiento/);
-  assert.ok(!html.includes('<b>mi</b>'), 'el texto de su memoria se escapa');
-  assert.match(html, /&lt;b&gt;mi&lt;\/b&gt;/);
+  assert.match(html, /Te pide 2 cosas: están en «02 · Te toca»/);
+  assert.ok(!html.includes('<b>mi</b>'));
   assert.match(html, /hace 10 min/);
   const err = renderHija(buildHija({ files: {}, errors: { 'status.md': 'HTTP 500' } }, NOW, HIJA));
   assert.match(err, /data-hija="error"/);
@@ -127,11 +161,49 @@ test('renderHija: tarjeta con su nombre, todo escapado y link a su memoria', () 
   assert.equal(renderHija(null), '');
 });
 
-test('app.js: lee a Shiruna junto con la memoria y pone su tarjeta debajo de «La Factory ahora»', async () => {
-  const { readFileSync } = await import('node:fs');
+test('renderFiltro: Las dos · Shiruvana · Shiruna, arranca en Las dos', () => {
+  const html = renderFiltro(hija());
+  assert.match(html, /role="group" aria-label="Mostrar lo de"/);
+  assert.deepEqual([...html.matchAll(/data-ver="([^"]+)"/g)].map(x => x[1]), ['todas', 'shiruvana', 'shiruna']);
+  assert.deepEqual([...html.matchAll(/aria-pressed="([^"]+)"/g)].map(x => x[1]), ['true', 'false', 'false']);
+  assert.equal(renderFiltro(null), '');
+});
+
+/** DOM mínimo para el filtro: elementos con dataset, style y classList. */
+function fakeRoot() {
+  const el = (attrs) => {
+    const classes = new Set(attrs.cls || []);
+    return {
+      dataset: attrs.dataset, style: { display: '' }, attrs: {},
+      setAttribute(k, v) { this.attrs[k] = v; },
+      classList: { toggle: (c, on) => (on ? classes.add(c) : classes.delete(c)), has: (c) => classes.has(c) },
+    };
+  };
+  const items = [el({ dataset: { duena: 'shiruvana' } }), el({ dataset: { duena: 'shiruna' } }), el({ dataset: { duena: 'shiruvana' } })];
+  const botones = ['todas', 'shiruvana', 'shiruna'].map(v => el({ dataset: { ver: v } }));
+  return { items, botones, querySelectorAll: (s) => (s === '[data-duena]' ? items : s === '[data-ver]' ? botones : []) };
+}
+
+test('aplicarFiltro: oculta lo de la otra, marca el botón y vuelve a Las dos', () => {
+  const r = fakeRoot();
+  aplicarFiltro(r, 'shiruna');
+  assert.deepEqual(r.items.map(i => i.style.display), ['none', '', 'none']);
+  assert.deepEqual(r.botones.map(b => b.attrs['aria-pressed']), ['false', 'false', 'true']);
+  assert.ok(r.botones[2].classList.has('gds-button--primary'));
+  aplicarFiltro(r, 'shiruvana');
+  assert.deepEqual(r.items.map(i => i.style.display), ['', 'none', '']);
+  aplicarFiltro(r, null);
+  assert.deepEqual(r.items.map(i => i.style.display), ['', '', '']);
+  assert.equal(r.botones[0].attrs['aria-pressed'], 'true');
+  aplicarFiltro(null, 'shiruna'); // sin DOM no tira
+});
+
+test('app.js: lee a Shiruna junto con mi memoria, la une al modelo y vuelve a aplicar el filtro en cada dibujo', () => {
   const app = readFileSync(new URL('../js/app.js', import.meta.url), 'utf8');
-  assert.match(app, /import \{ loadHija, buildHija, renderHija \} from '\.\/hija\.js';/);
+  assert.match(app, /import \{ loadHija, buildHija, unirHija, aplicarFiltro \} from '\.\/hija\.js';/);
   assert.match(app, /Promise\.all\(\[loadAll\(gh, now\), loadHija\(\{ now \}\)\]\)/);
-  assert.match(app, /state\.model\.hija = buildHija\(hija, now\);/);
-  assert.match(app, /insertAdjacentHTML\('afterend', renderHija\(m\.hija\)\)/);
+  assert.match(app, /state\.model = unirHija\(buildModel\(raw\), buildHija\(hija, now\)\);/);
+  assert.match(app, /montarGlobo\(m\);[^\n]*\n\s*aplicarFiltro\(\$main, state\.ver\);/);
+  assert.match(app, /closest\('button\[data-ver\]'\)/);
+  assert.doesNotMatch(app, /localStorage\.setItem\([^)]*ver/, 'el filtro no se guarda en el navegador');
 });
