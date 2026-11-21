@@ -6,7 +6,8 @@
  * - El resultado de cada lectura se anuncia en una región aria-live.
  * - Después de Refrescar, el foco vuelve al botón (el encabezado se vuelve a dibujar).
  * Mi globo con el gato (js/globo.js) se monta después de cada dibujo con lectura.
- * Shiruna (js/hija.js, S-4a): su memoria se lee junto con la mía y su tarjeta va debajo de «La Factory ahora».
+ * Shiruna (js/hija.js, S-4): su memoria se lee junto con la mía; lo que pide entra en «Te toca» y el filtro
+ * «Las dos · Shiruvana · Shiruna» se vuelve a aplicar después de cada dibujo (en memoria, sin guardar nada).
  */
 
 import { CONFIG } from './config.js';
@@ -15,7 +16,7 @@ import { loadAll } from './loader.js';
 import { buildModel } from './model.js';
 import * as V from './views.js';
 import { montarGlobo } from './globo.js';
-import { loadHija, buildHija, renderHija } from './hija.js';
+import { loadHija, buildHija, unirHija, aplicarFiltro } from './hija.js';
 
 const gh = createGitHub({
   owner: CONFIG.owner,
@@ -24,7 +25,7 @@ const gh = createGitHub({
   prefix: CONFIG.storagePrefix,
 });
 
-const state = { model: null, loading: false, error: null, refocusRefresh: false };
+const state = { model: null, loading: false, error: null, refocusRefresh: false, ver: 'todas' };
 const $header = document.getElementById('app-header');
 const $main = document.getElementById('app-main');
 const $live = document.getElementById('app-live');
@@ -59,10 +60,7 @@ function render() {
   }
   $main.innerHTML = html;
   montarGlobo(m); // mi globo con el gato (BL-091 CD-3); sin el kit, no pasa nada
-  if (html.includes('id="factory-title"') && m.hija) {
-    const $factory = $main.querySelector('section.factory');
-    if ($factory) $factory.insertAdjacentHTML('afterend', renderHija(m.hija));
-  }
+  aplicarFiltro($main, state.ver); // lo de Shiruna, lo mío o lo de las dos (S-4b)
   const pending = m.human.length;
   document.title = `${pending ? `(${pending}) ` : ''}${V.verdict(m).text} · Gato Negro Factory`;
 }
@@ -81,8 +79,7 @@ async function refresh(force) {
   try {
     const now = Date.now();
     const [raw, hija] = await Promise.all([loadAll(gh, now), loadHija({ now })]);
-    state.model = buildModel(raw);
-    state.model.hija = buildHija(hija, now);
+    state.model = unirHija(buildModel(raw), buildHija(hija, now));
     state.error = null;
     announce(`Datos actualizados. ${V.verdict(state.model).text}.`);
   } catch (e) {
@@ -119,6 +116,8 @@ window.addEventListener('hashchange', () => {
 $main.addEventListener('click', (e) => {
   const a = e.target.closest && e.target.closest('a[href*="/issues/new?"]');
   if (a) state.respondedAt = Date.now();
+  const b = e.target.closest && e.target.closest('button[data-ver]');
+  if (b) { state.ver = b.dataset.ver; aplicarFiltro($main, state.ver); }
 });
 // Al volver a la pestaña, relee si respondió hace poco o si los datos tienen más que el TTL de caché.
 document.addEventListener('visibilitychange', () => {

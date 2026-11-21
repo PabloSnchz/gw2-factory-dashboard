@@ -1,5 +1,5 @@
 /**
- * js/hija.js — Shiruna en el Centro de mando (S-4a, DEC-053 de Shiruvana · DEC-002 de Shiruna).
+ * js/hija.js — Shiruna en el Centro de mando (S-4, DEC-053 de Shiruvana · DEC-002 de Shiruna).
  *
  * Shiruna es la hija de Shiruvana: trabaja en su propia organización y tiene su propia memoria.
  * El Centro de mando es uno solo y la lee para que Pablo vea el trabajo de las dos.
@@ -7,14 +7,19 @@
  * - Lee solo por raw.githubusercontent.com (sin cuota de API): status.md, backlog.md y roadmap.md
  *   de la rama, con un parámetro que cambia cada 5 min para no quedar pegado al CDN.
  * - Nunca lanza: si no puede leer, devuelve el motivo y la tarjeta lo dice.
- * - Puro salvo loadHija (red); renderHija devuelve HTML con todo el texto escapado.
+ * - 1.1.0 (S-4b): lo que Shiruna le pide a Pablo entra en «02 · Te toca» y sus avisos en
+ *   «Para tu información», con su nombre (unirHija). Sus IDs son suyos: nunca se enlazan a mi memoria.
+ *   Un filtro «Las dos · Shiruvana · Shiruna» oculta lo de la otra (data-duena), sin guardar nada.
  */
 
 import { CONFIG } from './config.js';
 import { parseStatus, parseBacklog, parseRoadmap, parseDate, esc } from './parse.js';
 
-export const HIJA_VERSION = '1.0.0';
+export const HIJA_VERSION = '1.1.0';
 export const HIJA_FILES = ['status.md', 'backlog.md', 'roadmap.md'];
+/** Dueña de todo lo que no trae otra: yo. */
+export const DUENA_MIA = 'shiruvana';
+const ORDEN = ['decision', 'accion', 'validacion'];
 
 /** URL raw de un archivo de su memoria. */
 export function hijaUrl(path, now, hija = CONFIG.hija) {
@@ -75,6 +80,7 @@ export function buildHija(raw, now, hija = CONFIG.hija) {
   const roadmap = parseRoadmap(f['roadmap.md']);
   const base = {
     nombre: hija.nombre,
+    key: String(hija.nombre).toLowerCase(),
     url: `https://github.com/${hija.owner}/${hija.repo}/tree/${hija.branch}/${CONFIG.memoryRoot}`,
   };
   if (!status) {
@@ -99,7 +105,54 @@ export function buildHija(raw, now, hija = CONFIG.hija) {
   };
 }
 
-const CLASE_LABEL = { decision: 'Decisión', accion: 'Acción', validacion: 'Validación', info: 'Info' };
+/**
+ * Suma a Shiruna al modelo: m.hija, sus pendientes en m.human (después de los míos de la misma clase)
+ * y sus avisos en m.info. No toca la salud ni mis chequeos. Devuelve el mismo modelo.
+ */
+export function unirHija(m, h) {
+  if (!m) return m;
+  m.hija = h || null;
+  if (!h || !h.leida) return m;
+  const suyo = (l) => ({ id: null, suId: l.id, duena: h.nombre, duenaKey: h.key, url: h.url });
+  const extra = h.pendientes.map(l => ({
+    ...suyo(l), clase: l.clase, titulo: l.texto, tipo: 'hija', prioridad: null, fecha: null, esperaMs: null,
+    origenes: [`${h.nombre} · status.md`], relacionados: [], pregunta: null,
+  }));
+  const human = [...(m.human || []), ...extra]
+    .map((x, i) => [x, i])
+    .sort((a, b) => (ORDEN.indexOf(a[0].clase) - ORDEN.indexOf(b[0].clase)) || a[1] - b[1])
+    .map(([x]) => x);
+  human.skipped = (m.human && m.human.skipped) || [];
+  m.human = human;
+  m.info = [...(m.info || []), ...h.info.map(l => ({ ...suyo(l), titulo: l.texto, origen: `${h.nombre} · status.md` }))];
+  return m;
+}
+
+/** Botones «Las dos · Shiruvana · Shiruna». Arranca en «Las dos». */
+export function renderFiltro(h) {
+  if (!h) return '';
+  const op = [['todas', 'Las dos'], [DUENA_MIA, 'Shiruvana'], [h.key, h.nombre]];
+  return `<div class="gds-cluster uv-filtro" role="group" aria-label="Mostrar lo de">
+    <span class="gds-label-2 gds-text-muted">Mostrar:</span>
+    ${op.map(([k, l], i) => `<button type="button" class="gds-button gds-button--sm ${i === 0 ? 'gds-button--primary' : 'gds-button--secondary'}" data-ver="${esc(k)}" aria-pressed="${i === 0}">${esc(l)}</button>`).join('')}
+  </div>`;
+}
+
+/** Muestra solo lo de `ver` ('todas', 'shiruvana' o la clave de la hija) y marca el botón elegido. */
+export function aplicarFiltro(root, ver) {
+  if (!root || typeof root.querySelectorAll !== 'function') return;
+  const v = ver || 'todas';
+  for (const el of root.querySelectorAll('[data-duena]')) {
+    el.style.display = v === 'todas' || el.dataset.duena === v ? '' : 'none';
+  }
+  for (const b of root.querySelectorAll('[data-ver]')) {
+    const on = b.dataset.ver === v;
+    b.setAttribute('aria-pressed', String(on));
+    b.classList.toggle('gds-button--primary', on);
+    b.classList.toggle('gds-button--secondary', !on);
+  }
+}
+
 const LEVEL_VARIANT = { ok: 'success', info: 'info', warn: 'warning' };
 
 function hace(ms) {
@@ -116,20 +169,18 @@ function chip(text, variant) {
   return `<span class="gds-status${variant ? ' gds-status--' + variant : ''}">${esc(text)}</span>`;
 }
 
-/** Tarjeta «Shiruna ahora». Va debajo de «La Factory ahora» en Hoy. */
+/** Tarjeta «Mi hija · Shiruna». Va debajo de «La Factory ahora» en Hoy. Lo que pide está en «02 · Te toca». */
 export function renderHija(h) {
   if (!h) return '';
   const head = `<p class="uv-ante uv-ante--t">Mi hija · ${esc(h.nombre)}</p>`;
   if (!h.leida) {
-    return `<section class="gds-card uv-hija" aria-labelledby="hija-title" data-hija="error">${head}
+    return `<section class="gds-card uv-hija" aria-labelledby="hija-title" data-hija="error" data-duena="${esc(h.key)}">${head}
       <h2 id="hija-title" class="gds-title-1">No pude leer la memoria de ${esc(h.nombre)}</h2>
       <p class="gds-body-2 gds-text-secondary">status.md: ${esc(h.error)}. <a href="${esc(h.url)}" target="_blank" rel="noopener">Ver su memoria</a></p>
     </section>`;
   }
-  const items = (list) => `<ul class="gds-list">${list.map(l => `<li class="gds-list__item"><div>
-      <p class="gds-label-1"><strong>${esc(CLASE_LABEL[l.clase])}:</strong> ${esc(l.texto)}</p>
-      ${l.id ? `<p class="gds-caption gds-text-muted">${esc(h.nombre)} · ${esc(l.id)}</p>` : ''}</div></li>`).join('')}</ul>`;
-  return `<section class="gds-card uv-hija" aria-labelledby="hija-title" data-hija="ok">${head}
+  const n = h.pendientes.length;
+  return `<section class="gds-card uv-hija" aria-labelledby="hija-title" data-hija="ok" data-duena="${esc(h.key)}">${head}
     <div class="gds-card__header">
       <h2 id="hija-title" class="gds-title-1">¿Qué está haciendo ${esc(h.nombre)}?</h2>
       <div class="gds-cluster">${chip(h.estado.text, LEVEL_VARIANT[h.estado.level])}${h.fase ? chip(`${h.fase.id} · ${h.fase.nombre}`, '') : ''}</div>
@@ -142,8 +193,7 @@ export function renderHija(h) {
         <div><dt>Última actualización</dt><dd>${esc(hace(h.actualizadoMs))}</dd></div>
         <div class="facts__wide"><dt>Próxima acción</dt><dd>${h.proxima ? esc(h.proxima) : 'sin dato'}</dd></div>
       </dl>
-      ${h.pendientes.length ? `<h3 class="gds-title-2">Te pide ${chip(String(h.pendientes.length), 'warning')}</h3>${items(h.pendientes)}` : ''}
-      ${h.info.length ? `<h3 class="gds-title-2">Para tu información</h3>${items(h.info)}` : ''}
+      <p class="gds-body-2 gds-text-secondary">${n ? `Te pide ${n === 1 ? '1 cosa' : n + ' cosas'}: están en «02 · Te toca», con su nombre.` : 'No te pide nada.'}${h.info.length ? ` Sus avisos están en «Para tu información».` : ''}</p>
       <p class="gds-caption gds-text-muted"><a href="${esc(h.url)}" target="_blank" rel="noopener">Ver la memoria de ${esc(h.nombre)}</a></p>
     </div>
   </section>`;
