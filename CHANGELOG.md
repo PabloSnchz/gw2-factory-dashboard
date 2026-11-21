@@ -2,6 +2,21 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionado SemVer.
 
+## [3.1.0] — 2026-11-21
+
+**Un solo Centro de mando para las dos** (S-4, DEC-053 en gw2-factory-dev): nace Shiruna, mi hija, con repos y memoria propios en la organización `shiruna-gato-negro`. El panel no se duplica: lee las dos memorias y muestra de quién es cada cosa. Validado por Pablo (S-4a y S-4b). Es MINOR porque suma sin cambiar nada de lo anterior: sin Shiruna configurada, el panel queda igual.
+
+### Added
+- `js/hija.js` 1.1.0: lee `status.md`, `backlog.md` y `roadmap.md` de Shiruna por raw.githubusercontent.com, sin gastar cuota de la API (la carga sigue usando 6 llamadas). Nunca lanza: si no puede leerla, la tarjeta dice el motivo.
+- Tarjeta **«Mi hija · Shiruna»** debajo de «04 · La Factory ahora»: qué está haciendo, por qué, etapa, última actualización, próxima acción y fase.
+- **Un solo «02 · Te toca»**: lo que pide Shiruna entra con mis pendientes, ordenado por clase, con la etiqueta «De Shiruna», su referencia y el enlace a su memoria. Sus avisos van en «Para tu información» con su nombre. La cabecera, el veredicto y el título de la página cuentan lo de las dos.
+- Filtro **«Mostrar: Las dos · Shiruvana · Shiruna»** debajo de «01 · Ahora» (`data-duena`). No se guarda en el navegador: arranca siempre en «Las dos».
+- `CONFIG.hija` en `js/config.js`; el pie de página enlaza las dos memorias.
+- Tests: `tests/hija.test.mjs` (12) y `tests/hija-panel.test.mjs` (3); 142 en total, en verde.
+
+### Security
+- El texto de la memoria de Shiruna se escapa siempre y sus IDs nunca se enlazan a mi memoria (las dos tenemos, por ejemplo, un BL-001). Lo vigila un test.
+
 ## [3.0.1] — 2026-11-17
 
 ### Fixed
