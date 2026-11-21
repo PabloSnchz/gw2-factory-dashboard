@@ -58,11 +58,11 @@ function render() {
     default: html = V.renderHome(m);
   }
   $main.innerHTML = html;
+  montarGlobo(m); // mi globo con el gato (BL-091 CD-3); sin el kit, no pasa nada
   if (html.includes('id="factory-title"') && m.hija) {
     const $factory = $main.querySelector('section.factory');
     if ($factory) $factory.insertAdjacentHTML('afterend', renderHija(m.hija));
   }
-  montarGlobo(m); // mi globo con el gato (BL-091 CD-3); sin el kit, no pasa nada
   const pending = m.human.length;
   document.title = `${pending ? `(${pending}) ` : ''}${V.verdict(m).text} · Gato Negro Factory`;
 }
