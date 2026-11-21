@@ -6,6 +6,7 @@
  * - El resultado de cada lectura se anuncia en una región aria-live.
  * - Después de Refrescar, el foco vuelve al botón (el encabezado se vuelve a dibujar).
  * Mi globo con el gato (js/globo.js) se monta después de cada dibujo con lectura.
+ * Shiruna (js/hija.js, S-4a): su memoria se lee junto con la mía y su tarjeta va debajo de «La Factory ahora».
  */
 
 import { CONFIG } from './config.js';
@@ -14,6 +15,7 @@ import { loadAll } from './loader.js';
 import { buildModel } from './model.js';
 import * as V from './views.js';
 import { montarGlobo } from './globo.js';
+import { loadHija, buildHija, renderHija } from './hija.js';
 
 const gh = createGitHub({
   owner: CONFIG.owner,
@@ -56,6 +58,10 @@ function render() {
     default: html = V.renderHome(m);
   }
   $main.innerHTML = html;
+  if (html.includes('id="factory-title"') && m.hija) {
+    const $factory = $main.querySelector('section.factory');
+    if ($factory) $factory.insertAdjacentHTML('afterend', renderHija(m.hija));
+  }
   montarGlobo(m); // mi globo con el gato (BL-091 CD-3); sin el kit, no pasa nada
   const pending = m.human.length;
   document.title = `${pending ? `(${pending}) ` : ''}${V.verdict(m).text} · Gato Negro Factory`;
@@ -73,8 +79,10 @@ async function refresh(force) {
   announce('Leyendo la memoria de la Factory…');
   render();
   try {
-    const raw = await loadAll(gh, Date.now());
+    const now = Date.now();
+    const [raw, hija] = await Promise.all([loadAll(gh, now), loadHija({ now })]);
     state.model = buildModel(raw);
+    state.model.hija = buildHija(hija, now);
     state.error = null;
     announce(`Datos actualizados. ${V.verdict(state.model).text}.`);
   } catch (e) {

@@ -23,6 +23,9 @@ export const CONFIG = {
     { dir: 'features',  prefix: 'FEAT', label: 'Funcionalidades' },
   ],
 
+  // Shiruna, la hija de Shiruvana (DEC-053): su memoria se lee por raw, sin cuota de API (js/hija.js).
+  hija: { nombre: 'Shiruna', owner: 'shiruna-gato-negro', repo: 'gw2-factory-dev', branch: 'main' },
+
   // Caché de la API de GitHub (anónima: 60 req/h por IP). Una carga usa 6 (ver loader.js).
   apiCacheTtlMs: 10 * 60 * 1000,
   storagePrefix: 'gfd:',
