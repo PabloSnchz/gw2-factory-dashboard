@@ -1,7 +1,8 @@
 /* ==========================================================================
-   Centro de mando — Shiruna con cuerpo (SH-1) v1.0.0
+   Centro de mando — Shiruna y Pablo con cuerpo (SH-1, SH-2) v1.1.0
    Su tarjeta «Mi hija · Shiruna» muestra la pose de lo que está haciendo (js/poses.js) y lo que te pide
-   en «Te toca» lleva su cara. Imágenes sin fondo (webp con alfa) en assets/shiruna/.
+   en «Te toca» lleva su cara. Pablo (js/pablo.js): su cara en «02 · Te toca», en paz si no le queda nada
+   y festejando en «Hoy» si se terminó algo. Imágenes sin fondo (webp con alfa) en assets/shiruna/ y assets/pablo/.
    Se carga antes de css/universo.css (la piel sigue siendo la última). Sin colores literales.
    ========================================================================== */
 
@@ -19,21 +20,38 @@
 .uv-hija__pose--consola  { background-image: url("../assets/shiruna/shiruna-consola.webp"); }
 .uv-hija__pose--espaldas { background-image: url("../assets/shiruna/shiruna-espaldas.webp"); }
 
-/* su cara al lado de «De Shiruna» */
+/* su cara al lado de «De Shiruna»; la de Pablo, al lado de «02 · Te toca» */
 .uv-cara {
   display: inline-block; flex: none; width: 24px; height: 24px; border-radius: var(--gds-radius-full);
   background: no-repeat center / cover; vertical-align: middle;
 }
 .uv-cara--shiruna { background-image: url("../assets/shiruna/shiruna-cara.webp"); }
+.uv-cara--pablo   { background-image: url("../assets/pablo/pablo-cara.webp"); }
+.uv-ante .uv-cara--pablo { width: 28px; height: 28px; margin-right: var(--gds-space-2); }
+
+/* Pablo de cuerpo entero: en paz en «Te toca» vacío, festejando en «Hoy» */
+[data-pablo] { position: relative; overflow: hidden; }
+[data-pablo="paz"] { padding-right: 150px; min-height: 250px; }
+[data-pablo="festeja"] { padding-right: 112px; min-height: 210px; }
+.uv-pablo {
+  position: absolute; right: var(--gds-space-3); bottom: 0; width: 132px; height: 236px;
+  background-repeat: no-repeat; background-position: center bottom; background-size: contain;
+  pointer-events: none;
+}
+.uv-pablo--paz     { background-image: url("../assets/pablo/pablo-paz.webp"); }
+.uv-pablo--festeja { background-image: url("../assets/pablo/pablo-festeja.webp"); width: 100px; height: 190px; animation: uv-hija-salto 900ms ease-out 1; }
 
 @keyframes uv-hija-salto { 0% { transform: translateY(14px); opacity: 0; } 60% { transform: translateY(-4px); opacity: 1; } 100% { transform: translateY(0); } }
 
-/* celular: figura más chica para que el texto respire */
+/* celular: figuras más chicas para que el texto respire */
 @media (max-width: 640px) {
   .uv-hija[data-pose] { padding-right: 96px; min-height: 0; }
   .uv-hija__pose { width: 84px; height: 150px; right: var(--gds-space-2); }
+  [data-pablo="paz"], [data-pablo="festeja"] { padding-right: 88px; min-height: 0; }
+  .uv-pablo, .uv-pablo--festeja { width: 76px; height: 140px; right: var(--gds-space-2); }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .uv-hija__pose--festeja { animation: none; }
+  .uv-pablo--festeja { animation: none; }
 }

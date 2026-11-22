@@ -10,6 +10,8 @@
  * «Las dos · Shiruvana · Shiruna» se vuelve a aplicar después de cada dibujo (en memoria, sin guardar nada).
  * SH-1 (js/poses.js): su tarjeta lleva la pose de lo que está haciendo y lo que te pide, su cara. En cada lectura
  * se compara cuántas tareas tiene terminadas con tu visita anterior (un número en el navegador) para festejar.
+ * SH-2 (js/pablo.js): Pablo con su cara en «Te toca», en paz si no le queda nada y festejando en «Hoy» si se
+ * terminó algo hoy. Decorativo, después de cada dibujo; no guarda nada.
  */
 
 import { CONFIG } from './config.js';
@@ -20,6 +22,7 @@ import * as V from './views.js';
 import { montarGlobo } from './globo.js';
 import { loadHija, buildHija, unirHija, aplicarFiltro } from './hija.js';
 import { marcarLogro, vestirHija } from './poses.js';
+import { vestirPablo } from './pablo.js';
 
 const gh = createGitHub({
   owner: CONFIG.owner,
@@ -65,6 +68,7 @@ function render() {
   montarGlobo(m); // mi globo con el gato (BL-091 CD-3); sin el kit, no pasa nada
   aplicarFiltro($main, state.ver); // lo de Shiruna, lo mío o lo de las dos (S-4b)
   vestirHija($main, m.hija); // su pose en la tarjeta y su cara en «Te toca» (SH-1)
+  vestirPablo($main, m); // Pablo: su cara en «Te toca», en paz o festejando (SH-2)
   const pending = m.human.length;
   document.title = `${pending ? `(${pending}) ` : ''}${V.verdict(m).text} · Gato Negro Factory`;
 }
