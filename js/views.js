@@ -229,7 +229,7 @@ function renderDecisionCard(h, m, first, { level = 'h3', title = null, voiceAvat
     ${failed ? renderChannelItem(failed, m, true) : ''}
     ${req ? renderRespond(req, m) : h.duena
       ? `<p class="gds-caption gds-text-muted">${icon('info')} Se lo respondés a ${esc(h.duena)}, fuera del panel. <a href="${esc(h.url)}" target="_blank" rel="noopener">Ver su memoria</a></p>`
-      : `<p class="gds-caption gds-text-muted">${icon('info')} Se responde fuera del panel, en la conversación con la Factory.</p>`}
+      : `<p class="gds-caption gds-text-muted">${icon('info')} Se responde fuera del panel, en la conversación con Shiruvana.</p>`}
     <p class="gds-caption gds-text-muted decision__refs">${h.duena ? (h.suId ? esc(h.duena + ' · ' + h.suId) : '') : `${h.id ? `Detalle: ${ref(h.id, m, 'Ver detalle de ' + h.id)}` : ''}${extra.length ? ` · También resuelve: ${extra.map(r => ref(r, m)).join(', ')}` : ''}`}</p>
   </article>`;
 }
@@ -343,7 +343,7 @@ export function verdict(m) {
   if (tasks) return { text: `Nada que decidir: te ${g.accion.length + g.validacion.length === 1 ? 'espera' : 'esperan'} ${tasks}`, level: 'info' };
   if (m.health.level === 'critical') return { text: 'Nada espera tu decisión, pero hay un problema crítico', level: 'critical' };
   const st = humanStatus(m.statusInfo.code);
-  return { text: st.level === 'ok' ? 'La Factory está trabajando: nada necesita tu decisión' : 'Nada necesita tu decisión', level: 'ok' };
+  return { text: st.level === 'ok' ? 'Shiruvana está trabajando: nada necesita tu decisión' : 'Nada necesita tu decisión', level: 'ok' };
 }
 
 export function renderHome(m) {
@@ -377,7 +377,7 @@ export function renderHome(m) {
       ${g.validacion.length ? statusChip(plural(g.validacion.length, 'para validar', 'para validar'), 'info', 'check') : ''}
       ${crit ? statusChip(`${crit} problema${crit > 1 ? 's' : ''} crítico${crit > 1 ? 's' : ''}`, 'danger', 'octagon') : ''}
       ${blocked ? statusChip(`${blocked} bloqueado${blocked > 1 ? 's' : ''}`, 'warning', 'alert') : ''}
-      ${levelChip(st.level, 'Factory: ' + st.text)}
+      ${levelChip(st.level, 'Shiruvana: ' + st.text)}
     </div>
     </div>
     <div class="uv-cifras" role="group" aria-label="En números">
@@ -399,7 +399,7 @@ export function renderHome(m) {
     ${g.decision.length
       ? `<div class="decisions">${g.decision.map((h, i) => renderDecisionCard(h, m, i === 0, { voiceAvatar: i === 0 })).join('')}</div>`
       : `<div class="gds-callout gds-callout--success">${icon('check')}<div><p class="gds-callout__title">Nada que decidir.</p>
-        <p class="gds-callout__body">Las decisiones técnicas las toma la Factory. Acá solo llegan decisiones de producto, negocio o estrategia, con contexto, impacto, recomendación y el motivo por el que te las pregunta.</p></div></div>`}
+        <p class="gds-callout__body">Las decisiones técnicas las toma Shiruvana (y Shiruna, en lo suyo). Acá solo llegan decisiones de producto, negocio o estrategia, con contexto, impacto, recomendación y el motivo por el que te las pregunta.</p></div></div>`}
     ${g.accion.length || g.validacion.length ? `
     <h2 id="tasks-title" class="gds-title-1">Necesita tu mano ${count(g.accion.length + g.validacion.length, 'tareas')}</h2>
     <p class="gds-body-2 gds-text-secondary gds-measure">No hay nada que decidir: son cosas que solo vos podés hacer o mirar.</p>
@@ -418,9 +418,9 @@ export function renderHome(m) {
 
   <div class="uv-col">
   <section class="gds-card factory" aria-labelledby="factory-title" data-duena="${DUENA_MIA}">
-    <p class="uv-ante uv-ante--t">04 · La Factory ahora</p>
+    <p class="uv-ante uv-ante--t">04 · Shiruvana ahora</p>
     <div class="gds-card__header">
-      <h2 id="factory-title" class="gds-title-1">¿Qué está haciendo la Factory?</h2>
+      <h2 id="factory-title" class="gds-title-1">¿Qué está haciendo Shiruvana?</h2>
       <div class="gds-cluster">${levelChip(st.level, st.text)}${m.fase ? `<a class="gds-ref" href="#/trabajo">${esc(m.fase.id)} · ${esc(m.fase.nombre)}</a>` : ''}</div>
     </div>
     <div class="gds-stack">
@@ -518,7 +518,7 @@ function renderWarnings(m) {
     <h2 id="warn-title" class="gds-visually-hidden">Advertencias</h2>
     ${crit.map((r, i) => voice({
       kind: 'critico', suffix: 'Crítico', avatar: i === 0,
-      body: `<p>${t(r.riesgo, m)}</p><p>Con un riesgo crítico abierto la Factory se detiene hasta resolverlo.</p>`,
+      body: `<p>${t(r.riesgo, m)}</p><p>Con un riesgo crítico abierto, freno todo hasta resolverlo.</p>`,
       meta: ref(r.id, m),
     })).join('')}
   </section>`;
@@ -553,7 +553,7 @@ function renderDecided(m) {
   const [last, ...rest] = factoryDecisions(m);
   if (!last) return '';
   return `<section class="gds-stack--sm gds-stack" aria-labelledby="decided-title">
-    <h2 id="decided-title" class="gds-title-1">Decidido por la Factory</h2>
+    <h2 id="decided-title" class="gds-title-1">Decidido por Shiruvana</h2>
     ${voice({
       kind: 'decidio', size: 'lg',
       body: `<p>${t(plainTitle(last.titulo), m)}</p>`,
@@ -621,7 +621,7 @@ export function renderWork(m) {
     ['IN_PROGRESS', 'En curso', 'arrow'], ['BLOCKED', 'Bloqueado', 'alert'], ['READY', 'Listo para hacer', 'clock'], ['DONE', 'Hecho', 'check'],
   ];
   return `
-  ${pageHead('01 · El plan', 'Trabajo', 'Hacia dónde va la Factory y en qué está cada tarea.',
+  ${pageHead('01 · El plan', 'Trabajo', 'Hacia dónde lleva Shiruvana la Factory y en qué está cada tarea.',
     b ? [[b.IN_PROGRESS.length, 'en curso'], [b.BLOCKED.length, b.BLOCKED.length === 1 ? 'bloqueada' : 'bloqueadas'], [b.READY.length, 'listas para hacer'], [b.DONE.length, 'hechas']] : [])}
   <section class="gds-card" aria-labelledby="roadmap-title">
     <p class="uv-ante uv-ante--v">02 · Etapas</p>
@@ -656,7 +656,7 @@ export function renderKnowledge(m, sub) {
   const resumen = new Map(Object.values(m.index || {}).flat().filter(x => x && x.id).map(x => [x.id, x.resumen]));
   const backlinks = buildBacklinks(m);
   return `
-  ${pageHead('01 · Lo que sé', 'Conocimiento', 'Lo que la Factory decidió, aprendió y construyó.',
+  ${pageHead('01 · Lo que sé', 'Conocimiento', 'Lo decidido por Pablo y por Shiruvana (cada decisión dice quién), lo aprendido y lo construido.',
     tabs.map(x => [(m.entries[x.prefix] || []).length, x.label.toLowerCase()]))}
   <nav class="gds-tabs" aria-label="Tipo de registro">${tabs.map(x => `<a href="#/conocimiento/${x.key}" class="gds-tab"${x === active ? ' aria-current="page"' : ''}>${esc(x.label)} ${count((m.entries[x.prefix] || []).length)}</a>`).join('')}</nav>
   ${list.length ? `<div class="gds-grid">${list.slice().reverse().map(e => `
@@ -823,7 +823,7 @@ export function renderHealth(m) {
       <div><dt>Registros leídos</dt><dd>${m.allIds.size}</dd></div>
       <div><dt>Canal de respuestas</dt><dd>${m.channel && m.channel.available ? (m.channel.items.length ? `${m.channel.items.length} respuesta(s) sin registrar` : 'Sin respuestas pendientes de registrar') : na('no se pudo consultar')}</dd></div>
       <div><dt>API de GitHub</dt><dd>${api.remaining != null ? `${api.remaining}/${api.limit} consultas restantes · se renueva ${esc(relTime((api.reset || 0) - Date.now()))}` : 'sin consultas nuevas (caché)'}</dd></div>
-      <div class="facts__wide"><dt>Cómo se calcula</dt><dd>Los chequeos corren en tu navegador en cada lectura, sin scripts locales. <strong>Declarado</strong> = lo que la Factory escribió en su memoria; <strong>medido</strong> = lo que se observa en GitHub. Una diferencia entre ambos es una inconsistencia.</dd></div>
+      <div class="facts__wide"><dt>Cómo se calcula</dt><dd>Los chequeos corren en tu navegador en cada lectura, sin scripts locales. <strong>Declarado</strong> = lo que Shiruvana escribió en su memoria; <strong>medido</strong> = lo que se observa en GitHub. Una diferencia entre ambos es una inconsistencia.</dd></div>
     </dl>
   </section>`;
 }
@@ -832,7 +832,7 @@ export function renderHealth(m) {
 
 export function renderLoading() {
   return `<section class="gds-stack" aria-busy="true" aria-label="Cargando">
-    <p class="gds-body-1 gds-text-secondary">Leyendo la memoria de la Factory…</p>
+    <p class="gds-body-1 gds-text-secondary">Leyendo la memoria de Shiruvana…</p>
     <div class="gds-skeleton"></div><div class="gds-skeleton"></div><div class="gds-skeleton"></div>
   </section>`;
 }

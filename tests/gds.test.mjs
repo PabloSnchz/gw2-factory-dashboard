@@ -111,7 +111,7 @@ test('íconos: decorativos (aria-hidden) y con color heredado', () => {
 /* ------------------------------------------------------------ marca y voz (DEC-024) */
 
 test('marca: el gato de Gato Negro Factory no cambia (DEC-024 §1)', () => {
-  // Huella del dibujo publicado en la cabecera. Si cambia, es una decisión de Pablo, no de la Factory.
+  // Huella del dibujo publicado en la cabecera. Si cambia, es una decisión de Pablo, no mía (Shiruvana).
   const hash = createHash('sha256').update(brandMark(32)).digest('hex');
   assert.equal(hash, 'b5181bd5b9d51042039e152cc7b7ae31053d478b22f68729e0d132c55c9218a3');
   assert.doesNotMatch(VOICE_JS + stripComments(COMPONENTS_CSS.slice(COMPONENTS_CSS.indexOf('.gds-voice {'))), /brand-(frame|eyes)/,

@@ -30,7 +30,7 @@ const respBody = (req, code) => `${MARK}\n\n\`\`\`gds-response\nsolicitud: ${req
 
 test('Hoy: lo que necesita a Pablo va antes que el estado de la Factory', async () => {
   const html = V.renderHome(await model());
-  const order = ['verdict-title', 'Necesita tu decisión', '¿Qué está haciendo la Factory?', 'Qué debería preocuparte', 'Entornos'].map(s => html.indexOf(s));
+  const order = ['verdict-title', 'Necesita tu decisión', '¿Qué está haciendo Shiruvana?', 'Qué debería preocuparte', 'Entornos'].map(s => html.indexOf(s));
   assert.ok(order.every(i => i >= 0), 'todas las secciones presentes');
   assert.deepEqual([...order].sort((a, b) => a - b), order, 'orden: veredicto → decisiones → Factory → preocupaciones → entornos');
   assert.equal((html.match(/<h1\b/g) || []).length, 1, 'un único h1 por vista');

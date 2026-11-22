@@ -1,5 +1,5 @@
 /**
- * js/decisions.js — Intercambio de decisiones entre Pablo y la Factory (contrato v3, DEC-011).
+ * js/decisions.js — Intercambio de decisiones entre Pablo y Shiruvana (contrato v3, DEC-011).
  *
  *   Factory trabaja → escribe un PEDIDO   ai-memory/requests/REQ-XXX-<slug>.md
  *   Panel propone   → muestra los pedidos abiertos
@@ -32,8 +32,8 @@ const SYNONYMS = {
 export const STATE_TEXT = {
   open: 'Esperando tu respuesta',
   postponed: 'Pospuesto',
-  answered: 'Respondido · la Factory lo está procesando',
-  measured: 'Hecho (verificado) · la Factory lo cierra',
+  answered: 'Respondido · Shiruvana lo está procesando',
+  measured: 'Hecho (verificado) · Shiruvana lo cierra',
   closed: 'Cerrado',
 };
 
@@ -85,8 +85,8 @@ export function parseRequest(md, path) {
   const recClave = recTexto ? (recTexto.match(/^([A-Z])\s+[—-]\s+/) || [])[1] || null : null;
 
   const impacto = s['por que importa'] || s['impacto'] || null;
-  // Soberanía de decisiones (DEC-018): un pedido de decisión explica por qué la Factory no puede decidirlo sola.
-  const justificacion = s['por que te lo pregunto'] || s['por que no lo decide la factory'] || null;
+  // Soberanía de decisiones (DEC-018): un pedido de decisión explica por qué Shiruvana no puede decidirlo sola.
+  const justificacion = s['por que te lo pregunto'] || s['por que no lo decide shiruvana'] || s['por que no lo decide la factory'] || null;
 
   if (!s['que paso']) problems.push('falta "## Qué pasó"');
   if (!impacto) problems.push('falta "## Por qué importa"');
@@ -109,7 +109,7 @@ export function parseRequest(md, path) {
     quePaso: s['que paso'] || null,
     porQueImporta: impacto,
     justificacion,
-    // Una decisión sin justificación no llega a Pablo: la Factory debe decidirla o justificarla.
+    // Una decisión sin justificación no llega a Pablo: Shiruvana debe decidirla o justificarla.
     sinJustificar: tipo === 'decision' && !justificacion,
     comoHacerlo: s['como hacerlo'] || null,
     opciones,
@@ -225,14 +225,14 @@ export function buildDecisions(ctx) {
 
     if (r.problems.length) add('warn', 'req:invalid:' + (r.id || r.path), `Pedido ${r.id || r.path} fuera de formato`, r.problems.join('; '), 'declarado', r.id);
     if (r.sinJustificar && r.state !== 'closed') {
-      add('warn', 'req:unjustified:' + r.id, `${r.id} no llega a Pablo: no explica por qué la Factory no puede decidirlo`,
-        'Falta "## Por qué te lo pregunto". La Factory debe decidirlo sola o justificar el pedido (soberanía de decisiones, DEC-018).', 'declarado', r.id);
+      add('warn', 'req:unjustified:' + r.id, `${r.id} no llega a Pablo: no explica por qué Shiruvana no puede decidirlo`,
+        'Falta "## Por qué te lo pregunto". Shiruvana debe decidirlo sola o justificar el pedido (soberanía de decisiones, DEC-018).', 'declarado', r.id);
     }
     if (r.state === 'open' && r.esperaMs != null && r.esperaMs > T.requestWaitDays * 864e5) {
-      add('warn', 'req:waiting:' + r.id, `Hace ${Math.floor(r.esperaMs / 864e5)} días que la Factory espera tu respuesta: ${r.titulo}`, 'Pedido abierto sin respuesta.', 'medido', r.id);
+      add('warn', 'req:waiting:' + r.id, `Hace ${Math.floor(r.esperaMs / 864e5)} días que Shiruvana espera tu respuesta: ${r.titulo}`, 'Pedido abierto sin respuesta.', 'medido', r.id);
     }
     if (r.vencida) add('info', 'req:due:' + r.id, `Venció el plazo que pospusiste: ${r.titulo}`, 'Vuelve a "Esperando tu respuesta".', 'medido', r.id);
-    if (r.state === 'measured') add('info', 'req:measured:' + r.id, `Hecho y verificado: ${r.titulo}`, 'La Factory debe cerrar el pedido.', 'medido', r.id);
+    if (r.state === 'measured') add('info', 'req:measured:' + r.id, `Hecho y verificado: ${r.titulo}`, 'Shiruvana debe cerrar el pedido.', 'medido', r.id);
     if (r.state === 'answered' && r.ultima.procesada) {
       add('warn', 'req:notclosed:' + r.id, `${r.id} tiene la respuesta procesada pero el pedido sigue ABIERTO`, `Cerrar el pedido (Estado: CERRADA) citando ${r.ultima.id}.`, 'declarado', r.id);
     }
@@ -241,13 +241,13 @@ export function buildDecisions(ctx) {
   for (const x of responses) {
     if (x.problems.length) add('warn', 'resp:invalid:' + (x.id || x.path), `Respuesta ${x.id || x.path} fuera de formato`, x.problems.join('; '), 'declarado', x.id);
     const req = x.solicitud ? reqById.get(x.solicitud) : null;
-    if (x.solicitud && !req) add('warn', 'resp:orphan:' + x.id, `${x.id} responde a ${x.solicitud}, que no existe`, 'La Factory no puede procesarla.', 'declarado', x.id);
+    if (x.solicitud && !req) add('warn', 'resp:orphan:' + x.id, `${x.id} responde a ${x.solicitud}, que no existe`, 'Shiruvana no puede procesarla.', 'declarado', x.id);
     if (req && x.opcion && req.opciones.length && !req.opciones.some(o => o.clave === x.opcion)) {
       add('warn', 'resp:option:' + x.id, `${x.id} elige la opción ${x.opcion}, que no existe en ${req.id}`, 'Opciones válidas: ' + req.opciones.map(o => o.clave).join(', '), 'declarado', x.id);
     }
     if (!x.procesada && x.respuesta && x.respuesta !== 'POSTPONED' && x.fecha) {
       const h = (now - x.fecha.getTime()) / 36e5;
-      if (h > T.responseUnprocessedHours) add('warn', 'resp:unprocessed:' + x.id, `Respondiste hace ${Math.floor(h)} h y la Factory todavía no procesó ${x.id}`, 'La Factory debe procesar las respuestas pendientes al iniciar cada sesión (DEC-011).', 'medido', x.id);
+      if (h > T.responseUnprocessedHours) add('warn', 'resp:unprocessed:' + x.id, `Respondiste hace ${Math.floor(h)} h y Shiruvana todavía no procesó ${x.id}`, 'Shiruvana debe procesar las respuestas pendientes al iniciar cada sesión (DEC-011).', 'medido', x.id);
     }
   }
 

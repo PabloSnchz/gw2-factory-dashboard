@@ -13,7 +13,7 @@ async function model(files = readMemory()) {
 
 test('Hoy responde las preguntas de la misión', async () => {
   const html = V.renderHome(await model());
-  for (const s of ['¿Qué está haciendo la Factory?', 'Por qué', 'Tiempo en ejecución', 'Próxima acción',
+  for (const s of ['¿Qué está haciendo Shiruvana?', 'Por qué', 'Tiempo en ejecución', 'Próxima acción',
     'Necesita tu decisión', 'Qué debería preocuparte', 'Hoy', 'Esta semana', 'Entornos']) assert.ok(html.includes(s), s);
   assert.ok(html.includes('20 min'), 'tiempo en ejecución calculado');
   assert.ok(html.includes('href="#/item/DEC-005"'));

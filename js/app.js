@@ -82,7 +82,7 @@ async function refresh(force) {
   if (state.loading) return;
   if (force) clearApiCache();
   state.loading = true;
-  announce('Leyendo la memoria de la Factory…');
+  announce('Leyendo la memoria de Shiruvana y de Shiruna…');
   render();
   try {
     const now = Date.now();
@@ -94,7 +94,7 @@ async function refresh(force) {
   } catch (e) {
     console.error(e);
     state.error = e;
-    announce('No se pudo leer la memoria de la Factory.');
+    announce('No se pudo leer la memoria de Shiruvana.');
   } finally {
     state.loading = false;
     render();

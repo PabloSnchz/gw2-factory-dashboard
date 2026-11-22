@@ -155,7 +155,7 @@ test('ciclo de vida: abierto → respondido → procesado → cerrado', () => {
 
   d = lifecycle({ 'responses/RESP-001.md': resp('RESP-001', 'REQ-010', 'APPROVED', '- Opción: B\n') });
   assert.equal(d.requests[0].state, 'answered');
-  assert.equal(d.pendingResponses.length, 1, 'la Factory tiene una respuesta para procesar');
+  assert.equal(d.pendingResponses.length, 1, 'Shiruvana tiene una respuesta para procesar');
   assert.equal(d.open.length, 0, 'ya no es el turno de Pablo');
 
   const processed = resp('RESP-001', 'REQ-010', 'APPROVED', '- Opción: B\n').replace('Estado: PENDIENTE', 'Estado: PROCESADA');

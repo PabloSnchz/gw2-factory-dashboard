@@ -149,6 +149,6 @@ test('panel: después de responder, el pedido sale de la cola y aparece en "Ya r
   assert.ok(!m.human.some(h => h.id === 'REQ-002'));
   const home = V.renderHome(m);
   assert.ok(home.includes('Ya respondiste'));
-  assert.match(home, /Hecha · Respondido · la Factory lo está procesando/);
+  assert.match(home, /Hecha · Respondido · Shiruvana lo está procesando/);
   assert.ok(!V.renderItem(m, 'REQ-002').includes('Ya lo hice<svg'), 'un pedido respondido no se vuelve a responder');
 });

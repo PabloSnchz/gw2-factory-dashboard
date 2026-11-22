@@ -1,5 +1,5 @@
 // Soberanía de decisiones (DEC-018): a Pablo solo le llegan decisiones de producto, negocio o estrategia,
-// con contexto, impacto, recomendación y el motivo por el que la Factory no puede decidirlas.
+// con contexto, impacto, recomendación y el motivo por el que Shiruvana no puede decidirlas.
 // Acciones y validaciones son tareas, no decisiones; lo informativo no cuenta como pendiente.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -28,7 +28,7 @@ const decisionReq = (why) => `# REQ-010 — ¿Mostramos el historial de la carte
 
 ## Qué pasó
 
-La Factory puede guardar una foto diaria de la cartera.
+Shiruvana puede guardar una foto diaria de la cartera.
 
 ## Por qué importa
 
@@ -66,7 +66,7 @@ test('una decisión sin justificar no llega a Pablo y queda como aviso en Salud'
   const m = await model({ ...base(), 'requests/REQ-010-historial.md': decisionReq(false) });
   assert.ok(!m.human.some(h => h.id === 'REQ-010'));
   const c = m.health.checks.find(x => x.id === 'req:unjustified:REQ-010');
-  assert.ok(c && c.level === 'warn', 'aviso para la Factory');
+  assert.ok(c && c.level === 'warn', 'aviso para Shiruvana');
   assert.match(c.detail, /Por qué te lo pregunto/);
 });
 
@@ -93,7 +93,7 @@ test('status.md: cada línea declara su clase; Info y "Para tu información" no 
 
 - [FEAT-002] Validación: Abrí DEV y confirmá que no carga Analytics.
 - [BL-020] Acción: Crear el token de la API.
-- [RSK-016] Info: La Factory no ve CI; si ves app-checks en rojo, avisá.
+- [RSK-016] Info: Shiruvana no ve CI; si ves app-checks en rojo, avisá.
 - Algo sin clase.
 
 ## Para tu información

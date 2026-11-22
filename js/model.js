@@ -3,7 +3,7 @@
  * y ejecuta los chequeos de salud. Puro: sin DOM ni red (testeable en node).
  *
  * Distinción central (heredada del dashboard histórico, la que sí tenía valor):
- *   - DECLARADO: lo que la Factory escribe en ai-memory.
+ *   - DECLARADO: lo que Shiruvana escribe en ai-memory.
  *   - MEDIDO:    lo que se observa en GitHub (commits, protección, diferencias).
  * Las inconsistencias entre ambos son las señales más valiosas del panel.
  */
@@ -107,11 +107,11 @@ function deriveStatus(status, now) {
 /**
  * Soberanía de decisiones (DEC-018): lo que le llega a Pablo se clasifica en
  *   decision   — producto, negocio o estrategia; solo desde un pedido REQ con contexto, impacto,
- *                recomendación y justificación de por qué la Factory no puede decidirlo;
+ *                recomendación y justificación de por qué Shiruvana no puede decidirlo;
  *   accion     — algo que solo Pablo puede hacer (su cuenta, sus permisos);
  *   validacion — mirar o probar algo funcionando y confirmar que sirve;
  * y lo demás es información (`buildInfo`): no pide nada y no cuenta como pendiente.
- * Las decisiones técnicas las toma la Factory y no aparecen acá.
+ * Las decisiones técnicas las toma Shiruvana y no aparecen acá.
  */
 export const CLASES = ['decision', 'accion', 'validacion'];
 const CLASS_PREFIX = /^(decisi[oó]n|acci[oó]n|validaci[oó]n|info(?:rmaci[oó]n)?)\s*:\s*/i;
@@ -448,8 +448,8 @@ function runHealthChecks(ctx) {
     if (!statusInfo.actualizado) add('warn', 'status:nodate', 'status.md sin fecha de última actualización', 'No se puede saber si el estado está vigente.', 'declarado');
     else if (hours > T.statusDeadHours) add('critical', 'status:dead', `status.md sin actualizar hace ${Math.round(hours / 24)} días`, 'La memoria dejó de reflejar la realidad.', 'medido');
     else if (enCurso && hours > T.statusStaleHours) add('warn', 'status:stale', `Trabajo "en curso" sin actualizar hace ${Math.round(hours)} h`, 'Puede estar detenido sin que status.md lo diga.', 'medido');
-    if (enCurso && backlog && backlog.IN_PROGRESS.length === 0) add('warn', 'status:noprogress', 'La Factory dice estar trabajando, pero no tiene ninguna tarea en curso', 'status.md (EN_CURSO) y backlog.md (sin IN_PROGRESS) no coinciden.', 'declarado');
-    if (!enCurso && backlog && backlog.IN_PROGRESS.length > 0) add('info', 'status:idleprogress', `Hay ${backlog.IN_PROGRESS.length} tarea(s) en curso mientras la Factory espera`, `Estado declarado: ${statusInfo.label}. Tareas: ${backlog.IN_PROGRESS.map(x => x.id).join(', ')}.`, 'declarado');
+    if (enCurso && backlog && backlog.IN_PROGRESS.length === 0) add('warn', 'status:noprogress', 'Shiruvana dice estar trabajando, pero no tiene ninguna tarea en curso', 'status.md (EN_CURSO) y backlog.md (sin IN_PROGRESS) no coinciden.', 'declarado');
+    if (!enCurso && backlog && backlog.IN_PROGRESS.length > 0) add('info', 'status:idleprogress', `Hay ${backlog.IN_PROGRESS.length} tarea(s) en curso mientras Shiruvana espera`, `Estado declarado: ${statusInfo.label}. Tareas: ${backlog.IN_PROGRESS.map(x => x.id).join(', ')}.`, 'declarado');
     const lastDev = commits.find(c => c.repo === 'dev');
     if (lastDev && statusInfo.actualizado && lastDev.date.getTime() - statusInfo.actualizado.getTime() > 12 * H) {
       add('warn', 'status:behind', 'Hay commits en DEV posteriores a la última actualización de status.md', `Último commit: ${lastDev.short} (${lastDev.date.toISOString().slice(0, 16)}Z).`, 'medido');
@@ -496,7 +496,7 @@ function runHealthChecks(ctx) {
   const orphanDecisions = ((human && human.skipped) || []).filter(x => !declaredElsewhere.has(x));
   if (orphanDecisions.length) {
     add('warn', 'sovereignty:noreq', `${orphanDecisions.length} decisión(es) para Pablo sin pedido justificado: no se muestran`,
-      `${orphanDecisions.join(', ')}. Una decisión llega a Pablo solo como pedido (requests/) con contexto, impacto, recomendación y por qué la Factory no puede decidirla.`, 'declarado');
+      `${orphanDecisions.join(', ')}. Una decisión llega a Pablo solo como pedido (requests/) con contexto, impacto, recomendación y por qué Shiruvana no puede decidirla.`, 'declarado');
   }
   const untagged = ((human || []).filter(h => h.sinClase)).map(h => h.id || h.titulo);
   if (untagged.length) {

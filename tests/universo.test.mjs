@@ -106,7 +106,7 @@ async function home() {
   return { m, html: V.renderHome(m) };
 }
 
-test('mesa: 01 · Ahora arriba y dos columnas; lo tuyo a la izquierda, la Factory a la derecha', async () => {
+test('mesa: 01 · Ahora arriba y dos columnas; lo tuyo a la izquierda, Shiruvana a la derecha', async () => {
   const { html } = await home();
   assert.equal((html.match(/<div class="uv-mesa">/g) || []).length, 1, 'una sola mesa');
   const cols = html.split('<div class="uv-col">');
@@ -217,7 +217,7 @@ test('resumen: si entra, todo; si no, la primera oración; si es muy larga, cort
   assert.equal(V.resumen(''), '');
 });
 
-test('04 · La Factory ahora: con textos de miles de caracteres, el resumen arriba y el resto plegado con scroll propio', async () => {
+test('04 · Shiruvana ahora: con textos de miles de caracteres, el resumen arriba y el resto plegado con scroll propio', async () => {
   const { m } = await home();
   const larga = (n, x) => `${x} primera oración. ` + `detalle ${x} `.repeat(n);
   m.status = { ...m.status, tarea: 'BL-091 — ' + larga(400, 'tarea'), motivo: larga(300, 'motivo'), proxima: larga(500, 'proxima') };
@@ -236,7 +236,7 @@ test('04 · La Factory ahora: con textos de miles de caracteres, el resumen arri
   assert.match(UV, /\.uv-mas summary \{[^}]*min-height: var\(--gds-target-min\)/, 'el «Ver…» se puede tocar con el dedo');
 });
 
-test('04 · La Factory ahora: con textos cortos no hay nada plegado', async () => {
+test('04 · Shiruvana ahora: con textos cortos no hay nada plegado', async () => {
   const { m } = await home();
   m.status = { ...m.status, tarea: 'BL-100 — Algo corto', motivo: 'Porque sí. Y por esto también.', proxima: 'Seguir.' };
   const html = V.renderHome(m);

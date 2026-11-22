@@ -41,7 +41,7 @@ test('Hoy con Shiruna: filtro, su tarjeta debajo de la mía y lo que pide en «T
   const html = V.renderHome(m);
   assert.match(html, /class="gds-cluster uv-filtro" role="group" aria-label="Mostrar lo de"/);
   assert.ok(html.indexOf('uv-filtro') < html.indexOf('id="human-title"'), 'el filtro va arriba de «Te toca»');
-  assert.ok(html.indexOf('id="factory-title"') < html.indexOf('id="hija-title"'), 'su tarjeta va debajo de «La Factory ahora»');
+  assert.ok(html.indexOf('id="factory-title"') < html.indexOf('id="hija-title"'), 'su tarjeta va debajo de «Shiruvana ahora»');
   assert.match(html, /data-duena="shiruvana"/);
   const card = suTarjeta(html);
   assert.ok(card, 'su pendiente es una tarjeta con data-duena="shiruna"');

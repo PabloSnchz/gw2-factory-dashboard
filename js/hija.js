@@ -61,7 +61,7 @@ export function lineaHija(txt) {
   return { id, clase: k === 'd' ? 'decision' : k === 'a' ? 'accion' : k === 'v' ? 'validacion' : 'info', texto: rest.slice(m[0].length).trim() };
 }
 
-/** Estado declarado → nivel y texto (mismo criterio que la Factory). */
+/** Estado declarado → nivel y texto (el mismo criterio que uso para mí). */
 export function estadoHija(code) {
   const c = String(code || '').toUpperCase();
   if (!c) return { level: 'warn', text: 'Sin dato' };
@@ -169,7 +169,7 @@ function chip(text, variant) {
   return `<span class="gds-status${variant ? ' gds-status--' + variant : ''}">${esc(text)}</span>`;
 }
 
-/** Tarjeta «Mi hija · Shiruna». Va debajo de «La Factory ahora» en Hoy. Lo que pide está en «02 · Te toca». */
+/** Tarjeta «Mi hija · Shiruna». Va debajo de «04 · Shiruvana ahora» en Hoy. Lo que pide está en «02 · Te toca». */
 export function renderHija(h) {
   if (!h) return '';
   const head = `<p class="uv-ante uv-ante--t">Mi hija · ${esc(h.nombre)}</p>`;
