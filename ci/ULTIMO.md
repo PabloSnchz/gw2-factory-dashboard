@@ -1,8 +1,196 @@
-# CI: VERDE
+# CI: FALLA
 
-- Commit verificado: 6297f3d7bb60e6abe097abb889b527b3897de515
-- Fecha: 2026-11-22T18:44Z
+- Commit verificado: 7057f0b76d064a254531e3a34dc541f27e71ed83
+- Fecha: 2026-11-22T18:52Z
 
+## Fallas
+
+```
+21:✔ panel: las vistas actuales muestran pedidos y respuestas sin romperse (55.263394ms)
+102:✖ assets/shiruna: si ya están subidas, son las 7 webp (una por pose + la cara) (0.273326ms)
+159:✖ failing tests:
+162:✖ assets/shiruna: si ya están subidas, son las 7 webp (una por pose + la cara) (0.273326ms)
+163:  Error: ENOENT: no such file or directory, open '/home/runner/work/gw2-factory-dashboard/gw2-factory-dashboard/assets/shiruna/shiruna-espaldas.webp'
+```
+
+## Salida (últimos 60 KB)
+
+```
+✔ cache: muchas cargas a lo largo de días no acumulan claves (15.526456ms)
+✔ cache: fresco solo con la misma ruta; un árbol de otro commit se vuelve a pedir (0.336671ms)
+✔ cache: si la API falla se usa el último dato del casillero (aunque sea de otra ruta) (2.729564ms)
+✔ cache: guarda solo lo que usa el panel (0.446357ms)
+✔ cache: la ventana de 30 días no cambia dentro del mismo día UTC (0.149432ms)
+✔ limpieza: al iniciar borra las claves del formato viejo y nada de otras apps (0.244272ms)
+✔ lleno: libera solo su propia caché y reintenta; sin lugar sigue funcionando (0.372927ms)
+✔ localStorage real (length/key): storageKeys lo recorre (0.175969ms)
+✔ pedidos reales publicados: sin problemas de formato (3.701209ms)
+✔ pedido de decisión: opciones y recomendación (0.431469ms)
+✔ pedido mal formado: cada problema se explica (0.2898ms)
+✔ respuestas: códigos canónicos, sinónimos y validación (0.749884ms)
+✔ buildResponseMarkdown: ida y vuelta, y no permite inyectar metadatos (1.108356ms)
+✔ ciclo de vida: abierto → respondido → procesado → cerrado (1.367889ms)
+✔ posponer: desaparece hasta la fecha y vuelve cuando vence (0.653559ms)
+✔ acciones verificadas por medición no esperan respuesta (0.416886ms)
+✔ chequeos: espera larga, respuesta sin procesar, huérfana, opción inexistente, README ignorado (34.777481ms)
+✔ contrato v3: una DEC PROPUESTA sin pedido es una inconsistencia (solo si ya se usan pedidos) (0.65556ms)
+✔ panel: los pedidos encabezan "Necesita tu decisión" y absorben lo que cubren (8.343556ms)
+✔ panel: un pedido pospuesto saca de la cola todo lo que cubre (2.531181ms)
+✔ panel: las vistas actuales muestran pedidos y respuestas sin romperse (55.263394ms)
+✔ tokens: todos declarados dentro de :root (salvo la redefinición de movimiento) (1.529197ms)
+✔ tokens: sin duplicados (0.369318ms)
+✔ tokens: los semánticos de color nunca llevan hex; solo referencian primitivos (o rgba para tintes) (0.374562ms)
+✔ tokens: toda referencia var(--gds-*) existe (tokens, componentes, íconos) (0.718423ms)
+✔ espaciado: escala exacta 4 · 8 · 12 · 16 · 24 · 32 · 48 · 64 (0.382678ms)
+✔ tipografía: existen los roles headline, title, body, label y caption, en rem (0.421314ms)
+✔ componentes: sin hex, rgb/hsl, primitivos ni medidas sueltas (0.569979ms)
+✔ accesibilidad: foco visible, salto al contenido y movimiento reducido (0.295158ms)
+✔ contraste: todos los pares de uso cumplen WCAG 2.1 AA (1.322892ms)
+✔ contraste: la tabla de GDS_FOUNDATION.md coincide con el cálculo (0.90282ms)
+✔ íconos: decorativos (aria-hidden) y con color heredado (0.304892ms)
+✔ marca: el gato de Gato Negro Factory no cambia (DEC-024 §1) (0.594274ms)
+✔ voz de Shiruvana: rótulo visible, ícono y avatar decorativo (0.44146ms)
+✔ voz de Shiruvana: avatar oficial liviano y tamaños con tokens (0.40036ms)
+✔ foundation: documenta principios, tokens, tipografía, espaciado, componentes y accesibilidad (0.805457ms)
+✔ mensaje: con la memoria de prueba dice algo concreto, sin «undefined» (19.279856ms)
+✔ mensaje: prioridad — respuesta fallida, riesgo crítico, decisiones, tareas, nada (4.210645ms)
+✔ corto: títulos largos en palabra entera con «…»; los cortos, intactos (0.452469ms)
+✔ reacción del gato: festeja cuando baja lo pendiente, camina con algo nuevo o crítico (3.797425ms)
+✔ montarGlobo: lo crea una vez con su clave, después solo cambia lo que digo; reacciona solo a lecturas nuevas (2.983506ms)
+✔ montarGlobo: sin kit, sin modelo o con el kit roto, el panel sigue (devuelve null, no tira) (2.45988ms)
+✔ index.html: el kit se pide con versión fija, el JS antes que app.js y la hoja antes que universo (0.421314ms)
+✔ universo.css: con globo, las tarjetas no repiten mi cara; sin kit, quedan como antes (0.417014ms)
+✔ Hoy con Shiruna: filtro, su tarjeta debajo de la mía y lo que pide en «Te toca» (50.950229ms)
+✔ sin Shiruna (o sin leerla) Hoy queda como antes; la cabecera y el veredicto cuentan lo de las dos (11.637252ms)
+✔ con Shiruna, ninguna vista muestra undefined ni NaN (5.226764ms)
+✔ versión y config: la hija es Shiruna en su propia organización (1.031013ms)
+✔ hijaUrl: raw de su repo, rama main, con parámetro que cambia cada 5 min (0.348294ms)
+✔ loadHija: solo raw (sin api.github.com), y nunca lanza (0.347757ms)
+✔ lineaHija y estadoHija (0.374974ms)
+✔ buildHija: estado, tarea, fase, pendientes e info (2.084024ms)
+✔ buildHija: sin status.md dice por qué; sin hija o sin datos, null (0.160751ms)
+✔ unirHija: sus pendientes entran en mi cola por clase, con su nombre y sin ID mío (0.758112ms)
+✔ unirHija: sin hija o sin leer, mi modelo no cambia (y la hija queda para su tarjeta) (0.386898ms)
+✔ renderHija: tarjeta con su nombre y dueña, sin repetir la lista, escapada y con link a su memoria (1.593611ms)
+✔ renderFiltro: Las dos · Shiruvana · Shiruna, arranca en Las dos (0.875589ms)
+✔ aplicarFiltro: oculta lo de la otra, marca el botón y vuelve a Las dos (0.417417ms)
+✔ app.js: lee a Shiruna junto con mi memoria, la une al modelo y vuelve a aplicar el filtro en cada dibujo (0.35546ms)
+✔ pipeline completo: snapshot por SHA y presupuesto de 6 llamadas a la API (incluye el canal de respuestas) (19.217668ms)
+✔ caché: la segunda lectura no gasta API (4.61867ms)
+✔ la memoria real es coherente: sin inconsistencias declaradas (1.741292ms)
+✔ producción sin protección se reporta como crítico medido (1.655895ms)
+✔ cola de decisión humana: agrupa y no duplica (1.724611ms)
+✔ preocupaciones: un riesgo declarado y su medición no se duplican (1.232006ms)
+✔ estado, tiempo en ejecución y actividad (1.74725ms)
+✔ sin API (cuota agotada): sigue funcionando desde el índice y lo avisa (10.175221ms)
+✔ detecta inconsistencias inyectadas (1.946093ms)
+✔ codificación corrupta es crítica (7.399551ms)
+✔ Hoy: lo que necesita a Pablo va antes que el estado de la Factory (24.566942ms)
+✔ veredicto: una frase que dice qué hacer (3.612126ms)
+✔ tarjetas: la acción recomendada es el botón principal y va primero (3.479874ms)
+✔ lenguaje: los títulos no empiezan con IDs internos; los IDs quedan como referencia secundaria (4.105089ms)
+✔ lenguaje: estados en palabras, no en códigos (0.264213ms)
+✔ cola: un pendiente propio no se esconde dentro de otro ítem que solo lo cita (2.346069ms)
+✔ canal: una respuesta que no se registró se ve en Hoy, en su tarjeta y en Salud (4.235608ms)
+✔ canal: recién enviada se muestra como "registrando", no como error (4.987538ms)
+✔ canal: ignora PRs e issues sin la marca; si la API falla no rompe (4.122839ms)
+✔ accesibilidad: estados con ícono y texto, ids únicos, foco y nombres accesibles (14.477107ms)
+✔ accesibilidad: cada vista tiene un h1 y los niveles de título no se saltean (GDS §5) (8.710443ms)
+✔ textos: la procedencia de una alerta se dice en palabras, no en códigos (3.511623ms)
+✔ accesibilidad: index.html con salto al contenido, región viva e idioma (0.384871ms)
+✔ GDS: la aplicación no usa colores sueltos y solo referencia tokens existentes (1.40233ms)
+✔ status v2: claves de una línea y secciones (2.270216ms)
+✔ status v1 (formato de la inicialización) sigue siendo legible (0.781539ms)
+✔ status: resumen de la sesión con viñetas de primer nivel (DEC-024) (0.390597ms)
+✔ status ausente devuelve null (nunca un objeto vacío engañoso) (0.118762ms)
+✔ backlog: secciones, prioridad, referencias y fecha de cierre (2.489655ms)
+✔ riesgos: tabla completa (0.717856ms)
+✔ índice: secciones y links (0.488178ms)
+✔ entradas: título, metadatos y estado (0.598186ms)
+✔ roadmap: fases (0.5548ms)
+✔ fechas (0.423627ms)
+✔ IDs (0.405751ms)
+✔ markdown seguro: escapa HTML y bloquea javascript: (0.85629ms)
+✔ la memoria real está en UTF-8 limpio (0.209013ms)
+✔ versión y poses (1.262279ms)
+✔ poseHija: cada estado con su pose, en orden de prioridad (2.451093ms)
+✔ marcarLogro: la primera vez solo guarda; festeja cuando sube; nunca lanza (1.91744ms)
+✔ vestirHija: pose en su tarjeta, su cara en lo que pide, una sola vez aunque se dibuje de nuevo (0.420086ms)
+✔ css/hija.css: una imagen por pose, sin colores literales, antes de la piel y quieta con movimiento reducido (0.835925ms)
+✖ assets/shiruna: si ya están subidas, son las 7 webp (una por pose + la cara) (0.273326ms)
+✔ app.js: marca el logro en cada lectura y la viste después de cada dibujo (0.244946ms)
+✔ contrato espejo: cuerpo del issue idéntico al texto dorado del canal (1.932756ms)
+✔ contrato espejo: archivo de respuesta idéntico al texto dorado y válido para el panel (1.38272ms)
+✔ acciones: una acción ofrece Ya lo hice / Posponer / No lo voy a hacer (0.555654ms)
+✔ acciones: una decisión con opciones pone primero la recomendada (0.671948ms)
+✔ acciones: solo pedidos abiertos se pueden responder (0.437527ms)
+✔ URL: issue nuevo en gw2-factory-dev, título acotado y todo codificado (0.560856ms)
+✔ panel: cada pedido abierto muestra sus botones de respuesta (20.997741ms)
+✔ panel: después de responder, el pedido sale de la cola y aparece en "Ya respondiste" (3.540952ms)
+✔ una decisión justificada llega a Pablo con contexto, impacto, motivo y recomendación (31.942289ms)
+✔ una decisión sin justificar no llega a Pablo y queda como aviso en Salud (3.370837ms)
+✔ con pedidos en uso, una DEC PROPUESTA o una tarea bloqueada "por decisión" sin pedido no llegan a Pablo (2.113799ms)
+✔ sin pedidos (memoria v2) se conserva la cola anterior (3.231426ms)
+✔ status.md: cada línea declara su clase; Info y "Para tu información" no son pendientes (4.212005ms)
+✔ un riesgo que Pablo aceptó pasa a información: sin alarma crítica y con su fecha de revisión (5.955955ms)
+✔ Hoy: sin decisiones lo dice claro y separa las tareas (3.220995ms)
+✔ splitStatusLine reconoce clases con y sin tilde (0.248065ms)
+✔ paleta: colores literales solo en el primer :root y solo como --uv-* (1.728758ms)
+✔ referencias: toda var(--uv-*) y var(--gds-*) existe; solo se reasignan colores del GDS que existen (1.32236ms)
+✔ contraste: los pares del GDS cumplen WCAG 2.1 AA con la paleta del universo (1.815368ms)
+✔ movimiento: con prefers-reduced-motion no hay chispas ni latido (0.222693ms)
+✔ index.html: la piel va última y las chispas son decorativas (0.508015ms)
+✔ cabecera: «Centro de mando», marca con aro y latido decorativo (0.438367ms)
+✔ mesa: 01 · Ahora arriba y dos columnas; lo tuyo a la izquierda, la Factory a la derecha (30.301709ms)
+✔ mesa: antetítulos 01 a 06, cada uno una sola vez (4.550087ms)
+✔ mesa: tres cifras; «te esperan» es la cantidad de pendientes y el cero va en gris (4.440137ms)
+✔ mesa: estilos — dos columnas que se apilan en pantallas chicas, cifras en ámbar (0.657178ms)
+✔ vistas: cada una abre con «01 · …», su único h1 y tres o más cifras en ámbar (7.763821ms)
+✔ vistas: las cifras dicen lo mismo que la vista (5.848967ms)
+✔ vistas: líneas de tiempo con puntos, tablero y niveles con su color (5.66859ms)
+✔ resumen: si entra, todo; si no, la primera oración; si es muy larga, cortada en una palabra entera con «…» (0.285031ms)
+✔ 04 · La Factory ahora: con textos de miles de caracteres, el resumen arriba y el resto plegado con scroll propio (8.62784ms)
+✔ 04 · La Factory ahora: con textos cortos no hay nada plegado (4.029754ms)
+✔ celular: etapas en vertical, sin desenfoque por tarjeta, cifras más chicas y puertas sin hover pegado (0.356765ms)
+✔ Hoy responde las preguntas de la misión (23.494829ms)
+✔ todas las vistas renderizan (11.244523ms)
+✔ detalle: links internos entre entradas y "citado por" (2.707589ms)
+✔ el contenido de la memoria se escapa en todas las vistas (4.648933ms)
+✔ dato faltante se muestra con motivo, nunca vacío (2.877061ms)
+✔ caras: cada tipo de mensaje tiene la suya (2.755316ms)
+✔ caras: WebP embebido y liviano (0.524567ms)
+✔ voz: recomienda, advierte, decide y resume con su rótulo (22.651962ms)
+✔ voz: un solo avatar por sección visible (3.820713ms)
+✔ voz: tamaños — 56 px en resumen y decisión importante, 48 px en el resto (3.635502ms)
+✔ voz: el resumen muestra hasta 3 viñetas de primer nivel (2.378286ms)
+✔ voz: solo decisiones de la Factory; las de Pablo no son "Shiruvana decidió" (1.899365ms)
+✔ voz: nunca en la cabecera, las métricas ni sin nada que decir (7.889949ms)
 ℹ tests 149
-ℹ pass 149
-ℹ fail 0
+ℹ suites 0
+ℹ pass 148
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 579.059679
+
+✖ failing tests:
+
+test at tests/poses.test.mjs:112:1
+✖ assets/shiruna: si ya están subidas, son las 7 webp (una por pose + la cara) (0.273326ms)
+  Error: ENOENT: no such file or directory, open '/home/runner/work/gw2-factory-dashboard/gw2-factory-dashboard/assets/shiruna/shiruna-espaldas.webp'
+      at Object.openSync (node:fs:560:18)
+      at readFileSync (node:fs:444:35)
+      at TestContext.<anonymous> (file:///home/runner/work/gw2-factory-dashboard/gw2-factory-dashboard/tests/poses.test.mjs:116:17)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1047:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+      at Test.postRun (node:internal/test_runner/test:1173:19)
+      at Test.run (node:internal/test_runner/test:1101:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:744:7) {
+    errno: -2,
+    code: 'ENOENT',
+    syscall: 'open',
+    path: '/home/runner/work/gw2-factory-dashboard/gw2-factory-dashboard/assets/shiruna/shiruna-espaldas.webp'
+  }
+```
