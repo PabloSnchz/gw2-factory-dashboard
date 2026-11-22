@@ -8,6 +8,8 @@
  * Mi globo con el gato (js/globo.js) se monta después de cada dibujo con lectura.
  * Shiruna (js/hija.js, S-4): su memoria se lee junto con la mía; lo que pide entra en «Te toca» y el filtro
  * «Las dos · Shiruvana · Shiruna» se vuelve a aplicar después de cada dibujo (en memoria, sin guardar nada).
+ * SH-1 (js/poses.js): su tarjeta lleva la pose de lo que está haciendo y lo que te pide, su cara. En cada lectura
+ * se compara cuántas tareas tiene terminadas con tu visita anterior (un número en el navegador) para festejar.
  */
 
 import { CONFIG } from './config.js';
@@ -17,6 +19,7 @@ import { buildModel } from './model.js';
 import * as V from './views.js';
 import { montarGlobo } from './globo.js';
 import { loadHija, buildHija, unirHija, aplicarFiltro } from './hija.js';
+import { marcarLogro, vestirHija } from './poses.js';
 
 const gh = createGitHub({
   owner: CONFIG.owner,
@@ -61,6 +64,7 @@ function render() {
   $main.innerHTML = html;
   montarGlobo(m); // mi globo con el gato (BL-091 CD-3); sin el kit, no pasa nada
   aplicarFiltro($main, state.ver); // lo de Shiruna, lo mío o lo de las dos (S-4b)
+  vestirHija($main, m.hija); // su pose en la tarjeta y su cara en «Te toca» (SH-1)
   const pending = m.human.length;
   document.title = `${pending ? `(${pending}) ` : ''}${V.verdict(m).text} · Gato Negro Factory`;
 }
@@ -80,6 +84,7 @@ async function refresh(force) {
     const now = Date.now();
     const [raw, hija] = await Promise.all([loadAll(gh, now), loadHija({ now })]);
     state.model = unirHija(buildModel(raw), buildHija(hija, now));
+    marcarLogro(state.model.hija, hija, safeStorage()); // ¿cerró algo desde tu última visita? (SH-1: festeja)
     state.error = null;
     announce(`Datos actualizados. ${V.verdict(state.model).text}.`);
   } catch (e) {

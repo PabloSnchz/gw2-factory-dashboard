@@ -1,0 +1,39 @@
+/* ==========================================================================
+   Centro de mando — Shiruna con cuerpo (SH-1) v1.0.0
+   Su tarjeta «Mi hija · Shiruna» muestra la pose de lo que está haciendo (js/poses.js) y lo que te pide
+   en «Te toca» lleva su cara. Imágenes sin fondo (webp con alfa) en assets/shiruna/.
+   Se carga antes de css/universo.css (la piel sigue siendo la última). Sin colores literales.
+   ========================================================================== */
+
+/* la tarjeta deja lugar a la figura, abajo a la derecha */
+.uv-hija[data-pose] { position: relative; overflow: hidden; padding-right: 150px; min-height: 250px; }
+.uv-hija__pose {
+  position: absolute; right: var(--gds-space-3); bottom: 0; width: 132px; height: 236px;
+  background-repeat: no-repeat; background-position: center bottom; background-size: contain;
+  pointer-events: none;
+}
+.uv-hija__pose--saluda   { background-image: url("../assets/shiruna/shiruna-saluda.webp"); }
+.uv-hija__pose--tablet   { background-image: url("../assets/shiruna/shiruna-tablet.webp"); }
+.uv-hija__pose--festeja  { background-image: url("../assets/shiruna/shiruna-festeja.webp"); animation: uv-hija-salto 900ms ease-out 1; }
+.uv-hija__pose--brazos   { background-image: url("../assets/shiruna/shiruna-brazos.webp"); }
+.uv-hija__pose--consola  { background-image: url("../assets/shiruna/shiruna-consola.webp"); }
+.uv-hija__pose--espaldas { background-image: url("../assets/shiruna/shiruna-espaldas.webp"); }
+
+/* su cara al lado de «De Shiruna» */
+.uv-cara {
+  display: inline-block; flex: none; width: 24px; height: 24px; border-radius: var(--gds-radius-full);
+  background: no-repeat center / cover; vertical-align: middle;
+}
+.uv-cara--shiruna { background-image: url("../assets/shiruna/shiruna-cara.webp"); }
+
+@keyframes uv-hija-salto { 0% { transform: translateY(14px); opacity: 0; } 60% { transform: translateY(-4px); opacity: 1; } 100% { transform: translateY(0); } }
+
+/* celular: figura más chica para que el texto respire */
+@media (max-width: 640px) {
+  .uv-hija[data-pose] { padding-right: 96px; min-height: 0; }
+  .uv-hija__pose { width: 84px; height: 150px; right: var(--gds-space-2); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .uv-hija__pose--festeja { animation: none; }
+}
