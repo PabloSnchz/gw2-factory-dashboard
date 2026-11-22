@@ -1,0 +1,53 @@
+# Canal de parches del Centro de mando (FX-1; misma idea que DEC-035 en gw2-factory-dev).
+# Shiruvana publica patches/PATCH-NNN.json; este workflow lo aplica con .github/scripts/panel-patch.cjs
+# (blob base, ancla única, suite completa, todo o nada) y deja patches/RESULT-NNN.md en el repo.
+#
+# Seguridad: solo en este repo y con pushes del dueño; el contenido del parche nunca entra a un comando;
+# el script no toca .github/, .git/, patches/ ni ci/; antes del commit se verifica que lo preparado sea
+# exactamente lo que el script informó.
+
+name: panel-patch
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'patches/PATCH-*.json'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: panel-patch
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    if: >-
+      github.repository == 'PabloSnchz/gw2-factory-dashboard' &&
+      github.actor == github.repository_owner
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Aplicar los parches pendientes
+        id: apply
+        run: node .github/scripts/panel-patch.cjs
+
+      - name: Commit del resultado
+        if: steps.apply.outputs.count != '0'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          xargs -r -d '\n' git add -- < "$RUNNER_TEMP/panel-patch-files.txt"
+          if git diff --cached --name-only | grep -v -x -F -f "$RUNNER_TEMP/panel-patch-files.txt"; then echo "Cambios no esperados"; exit 1; fi
+          git commit -m "panel-patch: $(cat "$RUNNER_TEMP/panel-patch-ids.txt")"
+          git push origin HEAD:main || { git pull --rebase origin main && git push origin HEAD:main; }
