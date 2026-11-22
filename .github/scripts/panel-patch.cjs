@@ -95,11 +95,24 @@ function deshacer(prepared) {
 
 function suite(root) {
   const files = fs.readdirSync(path.join(root, 'tests')).filter(f => f.endsWith('.test.mjs')).sort().map(f => 'tests/' + f);
-  const r = spawnSync(process.execPath, ['--test', ...files], { cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
-  const out = `${r.stdout || ''}${r.stderr || ''}`;
-  const num = k => (out.match(new RegExp(`^ℹ ${k} (\\d+)`, 'm')) || [])[1] || '?';
-  const fallas = out.split('\n').filter(l => /✖|AssertionError|Error:/.test(l)).slice(0, 40).join('\n');
-  return { ok: r.status === 0, tests: num('tests'), pass: num('pass'), fail: num('fail'), fallas };
+  const r = spawnSync(process.execPath, ['--test', '--test-reporter=tap', ...files], { cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, env: sinContextoDeTest() });
+  return { ok: r.status === 0, ...leerTap(`${r.stdout || ''}${r.stderr || ''}`) };
+}
+
+/** El entorno sin NODE_TEST_CONTEXT: si no, un node --test hijo le reporta al padre y no a nosotros. */
+function sinContextoDeTest() {
+  const env = { ...process.env };
+  delete env.NODE_TEST_CONTEXT;
+  return env;
+}
+
+/** Cuentas y fallas de una salida TAP de node --test (pura). Las fallas dicen qué test y por qué. */
+function leerTap(out) {
+  const num = k => (out.match(new RegExp(`^# ${k} (\\d+)`, 'm')) || [])[1] || '?';
+  const fallas = out.split('\n')
+    .filter(l => /^\s*not ok \d+|^\s*(error|expected|actual|location):/.test(l))
+    .slice(0, 60).map(l => l.trimEnd()).join('\n');
+  return { tests: num('tests'), pass: num('pass'), fail: num('fail'), fallas };
 }
 
 function main(root = process.cwd(), runSuite = suite) {
@@ -149,4 +162,4 @@ if (require.main === module) {
   console.log(ids.length ? `Procesados: ${ids.join(', ')}` : 'Sin parches pendientes');
 }
 
-module.exports = { blobSha, validPath, applyOps, prepare, main };
+module.exports = { blobSha, validPath, applyOps, prepare, main, leerTap, suite };
