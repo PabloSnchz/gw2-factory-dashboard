@@ -12,6 +12,8 @@
  * se compara cuántas tareas tiene terminadas con tu visita anterior (un número en el navegador) para festejar.
  * SH-2 (js/pablo.js): Pablo con su cara en «Te toca», en paz si no le queda nada y festejando en «Hoy» si se
  * terminó algo hoy. Decorativo, después de cada dibujo; no guarda nada.
+ * SH-4a (js/pulso.js): «Hoy hizo» en su tarjeta — sus commits de hoy (1 llamada a la API, cacheada, después de
+ * leer las dos memorias), los pasos, las tareas que cerró, sus tests y si está activa o quieta con trabajo en cola.
  */
 
 import { CONFIG } from './config.js';
@@ -23,6 +25,9 @@ import { montarGlobo } from './globo.js';
 import { loadHija, buildHija, unirHija, aplicarFiltro } from './hija.js';
 import { marcarLogro, vestirHija } from './poses.js';
 import { vestirPablo } from './pablo.js';
+import { loadCommitsHija, buildPulso, vestirPulso } from './pulso.js';
+
+const HIJA_REPO = `https://github.com/${CONFIG.hija.owner}/${CONFIG.hija.repo}`;
 
 const gh = createGitHub({
   owner: CONFIG.owner,
@@ -69,6 +74,7 @@ function render() {
   aplicarFiltro($main, state.ver); // lo de Shiruna, lo mío o lo de las dos (S-4b)
   vestirHija($main, m.hija); // su pose en la tarjeta y su cara en «Te toca» (SH-1)
   vestirPablo($main, m); // Pablo: su cara en «Te toca», en paz o festejando (SH-2)
+  vestirPulso($main, m.pulso, HIJA_REPO); // «Hoy hizo»: lo que Shiruna hizo hoy (SH-4a)
   const pending = m.human.length;
   document.title = `${pending ? `(${pending}) ` : ''}${V.verdict(m).text} · Gato Negro Factory`;
 }
@@ -87,8 +93,10 @@ async function refresh(force) {
   try {
     const now = Date.now();
     const [raw, hija] = await Promise.all([loadAll(gh, now), loadHija({ now })]);
+    const commitsHija = await loadCommitsHija({ gh, now }); // SH-4a: después de loadAll (que reinicia los errores de API)
     state.model = unirHija(buildModel(raw), buildHija(hija, now));
     marcarLogro(state.model.hija, hija, safeStorage()); // ¿cerró algo desde tu última visita? (SH-1: festeja)
+    state.model.pulso = buildPulso({ commits: commitsHija, raw: hija, h: state.model.hija, now });
     state.error = null;
     announce(`Datos actualizados. ${V.verdict(state.model).text}.`);
   } catch (e) {
