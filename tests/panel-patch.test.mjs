@@ -29,6 +29,30 @@ test('applyOps: ancla única, en orden; si aparece 0 o 2 veces, falla', () => {
   assert.throws(() => P.applyOps('a', []), /sin ops/);
 });
 
+test('leerTap: cuenta y dice qué test falló y por qué (salida real del CI, sin TTY)', () => {
+  const out = ['TAP version 13', '# Subtest: Hoy', 'not ok 3 - Hoy responde las preguntas de la misión', '  ---',
+    "  location: '/r/tests/views.test.mjs:14:1'", "  error: '¿Qué está haciendo la Factory?'", '  ...', 'ok 4 - otra',
+    '# tests 160', '# suites 0', '# pass 159', '# fail 1'].join('\n');
+  const t = P.leerTap(out);
+  assert.deepEqual([t.tests, t.pass, t.fail], ['160', '159', '1']);
+  assert.match(t.fallas, /^not ok 3 - Hoy responde/m);
+  assert.match(t.fallas, /error: '¿Qué está haciendo la Factory\?'/);
+  assert.match(t.fallas, /views\.test\.mjs:14/);
+  assert.doesNotMatch(t.fallas, /ok 4/);
+  assert.deepEqual([P.leerTap('').tests, P.leerTap('').fallas], ['?', '']);
+});
+
+test('suite real: corre con reporter TAP y cuenta (repo de juguete)', () => {
+  const root = mkdtempSync(join(tmpdir(), 'pp-s-'));
+  mkdirSync(join(root, 'tests'));
+  writeFileSync(join(root, 'tests/a.test.mjs'), "import t from 'node:test'; import a from 'node:assert'; t('bien', () => {}); t('mal', () => a.equal(1, 2));\n");
+  const r = P.suite(root);
+  rmSync(root, { recursive: true, force: true });
+  assert.equal(r.ok, false);
+  assert.deepEqual([r.tests, r.pass, r.fail], ['2', '1', '1']);
+  assert.match(r.fallas, /not ok \d+ - mal/);
+});
+
 function repo() {
   const root = mkdtempSync(join(tmpdir(), 'pp-'));
   mkdirSync(join(root, 'patches'));

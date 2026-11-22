@@ -1,0 +1,81 @@
+{
+  "id": "PATCH-002",
+  "summary": "FX-1 (2.º intento): quien decide tiene nombre (Shiruvana, Shiruna o Pablo), no «la Factory». PATCH-001 fue rechazado porque tests/views.test.mjs esperaba el texto viejo; ahora va incluido.",
+  "files": [
+    {"path": "js/views.js", "base_sha": "df5cdfdf9af53be145978b234138191f1f0e5c11", "ops": [
+      {"op": "replace", "anchor": "en la conversación con la Factory.</p>", "text": "en la conversación con Shiruvana.</p>"},
+      {"op": "replace", "anchor": "'La Factory está trabajando: nada necesita tu decisión'", "text": "'Shiruvana está trabajando: nada necesita tu decisión'"},
+      {"op": "replace", "anchor": "levelChip(st.level, 'Factory: ' + st.text)", "text": "levelChip(st.level, 'Shiruvana: ' + st.text)"},
+      {"op": "replace", "anchor": "Las decisiones técnicas las toma la Factory. Acá solo llegan", "text": "Las decisiones técnicas las toma Shiruvana (y Shiruna, en lo suyo). Acá solo llegan"},
+      {"op": "replace", "anchor": "04 · La Factory ahora</p>", "text": "04 · Shiruvana ahora</p>"},
+      {"op": "replace", "anchor": "¿Qué está haciendo la Factory?</h2>", "text": "¿Qué está haciendo Shiruvana?</h2>"},
+      {"op": "replace", "anchor": "<p>Con un riesgo crítico abierto la Factory se detiene hasta resolverlo.</p>", "text": "<p>Con un riesgo crítico abierto, freno todo hasta resolverlo.</p>"},
+      {"op": "replace", "anchor": ">Decidido por la Factory</h2>", "text": ">Decidido por Shiruvana</h2>"},
+      {"op": "replace", "anchor": "'Hacia dónde va la Factory y en qué está cada tarea.'", "text": "'Hacia dónde lleva Shiruvana la Factory y en qué está cada tarea.'"},
+      {"op": "replace", "anchor": "'Lo que la Factory decidió, aprendió y construyó.'", "text": "'Lo decidido por Pablo y por Shiruvana (cada decisión dice quién), lo aprendido y lo construido.'"},
+      {"op": "replace", "anchor": "<strong>Declarado</strong> = lo que la Factory escribió en su memoria", "text": "<strong>Declarado</strong> = lo que Shiruvana escribió en su memoria"},
+      {"op": "replace", "anchor": "Leyendo la memoria de la Factory…</p>", "text": "Leyendo la memoria de Shiruvana…</p>"}
+    ]},
+    {"path": "js/app.js", "base_sha": "21a4e16721a63194d6b302a9ff7b1508970c3d63", "ops": [
+      {"op": "replace", "anchor": "announce('Leyendo la memoria de la Factory…');", "text": "announce('Leyendo la memoria de Shiruvana y de Shiruna…');"},
+      {"op": "replace", "anchor": "announce('No se pudo leer la memoria de la Factory.');", "text": "announce('No se pudo leer la memoria de Shiruvana.');"}
+    ]},
+    {"path": "js/model.js", "base_sha": "0d762429ee2995b3378beb82d579ca25f7131e47", "ops": [
+      {"op": "replace", "anchor": "DECLARADO: lo que la Factory escribe en ai-memory.", "text": "DECLARADO: lo que Shiruvana escribe en ai-memory."},
+      {"op": "replace", "anchor": "justificación de por qué la Factory no puede decidirlo;", "text": "justificación de por qué Shiruvana no puede decidirlo;"},
+      {"op": "replace", "anchor": " * Las decisiones técnicas las toma la Factory y no aparecen acá.", "text": " * Las decisiones técnicas las toma Shiruvana y no aparecen acá."},
+      {"op": "replace", "anchor": "'La Factory dice estar trabajando, pero no tiene ninguna tarea en curso'", "text": "'Shiruvana dice estar trabajando, pero no tiene ninguna tarea en curso'"},
+      {"op": "replace", "anchor": "tarea(s) en curso mientras la Factory espera`", "text": "tarea(s) en curso mientras Shiruvana espera`"},
+      {"op": "replace", "anchor": "y por qué la Factory no puede decidirla.`", "text": "y por qué Shiruvana no puede decidirla.`"}
+    ]},
+    {"path": "js/decisions.js", "base_sha": "dbf54fd9e79fb3cb94c3fc7c30e78c08e5849fc1", "ops": [
+      {"op": "replace", "anchor": "entre Pablo y la Factory (contrato v3", "text": "entre Pablo y Shiruvana (contrato v3"},
+      {"op": "replace", "anchor": "'Respondido · la Factory lo está procesando'", "text": "'Respondido · Shiruvana lo está procesando'"},
+      {"op": "replace", "anchor": "'Hecho (verificado) · la Factory lo cierra'", "text": "'Hecho (verificado) · Shiruvana lo cierra'"},
+      {"op": "replace", "anchor": "explica por qué la Factory no puede decidirlo sola.", "text": "explica por qué Shiruvana no puede decidirlo sola."},
+      {"op": "replace", "anchor": "s['por que no lo decide la factory']", "text": "s['por que no lo decide shiruvana'] || s['por que no lo decide la factory']"},
+      {"op": "replace", "anchor": "no llega a Pablo: la Factory debe decidirla o justificarla.", "text": "no llega a Pablo: Shiruvana debe decidirla o justificarla."},
+      {"op": "replace", "anchor": "no explica por qué la Factory no puede decidirlo`", "text": "no explica por qué Shiruvana no puede decidirlo`"},
+      {"op": "replace", "anchor": "La Factory debe decidirlo sola o justificar el pedido", "text": "Shiruvana debe decidirlo sola o justificar el pedido"},
+      {"op": "replace", "anchor": "días que la Factory espera tu respuesta", "text": "días que Shiruvana espera tu respuesta"},
+      {"op": "replace", "anchor": "'La Factory debe cerrar el pedido.'", "text": "'Shiruvana debe cerrar el pedido.'"},
+      {"op": "replace", "anchor": "'La Factory no puede procesarla.'", "text": "'Shiruvana no puede procesarla.'"},
+      {"op": "replace", "anchor": "h y la Factory todavía no procesó", "text": "h y Shiruvana todavía no procesó"},
+      {"op": "replace", "anchor": "'La Factory debe procesar las respuestas pendientes", "text": "'Shiruvana debe procesar las respuestas pendientes"}
+    ]},
+    {"path": "tests/panel.test.mjs", "base_sha": "584bb14e189d2b4b304dc94e045501cfd7503092", "ops": [
+      {"op": "replace", "anchor": "'¿Qué está haciendo la Factory?'", "text": "'¿Qué está haciendo Shiruvana?'"}
+    ]},
+    {"path": "tests/respond.test.mjs", "base_sha": "a435edd04ca4aec442ab6f733d24366c644ac51d", "ops": [
+      {"op": "replace", "anchor": "/Hecha · Respondido · la Factory lo está procesando/", "text": "/Hecha · Respondido · Shiruvana lo está procesando/"}
+    ]},
+    {"path": "tests/views.test.mjs", "base_sha": "d78752d00f35495fab663447f4fd5d5d0a368e83", "ops": [
+      {"op": "replace", "anchor": "'¿Qué está haciendo la Factory?'", "text": "'¿Qué está haciendo Shiruvana?'"}
+    ]},
+    {"path": "tests/universo.test.mjs", "base_sha": "c12fe26200116473c472e49ad471a5d081629a23", "ops": [
+      {"op": "replace", "anchor": "lo tuyo a la izquierda, la Factory a la derecha'", "text": "lo tuyo a la izquierda, Shiruvana a la derecha'"},
+      {"op": "replace", "anchor": "test('04 · La Factory ahora: con textos de miles", "text": "test('04 · Shiruvana ahora: con textos de miles"},
+      {"op": "replace", "anchor": "test('04 · La Factory ahora: con textos cortos", "text": "test('04 · Shiruvana ahora: con textos cortos"}
+    ]},
+    {"path": "tests/hija-panel.test.mjs", "base_sha": "98eaa4be2c833b274f2b9b10b577530cafe52514", "ops": [
+      {"op": "replace", "anchor": "su tarjeta va debajo de «La Factory ahora»'", "text": "su tarjeta va debajo de «Shiruvana ahora»'"}
+    ]},
+    {"path": "tests/sovereignty.test.mjs", "base_sha": "adb842bbea12cf797563f4ae1ce7bd9a1cc7b736", "ops": [
+      {"op": "replace", "anchor": "el motivo por el que la Factory no puede decidirlas.", "text": "el motivo por el que Shiruvana no puede decidirlas."},
+      {"op": "replace", "anchor": "La Factory puede guardar una foto diaria", "text": "Shiruvana puede guardar una foto diaria"},
+      {"op": "replace", "anchor": "'aviso para la Factory'", "text": "'aviso para Shiruvana'"},
+      {"op": "replace", "anchor": "Info: La Factory no ve CI;", "text": "Info: Shiruvana no ve CI;"}
+    ]},
+    {"path": "tests/decisions.test.mjs", "base_sha": "8e35baa8924dd2d6b873ae0c41ac4b4973eda116", "ops": [
+      {"op": "replace", "anchor": "'la Factory tiene una respuesta para procesar'", "text": "'Shiruvana tiene una respuesta para procesar'"}
+    ]},
+    {"path": "tests/gds.test.mjs", "base_sha": "79e69003c37f2ca3dac64bb4f58f9c2688c26127", "ops": [
+      {"op": "replace", "anchor": "es una decisión de Pablo, no de la Factory.", "text": "es una decisión de Pablo, no mía (Shiruvana)."}
+    ]},
+    {"path": "js/hija.js", "base_sha": "76dc25a43d7e8f3fb2d62b56a142942fa91f4f7c", "ops": [
+      {"op": "replace", "anchor": "(mismo criterio que la Factory). */", "text": "(el mismo criterio que uso para mí). */"},
+      {"op": "replace", "anchor": "Va debajo de «La Factory ahora» en Hoy.", "text": "Va debajo de «04 · Shiruvana ahora» en Hoy."}
+    ]},
+    {"path": "tests/autoria.test.mjs", "create": true, "content": "// FX-1: «la Factory» es un concepto, no alguien. Lo que se decide, se escribe o se hace lo hace alguien:\n// Shiruvana, Shiruna o Pablo. Ningún texto del panel le atribuye a «la Factory» una acción.\nimport test from 'node:test';\nimport assert from 'node:assert/strict';\nimport { readdirSync, readFileSync } from 'node:fs';\n\nconst dir = new URL('../js/', import.meta.url);\nconst sinComentarios = (src) => src.replace(/\\/\\*[\\s\\S]*?\\*\\//g, '').replace(/(^|\\s)\\/\\/.*$/gm, '$1');\nconst AGENTE = [\n  /\\b[Ll]a Factory\\s+(?:decid\\w*|toma|tom[óo]|recomienda|est[áa]|espera|debe|dice|puede|no puede|lo |se detiene|todav[íi]a|escrib\\w*|proces\\w*|cierra|frena)/,\n  /\\bpor la Factory\\b/,\n  /\\b(?:con|de) la Factory[.…]/,\n  /'Factory: '/,\n];\n\ntest('autoría: ningún texto del panel dice que «la Factory» decide, hace o espera', () => {\n  for (const f of readdirSync(dir).filter(x => x.endsWith('.js'))) {\n    const src = sinComentarios(readFileSync(new URL(f, dir), 'utf8'));\n    for (const re of AGENTE) {\n      const m = src.match(re);\n      assert.equal(m, null, `${f}: «${m && src.slice(Math.max(0, m.index - 30), m.index + 60)}»`);\n    }\n  }\n});\n\ntest('autoría: lo decidido y lo que pasa tiene nombre', () => {\n  const views = readFileSync(new URL('views.js', dir), 'utf8');\n  for (const s of ['>Decidido por Shiruvana</h2>', '¿Qué está haciendo Shiruvana?', '04 · Shiruvana ahora', 'Las decisiones técnicas las toma Shiruvana']) {\n    assert.ok(views.includes(s), s);\n  }\n  assert.match(readFileSync(new URL('decisions.js', dir), 'utf8'), /answered: 'Respondido · Shiruvana lo está procesando'/);\n});\n"}
+  ]
+}
