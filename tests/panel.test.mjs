@@ -187,8 +187,8 @@ test('accesibilidad: index.html con salto al contenido, región viva e idioma', 
   assert.match(html, /<main id="app-main"[^>]*tabindex="-1"/);
   assert.match(html, /aria-live="polite"/);
   const css = [...html.matchAll(/href="([^"?]+\.css)/g)].map(x => x[1]);
-  assert.deepEqual(css, ['gds/tokens.css', 'gds/components.css', 'css/app.css', 'https://pablosnchz.github.io/shiruvana/kit/escena-kit.css', 'css/universo.css'],
-    'tokens → componentes → disposición → kit de Shiruvana → universo (BL-091)');
+  assert.deepEqual(css, ['gds/tokens.css', 'gds/components.css', 'css/app.css', 'https://pablosnchz.github.io/shiruvana/kit/escena-kit.css', 'css/hija.css', 'css/universo.css'],
+    'tokens → componentes → disposición → kit de Shiruvana → Shiruna con cuerpo (SH-1) → universo (BL-091)');
   const app = read('js/app.js');
   assert.match(app, /\$main\.focus\(/, 'al cambiar de vista el foco pasa al contenido');
 });
