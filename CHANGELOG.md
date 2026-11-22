@@ -2,6 +2,18 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionado SemVer.
 
+## [3.2.0] — 2026-11-22
+
+**La familia con cuerpo** (SH-1 y SH-2): Shiruna y Pablo aparecen de cuerpo entero en el Centro de mando, con imágenes sin fondo. Todo es decorativo: lo que dice la pantalla sigue escrito en el texto y, si una imagen falta, no se ve nada roto. Validado por Pablo. Es MINOR porque suma sin cambiar nada de lo anterior.
+
+### Added
+- `js/poses.js` 1.0.0 (SH-1): la tarjeta «Mi hija · Shiruna» muestra la pose de lo que está haciendo, por prioridad: de espaldas (no pude leer su memoria), brazos cruzados (bloqueada), festeja (cerró algo desde tu visita anterior; una sola vez), saluda (te pide algo), con la tablet (trabajando) o con la consola (en pausa). Lo que te pide en «Te toca» lleva su cara.
+- `js/pablo.js` 1.0.0 (SH-2): la cara de Pablo al lado de «02 · Te toca»; si no le queda nada pendiente, aparece en paz en «Te toca»; si hoy se terminó algo, festeja en la tarjeta «Hoy».
+- `css/hija.css` 1.1.0, cargada antes de la piel: las figuras como fondo de un `<span aria-hidden="true">`, más chicas en el celular y quietas con movimiento reducido.
+- Imágenes: `assets/shiruna/` (7 poses + cara) y `assets/pablo/` (7 poses + cara), webp sin fondo de 640 px de alto.
+- Clave nueva de `localStorage`: `gfd:hija:hechas:v1` (un número: cuántas tareas tenía terminadas Shiruna en tu visita anterior, para festejar una sola vez).
+- Tests: `tests/poses.test.mjs` y `tests/pablo.test.mjs` (9); 158 en total, en verde, con mutaciones detectadas.
+
 ## [3.1.0] — 2026-11-21
 
 **Un solo Centro de mando para las dos** (S-4, DEC-053 en gw2-factory-dev): nace Shiruna, mi hija, con repos y memoria propios en la organización `shiruna-gato-negro`. El panel no se duplica: lee las dos memorias y muestra de quién es cada cosa. Validado por Pablo (S-4a y S-4b). Es MINOR porque suma sin cambiar nada de lo anterior: sin Shiruna configurada, el panel queda igual.
