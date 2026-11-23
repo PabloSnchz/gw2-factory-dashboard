@@ -17,6 +17,7 @@
  * SH-4b (js/tablero.js): su tablero en «Trabajo», debajo del mío, con el paso por el que va cada tarea hoy.
  * 2.11.0 (js/plegar.js): las columnas de los dos tableros muestran 5 tarjetas y pliegan el resto en «Ver N más».
  * SH-4c (js/alertas.js): su salud en «Salud» — quieta con cola, tests en rojo o que bajan, pasos sin tests, trabada.
+ * SH-4d (js/sudia.js): «El día de Shiruna» en «Actividad» — de qué hora a qué hora, tests, pausas largas y sus commits.
  */
 
 import { CONFIG } from './config.js';
@@ -31,6 +32,7 @@ import { vestirPablo } from './pablo.js';
 import { loadCommitsHija, buildPulso, vestirPulso } from './pulso.js';
 import { buildTablero, vestirTablero } from './tablero.js';
 import { buildAlertas, vestirAlertas } from './alertas.js';
+import { buildDia, vestirDia } from './sudia.js';
 
 const HIJA_REPO = `https://github.com/${CONFIG.hija.owner}/${CONFIG.hija.repo}`;
 
@@ -82,6 +84,7 @@ function render() {
   vestirPulso($main, m.pulso, HIJA_REPO); // «Hoy hizo»: lo que Shiruna hizo hoy (SH-4a)
   vestirTablero($main, m.tablero); // su tablero en «Trabajo», debajo del mío (SH-4b)
   vestirAlertas($main, m.alertas); // su salud en «Salud» (SH-4c)
+  vestirDia($main, m.dia, HIJA_REPO); // «El día de Shiruna» en «Actividad» (SH-4d)
   const pending = m.human.length;
   document.title = `${pending ? `(${pending}) ` : ''}${V.verdict(m).text} · Gato Negro Factory`;
 }
@@ -106,6 +109,7 @@ async function refresh(force) {
     state.model.pulso = buildPulso({ commits: commitsHija, raw: hija, h: state.model.hija, now });
     state.model.tablero = buildTablero({ raw: hija, h: state.model.hija, pulso: state.model.pulso });
     state.model.alertas = buildAlertas({ pulso: state.model.pulso, h: state.model.hija, tablero: state.model.tablero });
+    state.model.dia = buildDia({ pulso: state.model.pulso, now, nombre: CONFIG.hija.nombre, key: String(CONFIG.hija.nombre).toLowerCase() });
     state.error = null;
     announce(`Datos actualizados. ${V.verdict(state.model).text}.`);
   } catch (e) {

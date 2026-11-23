@@ -9,7 +9,7 @@ const li = (n) => `<li>t${n}</li>`;
 const it = (id, fecha) => ({ id, fecha: fecha ? new Date(fecha + 'T00:00:00Z') : null });
 
 test('versión y cinco a la vista', () => {
-  assert.equal(PLEGAR_VERSION, '1.0.0');
+  assert.equal(PLEGAR_VERSION, '1.1.0');
   assert.equal(VISIBLES, 5);
 });
 
@@ -30,6 +30,9 @@ test('plegarColumna: más de 5, el resto plegado con scroll propio y nada se pie
   assert.match(html, /<details class="uv-mas"><summary class="gds-caption">Ver 7 más<\/summary>/);
   assert.match(html, /<div class="uv-mas__txt gds-body-2" tabindex="0" role="region" aria-label="Hecho &lt;x&gt;: 7 más">/, 'región con nombre escapado, enfocable para desplazar con teclado');
   assert.match(plegarColumna(lis, { max: 10 }), /Ver 2 más/);
+  const tl = plegarColumna(lis, { clase: 'gds-timeline uv-linea' });
+  assert.equal((tl.match(/<ul class="gds-timeline uv-linea">/g) || []).length, 2, 'la clase elegida, a la vista y plegada');
+  assert.doesNotMatch(tl, /class="gds-list"/);
 });
 
 test('plegarColumna: el plegado usa el estilo con scroll propio que ya existe', () => {
