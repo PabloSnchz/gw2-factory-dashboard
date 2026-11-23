@@ -16,6 +16,7 @@
  * leer las dos memorias), los pasos, las tareas que cerró, sus tests y si está activa o quieta con trabajo en cola.
  * SH-4b (js/tablero.js): su tablero en «Trabajo», debajo del mío, con el paso por el que va cada tarea hoy.
  * 2.11.0 (js/plegar.js): las columnas de los dos tableros muestran 5 tarjetas y pliegan el resto en «Ver N más».
+ * SH-4c (js/alertas.js): su salud en «Salud» — quieta con cola, tests en rojo o que bajan, pasos sin tests, trabada.
  */
 
 import { CONFIG } from './config.js';
@@ -29,6 +30,7 @@ import { marcarLogro, vestirHija } from './poses.js';
 import { vestirPablo } from './pablo.js';
 import { loadCommitsHija, buildPulso, vestirPulso } from './pulso.js';
 import { buildTablero, vestirTablero } from './tablero.js';
+import { buildAlertas, vestirAlertas } from './alertas.js';
 
 const HIJA_REPO = `https://github.com/${CONFIG.hija.owner}/${CONFIG.hija.repo}`;
 
@@ -79,6 +81,7 @@ function render() {
   vestirPablo($main, m); // Pablo: su cara en «Te toca», en paz o festejando (SH-2)
   vestirPulso($main, m.pulso, HIJA_REPO); // «Hoy hizo»: lo que Shiruna hizo hoy (SH-4a)
   vestirTablero($main, m.tablero); // su tablero en «Trabajo», debajo del mío (SH-4b)
+  vestirAlertas($main, m.alertas); // su salud en «Salud» (SH-4c)
   const pending = m.human.length;
   document.title = `${pending ? `(${pending}) ` : ''}${V.verdict(m).text} · Gato Negro Factory`;
 }
@@ -102,6 +105,7 @@ async function refresh(force) {
     marcarLogro(state.model.hija, hija, safeStorage()); // ¿cerró algo desde tu última visita? (SH-1: festeja)
     state.model.pulso = buildPulso({ commits: commitsHija, raw: hija, h: state.model.hija, now });
     state.model.tablero = buildTablero({ raw: hija, h: state.model.hija, pulso: state.model.pulso });
+    state.model.alertas = buildAlertas({ pulso: state.model.pulso, h: state.model.hija, tablero: state.model.tablero });
     state.error = null;
     announce(`Datos actualizados. ${V.verdict(state.model).text}.`);
   } catch (e) {
