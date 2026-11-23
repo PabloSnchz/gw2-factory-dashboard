@@ -12,6 +12,8 @@
  *   Los datos del sistema (métricas, listas, tarjetas de datos) nunca llevan su avatar.
  * - Dos dueñas (S-4b, DEC-053): lo de Shiruna llega con `duena` y su texto se escapa sin enlazar IDs
  *   (sus IDs son suyos, no de mi memoria). Las piezas que se pueden filtrar llevan data-duena.
+ * - Tablero (js/plegar.js): cada columna muestra 5 tarjetas y pliega el resto en «Ver N más» con scroll propio;
+ *   «Hecho» va de lo más nuevo a lo más viejo.
  */
 
 import { CONFIG, blobUrl, commitUrl, repoUrl } from './config.js';
@@ -21,6 +23,7 @@ import { RESPONSES } from './decisions.js';
 import { icon, brandMark } from '../gds/icons.js';
 import { voice } from '../gds/voice.js';
 import { renderHija, renderFiltro, DUENA_MIA } from './hija.js';
+import { recientesPrimero, plegarColumna } from './plegar.js';
 
 const WORKFLOW = [
   ['PRODUCT', 'Producto'], ['ARCHITECTURE', 'Arquitectura'], ['DEVELOPMENT', 'Desarrollo'],
@@ -638,12 +641,12 @@ export function renderWork(m) {
   <div class="board">${cols.map(([k, label, ic]) => `
     <section class="gds-card board__col board__col--${k.toLowerCase()}" aria-labelledby="col-${k}">
       <div class="gds-card__header"><h2 id="col-${k}" class="gds-title-2">${icon(ic)} ${label} ${count(b[k].length)}</h2></div>
-      ${b[k].length ? `<ul class="gds-list">${b[k].map(it => `
+      ${b[k].length ? plegarColumna((k === 'DONE' ? recientesPrimero(b[k]) : b[k]).map(it => `
         <li class="gds-list__item ticket"><div class="gds-stack--sm gds-stack">
           <p class="gds-cluster">${prioChip(it.prioridad)}${ref(it.id, m)}</p>
           <p class="gds-label-1">${t(plainTitle(it.titulo), m)}</p>
           ${it.detalle ? `<p class="gds-caption gds-text-secondary">${t(it.detalle, m)}</p>` : ''}
-        </div></li>`).join('')}</ul>` : empty('Vacío')}
+        </div></li>`), { nombre: label }) : empty('Vacío')}
     </section>`).join('')}</div>` : na('backlog.md no disponible')}`;
 }
 

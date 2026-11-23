@@ -7,12 +7,14 @@
  * - Sus IDs son suyos (su BL-005 no es el mío): nunca se enlazan a mi memoria; el tablero enlaza a su backlog.
  * - Las líneas de su backlog que no respetan el formato se cuentan (no se esconden ni se inventan).
  * - vestirTablero: después de cada dibujo, solo en «Trabajo», debajo de mi tablero. views.js sigue pura.
+ * - 1.1.0: como el mío, cada columna muestra 5 tarjetas y el resto queda en «Ver N más» (js/plegar.js):
+ *   nada se pierde y el tablero no se estira.
  */
 import { CONFIG } from './config.js';
 import { parseBacklog, esc } from './parse.js';
+import { recientesPrimero, plegarColumna } from './plegar.js';
 
-export const TABLERO_VERSION = '1.0.0';
-export const HECHAS_MAX = 5;
+export const TABLERO_VERSION = '1.1.0';
 const COLUMNAS = [
   ['IN_PROGRESS', 'En curso'], ['BLOCKED', 'Bloqueado'], ['READY', 'En la fila'], ['DONE', 'Hecho'],
 ];
@@ -44,7 +46,7 @@ export function buildTablero({ raw, h, pulso, hija = CONFIG.hija } = {}) {
   const b = parseBacklog(raw && raw.files ? raw.files['backlog.md'] : null);
   if (!b) return { nombre: h.nombre, key: h.key, url, leido: false, error: (raw && raw.errors && raw.errors['backlog.md']) || 'sin dato' };
   const prog = progresos(pulso);
-  const col = (k) => b[k].map(it => ({ id: it.id, prioridad: it.prioridad, titulo: it.titulo, detalle: sinFecha(it.detalle), progreso: k === 'DONE' ? null : prog[it.id] || null }));
+  const col = (k) => b[k].map(it => ({ id: it.id, prioridad: it.prioridad, titulo: it.titulo, fecha: it.fecha || null, detalle: sinFecha(it.detalle), progreso: k === 'DONE' ? null : prog[it.id] || null }));
   return {
     nombre: h.nombre,
     key: h.key,
@@ -53,7 +55,7 @@ export function buildTablero({ raw, h, pulso, hija = CONFIG.hija } = {}) {
     IN_PROGRESS: col('IN_PROGRESS'),
     BLOCKED: col('BLOCKED'),
     READY: col('READY'),
-    DONE: col('DONE').reverse(), // lo último que cerró, primero
+    DONE: recientesPrimero(col('DONE'), { nuevasAlFinal: true }), // lo último que cerró, primero (ella agrega abajo)
     malformadas: b.malformed.length,
   };
 }
@@ -88,12 +90,9 @@ export function renderTablero(t) {
   }
   const cols = COLUMNAS.map(([k, label]) => {
     const all = t[k];
-    const list = k === 'DONE' ? all.slice(0, HECHAS_MAX) : all;
-    const resto = all.length - list.length;
     return `<section class="gds-card board__col board__col--${k.toLowerCase()}" aria-labelledby="hcol-${k}">
       <div class="gds-card__header"><h3 id="hcol-${k}" class="gds-title-2">${label} <span class="gds-caption gds-text-muted">(${all.length})</span></h3></div>
-      ${list.length ? `<ul class="gds-list">${list.map((it, i) => ticket(it, k, i)).join('')}</ul>` : '<p class="gds-body-2 gds-text-muted">Vacío</p>'}
-      ${resto > 0 ? `<p class="gds-caption gds-text-muted">y ${resto} más en su backlog</p>` : ''}
+      ${all.length ? plegarColumna(all.map((it, i) => ticket(it, k, i)), { nombre: `${t.nombre} · ${label}` }) : '<p class="gds-body-2 gds-text-muted">Vacío</p>'}
     </section>`;
   }).join('');
   const aviso = t.malformadas

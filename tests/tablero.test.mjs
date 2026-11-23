@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
-  TABLERO_VERSION, HECHAS_MAX, sinFecha, progresos, buildTablero, renderTablero, vestirTablero,
+  TABLERO_VERSION, sinFecha, progresos, buildTablero, renderTablero, vestirTablero,
 } from '../js/tablero.js';
 
 const read = (p) => readFileSync(new URL(`../${p}`, import.meta.url), 'utf8');
@@ -40,9 +40,8 @@ const PULSO = { items: [
 ] };
 const tab = (o = {}) => buildTablero({ raw: raw(), h, pulso: PULSO, hija: HIJA, ...o });
 
-test('versión y tope de hechas', () => {
-  assert.equal(TABLERO_VERSION, '1.0.0');
-  assert.equal(HECHAS_MAX, 5);
+test('versión', () => {
+  assert.equal(TABLERO_VERSION, '1.1.0');
 });
 
 test('sinFecha: saca la fecha final del detalle y nada más', () => {
@@ -100,8 +99,10 @@ test('renderTablero: la próxima de la fila, el paso de hoy, hechas con tope y e
   assert.match(html, /paso 2\/3<\/span> el modal espera al clic/);
   assert.match(html, /En curso <span class="gds-caption gds-text-muted">\(1\)/);
   assert.match(html, /Hecho <span class="gds-caption gds-text-muted">\(6\)/);
-  assert.match(html, /y 1 más en su backlog/);
-  assert.doesNotMatch(html, />BL-000</, 'la más vieja queda fuera del tope');
+  const hecho = html.slice(html.indexOf('board__col--done'));
+  assert.match(hecho, /<summary class="gds-caption">Ver 1 más<\/summary>/, 'de 6 hechas, 5 a la vista y 1 plegada');
+  assert.ok(hecho.indexOf('>BL-000<') > hecho.indexOf('Ver 1 más'), 'la más vieja no se pierde: queda plegada');
+  assert.match(hecho, /aria-label="Shiruna · Hecho: 1 más"/);
   assert.match(html, /&lt;b&gt;x&lt;\/b&gt;/);
   assert.doesNotMatch(html, /<b>x<\/b>/);
   assert.match(html, /Sidebar con &lt;i&gt;key&lt;\/i&gt;/, 'el título también se escapa');
@@ -150,5 +151,5 @@ test('app.js: arma su tablero después del pulso y lo pone después de «Hoy hiz
   assert.match(app, /import \{ buildTablero, vestirTablero \} from '\.\/tablero\.js';/);
   assert.match(app, /state\.model\.pulso = buildPulso\([^\n]*\n\s*state\.model\.tablero = buildTablero\(\{ raw: hija, h: state\.model\.hija, pulso: state\.model\.pulso \}\);/);
   assert.match(app, /vestirPulso\(\$main, m\.pulso, HIJA_REPO\);[^\n]*\n\s*vestirTablero\(\$main, m\.tablero\);/);
-  assert.match(read('index.html'), /src="js\/app\.js\?v=2\.10\.0"/, 'el navegador pide la versión nueva');
+  assert.match(read('index.html'), /src="js\/app\.js\?v=2\.(1\d|[2-9]\d)\.0"/, 'el navegador pide una versión que ya trae el tablero (2.10.0 o posterior)');
 });

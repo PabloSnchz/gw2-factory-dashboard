@@ -15,6 +15,7 @@
  * SH-4a (js/pulso.js): «Hoy hizo» en su tarjeta — sus commits de hoy (1 llamada a la API, cacheada, después de
  * leer las dos memorias), los pasos, las tareas que cerró, sus tests y si está activa o quieta con trabajo en cola.
  * SH-4b (js/tablero.js): su tablero en «Trabajo», debajo del mío, con el paso por el que va cada tarea hoy.
+ * 2.11.0 (js/plegar.js): las columnas de los dos tableros muestran 5 tarjetas y pliegan el resto en «Ver N más».
  */
 
 import { CONFIG } from './config.js';
