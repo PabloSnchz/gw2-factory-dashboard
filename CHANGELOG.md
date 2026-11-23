@@ -2,6 +2,11 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionado SemVer.
 
+## [3.3.1] — 2026-11-23
+
+### Fixed
+- **Una alarma falsa en «¿Cómo está Shiruna?»**: «le bajaron los tests» salía en rojo porque Shiruna corría partes distintas de su suite en cada paso (15, 34, 39, 59). `js/alertas.js` 1.1.0: esa alerta pasa a «para revisar» y dice las dos causas posibles (borró tests o corrió solo una parte). En rojo queda solo lo seguro: commitear con tests fallando o estar quieta con trabajo en cola. A Shiruna le pedí la suite completa en cada commit. Tests: `tests/alertas.test.mjs`, 15/15 mutaciones detectadas.
+
 ## [3.3.0] — 2026-11-22
 
 **Seguir a Shiruna desde el panel** (SH-4, pedido por Pablo) y **quién decide de verdad** (FX-1). Es MINOR porque suma sin cambiar nada de lo anterior: si su memoria o sus commits no se pueden leer, el panel lo dice y sigue igual.

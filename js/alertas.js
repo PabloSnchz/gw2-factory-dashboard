@@ -6,7 +6,8 @@
  * Acá miro si las cumple, con lo que ya leyó el panel (sus commits de hoy, su status.md y su backlog):
  * - critical · quieta: más de 2 h sin moverse con trabajo en cola (¿PC apagada o suspendida?).
  * - critical · en rojo: su último commit con tests dice que fallan.
- * - critical · tests que bajan: su último conteo es menor que uno anterior de hoy (¿borró tests?).
+ * - warn · tests que bajan: su último conteo es menor que uno anterior de hoy. Puede ser que borró tests o que
+ *   corrió solo una parte de la suite (1.1.0: antes era crítico; el 23/11 la alarma salió por suites parciales).
  * - warn · sin tests: un paso commiteado sin decir cuántos tests pasaron.
  * - warn · bloqueada: su status.md dice BLOQUEADA o tiene tareas en «Bloqueado».
  * - info · sin datos: no pude leer sus commits, o hay líneas de su backlog fuera de formato.
@@ -16,7 +17,7 @@
 import { esc } from './parse.js';
 import { icon } from '../gds/icons.js';
 
-export const ALERTAS_VERSION = '1.0.0';
+export const ALERTAS_VERSION = '1.1.0';
 const NIVEL = {
   critical: { variant: 'danger', icon: 'octagon', label: 'Crítico' },
   warn: { variant: 'warning', icon: 'alert', label: 'Para revisar' },
@@ -50,8 +51,8 @@ export function buildAlertas({ pulso, h, tablero } = {}) {
     }
     const max = Math.max(...conTests.slice(1).map(c => c.total));
     if (conTests.length > 1 && ult.total < max) {
-      add('hija:bajan', 'critical', `A ${n} le bajaron los tests`,
-        `Hoy llegó a ${max} y su último commit dice ${ult.total} (${corto(ult.sha)}). Su regla es no borrar tests.`, 'medido');
+      add('hija:bajan', 'warn', `Los tests de ${n} no suman lo mismo en todos sus commits`,
+        `Hoy llegó a ${max} y su último commit dice ${ult.total} (${corto(ult.sha)}). O borró tests o corrió solo una parte de la suite: su regla es correr la suite completa y no borrar tests.`, 'medido');
     }
   }
   const sinTests = ((pulso && pulso.items) || []).filter(c => c.paso != null && c.total == null);

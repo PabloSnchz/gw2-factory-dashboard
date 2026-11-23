@@ -11,7 +11,7 @@ const pulso = (items = [], o = {}) => ({ leidos: true, items, enCola: 5, vida: {
 const tablero = (o = {}) => ({ leido: true, BLOCKED: [], malformadas: 0, ...o });
 const ids = (a) => a.checks.map(x => x.id);
 
-test('versión', () => assert.equal(ALERTAS_VERSION, '1.0.0'));
+test('versión', () => assert.equal(ALERTAS_VERSION, '1.1.0'));
 
 test('sin hija leída no hay alertas; sana, en orden', () => {
   assert.equal(buildAlertas({ h: null }), null);
@@ -30,13 +30,16 @@ test('quieta con trabajo en cola: crítico; «hace un rato» no alarma', () => {
   assert.deepEqual(ids(buildAlertas({ pulso: pulso([], { vida: { level: 'warn', text: 'x' } }), h: h() })), []);
 });
 
-test('tests en rojo y tests que bajan: críticos, mirando el último conteo', () => {
+test('tests en rojo: crítico; tests que bajan: para revisar (puede ser una suite parcial); mirando el último conteo', () => {
   const rojo = buildAlertas({ pulso: pulso([c('b', { pass: 15, total: 16 }), c('a', { pass: 16, total: 16 })]), h: h() });
   assert.deepEqual(ids(rojo), ['hija:rojo']);
   assert.match(rojo.checks[0].detail, /15\/16 \(bbbbbbb\)/);
   const bajan = buildAlertas({ pulso: pulso([c('c', { pass: 14, total: 14 }), c('b', { pass: 17, total: 17 }), c('a', { pass: 16, total: 16 })]), h: h() });
   assert.deepEqual(ids(bajan), ['hija:bajan']);
-  assert.match(bajan.checks[0].detail, /llegó a 17 y su último commit dice 14/);
+  assert.match(bajan.checks[0].detail, /llegó a 17 y su último commit dice 14 \(ccccccc\)\. O borró tests o corrió solo una parte de la suite/);
+  assert.equal(bajan.checks[0].level, 'warn', 'no es crítico: puede ser una suite parcial');
+  assert.equal(bajan.nivel, 'warn');
+  assert.equal(rojo.checks[0].level, 'critical', 'en rojo sí es crítico');
   const arreglado = buildAlertas({ pulso: pulso([c('b', { pass: 17, total: 17 }), c('a', { pass: 15, total: 16 })]), h: h() });
   assert.deepEqual(ids(arreglado), [], 'un rojo viejo ya corregido no alarma');
   assert.deepEqual(ids(buildAlertas({ pulso: pulso([c('a', { pass: 3, total: 3 })]), h: h() })), [], 'un solo conteo no puede bajar');
