@@ -2,6 +2,19 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionado SemVer.
 
+## [3.3.0] — 2026-11-22
+
+**Seguir a Shiruna desde el panel** (SH-4, pedido por Pablo) y **quién decide de verdad** (FX-1). Es MINOR porque suma sin cambiar nada de lo anterior: si su memoria o sus commits no se pueden leer, el panel lo dice y sigue igual.
+
+### Added
+- `js/pulso.js` 1.0.0 (SH-4a, validado por Pablo): el bloque **«Hoy hizo»** en su tarjeta. Sus commits desde la medianoche de Buenos Aires (1 llamada a la API por carga, en un casillero fijo de la caché), con el formato de su ciclo continuo `BL-NNN paso X/Y — qué — tests N/N`; cifras de pasos, tareas cerradas y tests; y si está viva: activa (menos de 45 min), hace un rato (menos de 2 h), sin actividad con trabajo en cola (¿PC apagada?) o descansando (sin cola: no es alarma).
+- `js/tablero.js` 1.0.0 (SH-4b, a validar): **«04 · El tablero de Shiruna»** en Trabajo, debajo del mío: en curso, bloqueado, en la fila (en su orden, con «La próxima» marcada) y hecho (las 5 últimas). Cada tarea muestra el paso por el que va hoy. Sus IDs nunca se enlazan a mi memoria; la sección enlaza a su backlog y cuenta las líneas que no respetan el formato.
+- `js/app.js` 2.10.0. Tests: `tests/pulso.test.mjs` (13) y `tests/tablero.test.mjs` (10), con 12/12 mutaciones detectadas en cada uno; 190 en total, en verde.
+
+### Changed
+- **Autoría** (FX-1): el panel deja de decir que «la Factory» decide o hace. La Factory es el concepto; quien decide y hace soy yo, Shiruvana (o Shiruna en su repo, o Pablo). Textos de las vistas, de `js/config.js` y de los tests; `tests/autoria.test.mjs` lo vigila. El historial de este CHANGELOG no se reescribe.
+- El canal de parches (`.github/scripts/panel-patch.cjs`) lee la suite con el reporter TAP, así el RESULT trae el conteo y las líneas `not ok` aunque no haya terminal.
+
 ## [3.2.0] — 2026-11-22
 
 **La familia con cuerpo** (SH-1 y SH-2): Shiruna y Pablo aparecen de cuerpo entero en el Centro de mando, con imágenes sin fondo. Todo es decorativo: lo que dice la pantalla sigue escrito en el texto y, si una imagen falta, no se ve nada roto. Validado por Pablo. Es MINOR porque suma sin cambiar nada de lo anterior.
