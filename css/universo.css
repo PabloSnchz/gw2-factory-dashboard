@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Centro de mando — piel «Universo Shiruvana» v1.5.0 (BL-091 CD-1 fondo y cabecera · CD-2 Mesa de mando · CD-3 globo · CD-4 las otras vistas · CD-5 celular · 3.0.1 textos largos plegados)
+   Centro de mando — piel «Universo Shiruvana» v1.6.0 (BL-091 CD-1 fondo y cabecera · CD-2 Mesa de mando · CD-3 globo · CD-4 las otras vistas · CD-5 celular · 3.0.1 textos largos plegados · 1.6.0 scroll fluido)
    Se carga ÚLTIMA (tokens → componentes → disposición → universo).
 
    Qué hace:
@@ -36,7 +36,7 @@
   --uv-glow-violet: rgba(155, 130, 255, 0.20);
   --uv-glow-amber:  rgba(232, 179, 75, 0.08);
   --uv-grid:        rgba(255, 255, 255, 0.025);
-  --uv-glass:       rgba(11, 11, 16, 0.78);
+  --uv-glass:       rgba(11, 11, 16, 0.94);
   --uv-glass-pill:  rgba(21, 21, 29, 0.75);
   --uv-tint-violet: rgba(155, 130, 255, 0.14);
   --uv-ring-teal:   rgba(46, 196, 182, 0.55);
@@ -46,7 +46,6 @@
   --uv-glow-door:   rgba(155, 130, 255, 0.20);
 
   --uv-grid-step: 48px;
-  --uv-header-blur: 10px;
 }
 
 /* ------------------------------------------------------------ 1. el GDS habla con mi paleta */
@@ -72,15 +71,19 @@ body.gds {
 }
 
 /* ------------------------------------------------------------ 2. fondo: cuadrícula + resplandores */
-body.gds {
-  min-height: 100vh;
+/* 1.6.0 (scroll fluido): antes era el fondo del body con background-attachment: fixed, y eso obliga
+   al navegador a repintar toda la pantalla en cada paso del scroll (los «saltitos»). Ahora el
+   escenario es una capa fija propia, detrás de todo: se pinta una vez y al bajar solo se mueve el
+   contenido. Se ve igual (los porcentajes siguen siendo de la ventana). */
+body.gds { min-height: 100vh; background: var(--uv-bg); }
+body.gds::before {
+  content: ""; position: fixed; inset: 0; z-index: -2; pointer-events: none;
   background:
     radial-gradient(40% 40% at 88% 4%, var(--uv-glow-violet), transparent 70%),
     radial-gradient(35% 30% at 6% 30%, var(--uv-glow-amber), transparent 70%),
     linear-gradient(var(--uv-grid) 1px, transparent 1px) 0 0 / 100% var(--uv-grid-step),
-    linear-gradient(90deg, var(--uv-grid) 1px, transparent 1px) 0 0 / var(--uv-grid-step) 100%,
-    var(--uv-bg);
-  background-attachment: fixed;
+    linear-gradient(90deg, var(--uv-grid) 1px, transparent 1px) 0 0 / var(--uv-grid-step) 100%;
+  transform: translateZ(0);
 }
 
 /* chispas: 12 puntos que suben despacio, detrás de todo */
@@ -106,10 +109,9 @@ body.gds {
 .uv-chispas i:nth-child(12) { --chispa-i: 11; }
 
 /* ------------------------------------------------------------ 3. cabecera en una línea */
+/* 1.6.0: sin desenfoque detrás (se recalculaba en cada paso del scroll); el vidrio es casi opaco */
 .app-header {
   background: var(--uv-glass);
-  -webkit-backdrop-filter: blur(var(--uv-header-blur));
-  backdrop-filter: blur(var(--uv-header-blur));
   border-bottom-color: var(--uv-line);
 }
 .app-bar { max-width: none; padding: var(--gds-space-3) var(--gds-space-5); gap: var(--gds-space-3) var(--gds-space-5); }
@@ -180,15 +182,15 @@ body.gds {
 .uv-col .gds-grid { grid-template-columns: minmax(0, 1fr); }
 .uv-abajo { display: grid; gap: var(--gds-space-5); }
 
-/* paneles translúcidos sobre la cuadrícula */
+/* paneles translúcidos sobre la cuadrícula. 1.6.0: sin desenfoque detrás de cada tarjeta (con muchas
+   tarjetas, el navegador lo rehacía en cada paso del scroll); el panel ya es casi opaco y se ve igual */
 .gds-card, .uv-panel, .uv-numeros .gds-metric {
   background: var(--uv-panel);
-  -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
   border-color: var(--uv-line);
   border-radius: 14px;
 }
 .uv-panel { border: var(--gds-border-width) solid var(--uv-line); padding: var(--gds-card-padding); }
-.gds-card--inset { background: var(--gds-color-surface-2); -webkit-backdrop-filter: none; backdrop-filter: none; }
+.gds-card--inset { background: var(--gds-color-surface-2); }
 .gds-card--accent { border-color: var(--uv-amber); box-shadow: 0 0 0 1px var(--uv-ring-amber); }
 .factory > .uv-ante, .uv-entornos > .uv-ante { margin-bottom: var(--gds-space-2); }
 
@@ -300,8 +302,7 @@ body.svk-p-sentada #human-title + .gds-callout--success {
   .factory .gds-stepper::before { left: 4px; right: auto; top: 6px; bottom: 6px; width: 2px; height: auto; }
   .factory .gds-stepper__step { justify-items: start; text-align: left; }
   .factory .gds-stepper__step::before { position: absolute; left: -20px; top: 2px; }
-  /* CD-5: sin desenfoque detrás de cada tarjeta (en el celular hace saltar el scroll); el panel ya es casi opaco */
-  .gds-card, .uv-panel, .uv-numeros .gds-metric { -webkit-backdrop-filter: none; backdrop-filter: none; }
+  /* CD-5: el desenfoque por tarjeta que se sacaba acá ya no existe en ninguna pantalla (1.6.0) */
   /* CD-5: cifras más chicas para que entren de a tres por fila */
   .uv-cifras { gap: var(--gds-space-4); }
   .uv-cifra b { font-size: 2rem; }

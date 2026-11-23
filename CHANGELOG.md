@@ -2,6 +2,11 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionado SemVer.
 
+## [3.3.3] — 2026-11-23
+
+### Fixed
+- **Scroll pesado y con saltitos** (pedido de Pablo): el fondo del Centro de mando usaba `background-attachment: fixed` y cada tarjeta y la cabecera tenían desenfoque detrás (`backdrop-filter`). Las dos cosas obligan al navegador a repintar o recalcular en cada paso del scroll. `css/universo.css` 1.6.0: el escenario (cuadrícula y resplandores) pasa a una capa fija propia (`body.gds::before`) y se van los desenfoques; los paneles y la cabecera ya eran casi opacos, así que se ve igual. Tests: `tests/universo.test.mjs` (fluidez).
+
 ## [3.3.2] — 2026-11-23
 
 ### Added

@@ -254,10 +254,27 @@ test('celular: etapas en vertical, sin desenfoque por tarjeta, cifras más chica
   assert.match(cel, /\.factory \.gds-stepper::before \{[^}]*width: 2px; height: auto;/, 'la línea de las etapas pasa a vertical');
   assert.match(cel, /\.factory \.gds-stepper__step::before \{ position: absolute;/, 'el punto va a la izquierda del texto');
   assert.match(cel, /\.factory \.gds-stepper__step \{ justify-items: start; text-align: left; \}/);
-  assert.match(cel, /\.gds-card, \.uv-panel, \.uv-numeros \.gds-metric \{ -webkit-backdrop-filter: none; backdrop-filter: none; \}/, 'sin desenfoque por tarjeta');
+  assert.doesNotMatch(cel, /backdrop-filter/, 'sin desenfoque por tarjeta (1.6.0: ya no hay en ninguna pantalla)');
   assert.match(cel, /\.uv-cifra b \{ font-size: 2rem; \}/);
   // El efecto de «puerta» solo con mouse: fuera de @media (hover: hover) no hay :hover que mueva la tarjeta.
   const sinHover = UV.replace(/@media \(hover: hover\) \{[\s\S]*?\}\n\}/, '').replace(/@media \(prefers-reduced-motion: reduce\)[\s\S]*$/, '');
   assert.doesNotMatch(sinHover, /\.uv-entornos \.gds-card--inset:hover/, 'el hover de las puertas vive en @media (hover: hover)');
   assert.match(UV, /@media \(hover: hover\) \{\s*\.uv-entornos \.gds-card--inset:hover \{[^}]*translateY\(-2px\)/);
+});
+
+/* ------------------------------------------------------------ 1.6.0: scroll fluido */
+
+test('fluidez: el escenario es una capa fija propia y no hay desenfoques que recalcular al bajar', () => {
+  assert.doesNotMatch(UV, /background-attachment\s*:\s*fixed/, 'background-attachment: fixed repinta toda la pantalla en cada paso del scroll');
+  assert.doesNotMatch(UV, /backdrop-filter/, 'sin desenfoques detrás de la cabecera ni de las tarjetas');
+  const capa = UV.match(/body\.gds::before\s*\{([^}]*)\}/);
+  assert.ok(capa, 'el escenario vive en body.gds::before');
+  assert.match(capa[1], /position:\s*fixed;\s*inset:\s*0;\s*z-index:\s*-2;\s*pointer-events:\s*none;/);
+  assert.match(capa[1], /radial-gradient\(40% 40% at 88% 4%, var\(--uv-glow-violet\)/, 'los mismos resplandores');
+  assert.match(capa[1], /var\(--uv-grid-step\) 100%;/, 'la misma cuadrícula');
+  assert.match(capa[1], /transform:\s*translateZ\(0\)/, 'capa propia');
+  const fondo = [...UV.matchAll(/body\.gds\s*\{([^}]*)\}/g)].map(x => x[1]).find(b => /background/.test(b));
+  assert.match(fondo, /background:\s*var\(--uv-bg\);/, 'el body solo pinta el color de fondo');
+  assert.match(UV.match(/\.uv-chispas\s*\{([^}]*)\}/)[1], /z-index:\s*-1/, 'las chispas siguen arriba de la cuadrícula');
+  assert.equal(PALETTE['--uv-glass'], 'rgba(11, 11, 16, 0.94)', 'cabecera casi opaca, sin desenfoque');
 });
