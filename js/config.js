@@ -14,7 +14,7 @@ export const CONFIG = {
     prod:      { name: 'gw2-wallet-ligero',     branch: 'main', label: 'Producción',    role: 'production' },
   },
 
-  // Memoria oficial de la Factory (en el repo dev).
+  // Mi memoria oficial, la de Shiruvana (en el repo dev).
   memoryRoot: 'ai-memory',
   requiredFiles: ['status.md', 'backlog.md', 'memory-index.md', 'roadmap.md', 'risks.md'],
   collections: [
@@ -35,7 +35,7 @@ export const CONFIG = {
     statusDeadHours: 168,     // 7 días: la memoria dejó de reflejar la realidad
     proposalWaitDays: 7,      // una propuesta esperando decisión humana
     requestWaitDays: 7,       // un pedido abierto sin respuesta de Pablo
-    responseUnprocessedHours: 48, // una respuesta de Pablo sin procesar por la Factory
+    responseUnprocessedHours: 48, // una respuesta de Pablo que Shiruvana todavía no procesó
     devIdleDays: 7,           // sin commits en DEV
     apiLowRemaining: 10,      // cuota de API casi agotada
   },

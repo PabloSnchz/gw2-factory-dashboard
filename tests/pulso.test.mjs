@@ -183,5 +183,5 @@ test('app.js: lee sus commits después de las memorias y pone «Hoy hizo» despu
   assert.match(app, /state\.model\.pulso = buildPulso\(\{ commits: commitsHija, raw: hija, h: state\.model\.hija, now \}\);/);
   assert.match(app, /vestirPablo\(\$main, m\);[^\n]*\n\s*vestirPulso\(\$main, m\.pulso, HIJA_REPO\);/);
   assert.match(app, /const HIJA_REPO = `https:\/\/github\.com\/\$\{CONFIG\.hija\.owner\}\/\$\{CONFIG\.hija\.repo\}`;/);
-  assert.match(read('index.html'), /src="js\/app\.js\?v=2\.9\.0"/, 'el navegador pide la versión nueva');
+  assert.match(read('index.html'), /src="js\/app\.js\?v=2\.(9|\d{2,})\.0"/, 'el navegador pide una versión que ya trae «Hoy hizo» (2.9.0 o posterior)');
 });

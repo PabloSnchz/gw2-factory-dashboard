@@ -14,6 +14,7 @@
  * terminó algo hoy. Decorativo, después de cada dibujo; no guarda nada.
  * SH-4a (js/pulso.js): «Hoy hizo» en su tarjeta — sus commits de hoy (1 llamada a la API, cacheada, después de
  * leer las dos memorias), los pasos, las tareas que cerró, sus tests y si está activa o quieta con trabajo en cola.
+ * SH-4b (js/tablero.js): su tablero en «Trabajo», debajo del mío, con el paso por el que va cada tarea hoy.
  */
 
 import { CONFIG } from './config.js';
@@ -26,6 +27,7 @@ import { loadHija, buildHija, unirHija, aplicarFiltro } from './hija.js';
 import { marcarLogro, vestirHija } from './poses.js';
 import { vestirPablo } from './pablo.js';
 import { loadCommitsHija, buildPulso, vestirPulso } from './pulso.js';
+import { buildTablero, vestirTablero } from './tablero.js';
 
 const HIJA_REPO = `https://github.com/${CONFIG.hija.owner}/${CONFIG.hija.repo}`;
 
@@ -75,6 +77,7 @@ function render() {
   vestirHija($main, m.hija); // su pose en la tarjeta y su cara en «Te toca» (SH-1)
   vestirPablo($main, m); // Pablo: su cara en «Te toca», en paz o festejando (SH-2)
   vestirPulso($main, m.pulso, HIJA_REPO); // «Hoy hizo»: lo que Shiruna hizo hoy (SH-4a)
+  vestirTablero($main, m.tablero); // su tablero en «Trabajo», debajo del mío (SH-4b)
   const pending = m.human.length;
   document.title = `${pending ? `(${pending}) ` : ''}${V.verdict(m).text} · Gato Negro Factory`;
 }
@@ -97,6 +100,7 @@ async function refresh(force) {
     state.model = unirHija(buildModel(raw), buildHija(hija, now));
     marcarLogro(state.model.hija, hija, safeStorage()); // ¿cerró algo desde tu última visita? (SH-1: festeja)
     state.model.pulso = buildPulso({ commits: commitsHija, raw: hija, h: state.model.hija, now });
+    state.model.tablero = buildTablero({ raw: hija, h: state.model.hija, pulso: state.model.pulso });
     state.error = null;
     announce(`Datos actualizados. ${V.verdict(state.model).text}.`);
   } catch (e) {
