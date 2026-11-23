@@ -1,6 +1,6 @@
 {
   "name": "gw2-factory-dashboard",
-  "version": "3.3.1",
+  "version": "3.3.2",
   "private": true,
   "description": "Centro de mando de Gato Negro Factory. Sin dependencias ni build.",
   "type": "module",

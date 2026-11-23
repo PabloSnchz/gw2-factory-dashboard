@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { CONFIG } from '../js/config.js';
 import {
-  hijaUrl, loadHija, lineaHija, estadoHija, buildHija, renderHija, unirHija, renderFiltro, aplicarFiltro,
+  hijaUrl, hijaBoveda, loadHija, lineaHija, estadoHija, buildHija, renderHija, unirHija, renderFiltro, aplicarFiltro,
   HIJA_FILES, HIJA_VERSION, DUENA_MIA,
 } from '../js/hija.js';
 
@@ -54,7 +54,7 @@ const FILES = { 'status.md': STATUS, 'backlog.md': BACKLOG, 'roadmap.md': ROADMA
 const hija = () => buildHija({ files: FILES, errors: {} }, NOW, HIJA);
 
 test('versión y config: la hija es Shiruna en su propia organización', () => {
-  assert.equal(HIJA_VERSION, '1.1.0');
+  assert.equal(HIJA_VERSION, '1.2.0');
   assert.equal(DUENA_MIA, 'shiruvana');
   assert.deepEqual(CONFIG.hija, HIJA);
 });
@@ -159,6 +159,20 @@ test('renderHija: tarjeta con su nombre y dueña, sin repetir la lista, escapada
   assert.match(err, /No pude leer la memoria de Shiruna/);
   assert.match(err, /HTTP 500/);
   assert.equal(renderHija(null), '');
+});
+
+test('Su Bóveda: su DEV en GitHub Pages, un botón en la tarjeta (también si no pude leer su memoria)', () => {
+  assert.equal(hijaBoveda(HIJA), 'https://shiruna-gato-negro.github.io/gw2-factory-dev/');
+  assert.equal(hijaBoveda({ ...HIJA, owner: 'Otra-Org' }), 'https://otra-org.github.io/gw2-factory-dev/', 'Pages va en minúsculas');
+  assert.equal(hijaBoveda({ ...HIJA, boveda: 'https://x.dev/' }), 'https://x.dev/');
+  assert.equal(hijaBoveda(null), null);
+  assert.equal(hija().boveda, 'https://shiruna-gato-negro.github.io/gw2-factory-dev/');
+  const btn = /<a class="gds-button gds-button--sm gds-button--primary" href="https:\/\/shiruna-gato-negro\.github\.io\/gw2-factory-dev\/" target="_blank" rel="noopener" data-boveda>Su Bóveda<\/a>/;
+  const ok = renderHija(hija());
+  assert.match(ok, btn);
+  assert.ok(ok.indexOf('data-boveda') < ok.indexOf('Ver la memoria de Shiruna'), 'el botón va antes del link a su memoria');
+  assert.match(renderHija(buildHija({ files: {}, errors: { 'status.md': 'HTTP 500' } }, NOW, HIJA)), btn);
+  assert.ok(!renderHija({ ...hija(), boveda: null }).includes('data-boveda'), 'sin dirección, sin botón');
 });
 
 test('renderFiltro: Las dos · Shiruvana · Shiruna, arranca en Las dos', () => {

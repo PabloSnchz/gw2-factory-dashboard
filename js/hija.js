@@ -10,12 +10,14 @@
  * - 1.1.0 (S-4b): lo que Shiruna le pide a Pablo entra en «02 · Te toca» y sus avisos en
  *   «Para tu información», con su nombre (unirHija). Sus IDs son suyos: nunca se enlazan a mi memoria.
  *   Un filtro «Las dos · Shiruvana · Shiruna» oculta lo de la otra (data-duena), sin guardar nada.
+ * - 1.2.0: botón «Su Bóveda» en su tarjeta, para entrar con un clic a su DEV publicado en GitHub Pages
+ *   (https://<owner>.github.io/<repo>/, o CONFIG.hija.boveda si algún día cambia). Pedido de Pablo, 2026-11-23.
  */
 
 import { CONFIG } from './config.js';
 import { parseStatus, parseBacklog, parseRoadmap, parseDate, esc } from './parse.js';
 
-export const HIJA_VERSION = '1.1.0';
+export const HIJA_VERSION = '1.2.0';
 export const HIJA_FILES = ['status.md', 'backlog.md', 'roadmap.md'];
 /** Dueña de todo lo que no trae otra: yo. */
 export const DUENA_MIA = 'shiruvana';
@@ -25,6 +27,12 @@ const ORDEN = ['decision', 'accion', 'validacion'];
 export function hijaUrl(path, now, hija = CONFIG.hija) {
   const file = `${CONFIG.memoryRoot}/${path}`.split('/').map(encodeURIComponent).join('/');
   return `https://raw.githubusercontent.com/${hija.owner}/${hija.repo}/${hija.branch}/${file}?v=${Math.floor(now / 300000)}`;
+}
+
+/** Su Bóveda (el DEV de la hija en GitHub Pages). null si no hay hija configurada. */
+export function hijaBoveda(hija = CONFIG.hija) {
+  if (!hija) return null;
+  return hija.boveda || `https://${String(hija.owner).toLowerCase()}.github.io/${hija.repo}/`;
 }
 
 /** Lee su memoria. @returns { files: {path: text|null}, errors: {path: motivo} } o null si no hay hija configurada. */
@@ -82,6 +90,7 @@ export function buildHija(raw, now, hija = CONFIG.hija) {
     nombre: hija.nombre,
     key: String(hija.nombre).toLowerCase(),
     url: `https://github.com/${hija.owner}/${hija.repo}/tree/${hija.branch}/${CONFIG.memoryRoot}`,
+    boveda: hijaBoveda(hija),
   };
   if (!status) {
     return { ...base, leida: false, error: (raw.errors && raw.errors['status.md']) || 'sin dato', pendientes: [], info: [] };
@@ -169,6 +178,12 @@ function chip(text, variant) {
   return `<span class="gds-status${variant ? ' gds-status--' + variant : ''}">${esc(text)}</span>`;
 }
 
+/** Botón «Su Bóveda»: abre su DEV en otra pestaña. */
+function botonBoveda(h) {
+  if (!h || !h.boveda) return '';
+  return `<a class="gds-button gds-button--sm gds-button--primary" href="${esc(h.boveda)}" target="_blank" rel="noopener" data-boveda>Su Bóveda</a>`;
+}
+
 /** Tarjeta «Mi hija · Shiruna». Va debajo de «04 · Shiruvana ahora» en Hoy. Lo que pide está en «02 · Te toca». */
 export function renderHija(h) {
   if (!h) return '';
@@ -177,6 +192,7 @@ export function renderHija(h) {
     return `<section class="gds-card uv-hija" aria-labelledby="hija-title" data-hija="error" data-duena="${esc(h.key)}">${head}
       <h2 id="hija-title" class="gds-title-1">No pude leer la memoria de ${esc(h.nombre)}</h2>
       <p class="gds-body-2 gds-text-secondary">status.md: ${esc(h.error)}. <a href="${esc(h.url)}" target="_blank" rel="noopener">Ver su memoria</a></p>
+      <div class="gds-cluster">${botonBoveda(h)}</div>
     </section>`;
   }
   const n = h.pendientes.length;
@@ -194,7 +210,7 @@ export function renderHija(h) {
         <div class="facts__wide"><dt>Próxima acción</dt><dd>${h.proxima ? esc(h.proxima) : 'sin dato'}</dd></div>
       </dl>
       <p class="gds-body-2 gds-text-secondary">${n ? `Te pide ${n === 1 ? '1 cosa' : n + ' cosas'}: están en «02 · Te toca», con su nombre.` : 'No te pide nada.'}${h.info.length ? ` Sus avisos están en «Para tu información».` : ''}</p>
-      <p class="gds-caption gds-text-muted"><a href="${esc(h.url)}" target="_blank" rel="noopener">Ver la memoria de ${esc(h.nombre)}</a></p>
+      <div class="gds-cluster">${botonBoveda(h)}<p class="gds-caption gds-text-muted"><a href="${esc(h.url)}" target="_blank" rel="noopener">Ver la memoria de ${esc(h.nombre)}</a></p></div>
     </div>
   </section>`;
 }

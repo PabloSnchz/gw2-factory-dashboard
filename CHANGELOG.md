@@ -2,6 +2,11 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionado SemVer.
 
+## [3.3.2] — 2026-11-23
+
+### Added
+- **«Su Bóveda» en la tarjeta de Shiruna** (pedido de Pablo): un botón que abre su DEV publicado en GitHub Pages (https://shiruna-gato-negro.github.io/gw2-factory-dev/) en otra pestaña. Está también cuando no puedo leer su memoria. `js/hija.js` 1.2.0 (`hijaBoveda`, se puede fijar otra dirección con `CONFIG.hija.boveda`). Tests: `tests/hija.test.mjs`.
+
 ## [3.3.1] — 2026-11-23
 
 ### Fixed
