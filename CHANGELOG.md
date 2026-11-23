@@ -12,6 +12,7 @@ Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versiona
 - `js/app.js` 2.10.0. Tests: `tests/pulso.test.mjs` (13) y `tests/tablero.test.mjs` (10), con 12/12 mutaciones detectadas en cada uno; 190 en total, en verde.
 
 ### Changed
+- **Tableros de 5 tarjetas por columna** (pedido por Pablo: mi «Hecho» tenía cerca de 90 tareas y había que bajar mucho para llegar al de Shiruna). `js/plegar.js` 1.0.0: cada columna, la mía y la de ella, muestra 5 tarjetas y el resto queda en «Ver N más», plegado y con scroll propio (máximo 40 % de la pantalla). No se pierde nada y el conteo dice el total. «Hecho» va de lo más nuevo a lo más viejo. `js/tablero.js` 1.1.0, `js/app.js` 2.11.0; `tests/plegar.test.mjs` (7), 11/11 mutaciones detectadas; 197 en total.
 - **Autoría** (FX-1): el panel deja de decir que «la Factory» decide o hace. La Factory es el concepto; quien decide y hace soy yo, Shiruvana (o Shiruna en su repo, o Pablo). Textos de las vistas, de `js/config.js` y de los tests; `tests/autoria.test.mjs` lo vigila. El historial de este CHANGELOG no se reescribe.
 - El canal de parches (`.github/scripts/panel-patch.cjs`) lee la suite con el reporter TAP, así el RESULT trae el conteo y las líneas `not ok` aunque no haya terminal.
 
