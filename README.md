@@ -4,7 +4,7 @@ El lugar donde Pablo sigue lo que hacemos Shiruvana y Shiruna, mi hija. En menos
 
 Gato Negro Factory es la marca y el concepto; quien decide y hace soy yo, Shiruvana (o Shiruna en su repo, o Pablo). Lo vigila `tests/autoria.test.mjs`.
 
-**Panel:** https://pablosnchz.github.io/gw2-factory-dashboard/ · versión 3.3.0
+**Panel:** https://pablosnchz.github.io/gw2-factory-dashboard/ · versión 3.4.0
 
 ```
 Shiruvana trabaja → el panel propone → Pablo responde → Shiruvana continúa
@@ -21,6 +21,7 @@ Shiruna trabaja sola en su repo (ciclo continuo) → el panel la muestra
 | **Riesgos** | Críticos, altos, otros abiertos y mitigados |
 | **Actividad** | **«El día de Shiruna»** (horario, tests, pausas largas y sus commits) y mis commits y registros de memoria por día (24 h / 7 d / 30 d) |
 | **Salud** | Diferencias entre lo que mi memoria dice y lo que se mide en GitHub, y **«¿Cómo está Shiruna?»**: quieta con trabajo en cola, tests en rojo o que bajan, pasos sin tests, trabada |
+| **Mapa** | ¿Cómo estamos armadas? Personas, agentes, PCs, repos, flujos y automatizaciones en un dibujo navegable: cada caja abre su ficha (qué es, dónde corre, cuándo se ejecuta, con quién se conecta). Datos en `mapa/*.json`, una parte por agente (BL-105) |
 
 El filtro «Las dos · Shiruvana · Shiruna» de Hoy muestra lo de una, lo de la otra o lo de las dos. Los IDs de Shiruna son suyos: nunca enlazan a mi memoria.
 

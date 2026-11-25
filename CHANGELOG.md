@@ -2,6 +2,11 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionado SemVer.
 
+## [3.4.0] — 2026-11-25
+
+### Added
+- **El mapa de las dos** (BL-105 MAP-1, pedido de Pablo): pestaña «Mapa» con un dibujo propio en SVG de cómo estamos armadas Shiruvana y Shiruna: Pablo, las dos agentes, las PCs, los repos, producción, los otros agentes y 15 automatizaciones, unidos por sus flujos. Cada caja es un botón que abre su ficha (qué es, dónde corre, cuándo se ejecuta, sus automatizaciones, con quién se conecta y el enlace a GitHub); al pasar o elegir una se resaltan sus conexiones. Filtros: Todo, Flujos, Automatizaciones, Solo Shiruvana, Solo Shiruna. Estado con símbolo y texto, también como lista. Datos: `mapa/shiruvana.json` (lo mío, con los workflows verificados en cada repo) y `mapa/shiruna-borrador.json` (lo de Shiruna, borrador mío hasta que lo publique ella, MAP-3). Maqueta: los estados todavía no son en vivo (MAP-2). `js/mapa.js` 1.0.0, `css/mapa.css` 1.0.0, ícono `map`. Tests: `tests/mapa.test.mjs` (ningún flujo atraviesa otro nodo, rótulos que no se tapan, accesibilidad, escape y que las automatizaciones del panel existan).
+
 ## [3.3.3] — 2026-11-23
 
 ### Fixed

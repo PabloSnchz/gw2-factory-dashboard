@@ -52,6 +52,7 @@ export const NAV = [
   { route: 'riesgos', label: 'Riesgos', icon: 'shield' },
   { route: 'actividad', label: 'Actividad', icon: 'clock' },
   { route: 'salud', label: 'Salud', icon: 'pulse' },
+  { route: 'mapa', label: 'Mapa', icon: 'map' },
 ];
 
 /* ------------------------------------------------------------ formato */
@@ -499,7 +500,7 @@ function cifra(n, label) {
  * Cabecera de una vista en el universo (CD-4): antetítulo, el único h1, bajada y cifras en ámbar.
  * `sub` y `extra` son HTML ya escapado; `cifras` son pares [número, rótulo].
  */
-function pageHead(ante, title, sub, cifras = [], extra = '') {
+export function pageHead(ante, title, sub, cifras = [], extra = '') {
   return `<header class="page-head uv-head">
     <div class="gds-stack--sm gds-stack">
       <p class="uv-ante">${esc(ante)}</p>
