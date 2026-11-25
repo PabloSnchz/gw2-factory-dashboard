@@ -133,8 +133,8 @@ test('verdad: las automatizaciones del panel que dibuja el mapa existen en este 
 test('integración: pestaña «Mapa», ruta en app.js y estilos antes de la piel', () => {
   assert.ok(NAV.some(n => n.route === 'mapa' && n.label === 'Mapa'));
   const app = read('js/app.js');
-  assert.match(app, /case 'mapa': html = renderMapa\(estadoMapa\(\)\); break;/);
-  assert.match(app, /montarMapa\(\$main, \{ alTerminar: render \}\)/);
+  assert.match(app, /case 'mapa': html = renderMapa\(estadoMapa\(m\)\); break;/, 'MAP-2: la vista recibe el modelo para los estados en vivo');
+  assert.match(app, /montarMapa\(\$main, \{ alTerminar: render, gh, model: m \}\)/, 'MAP-2: el mapa lee las corridas con el mismo cliente (y la misma caché)');
   const html = read('index.html');
   const css = [...html.matchAll(/href="([^"?]+\.css)/g)].map(x => x[1]);
   assert.ok(css.indexOf('css/mapa.css') > -1 && css.indexOf('css/mapa.css') < css.indexOf('css/universo.css'));

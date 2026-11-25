@@ -19,6 +19,7 @@
  * SH-4c (js/alertas.js): su salud en «Salud» — quieta con cola, tests en rojo o que bajan, pasos sin tests, trabada.
  * SH-4d (js/sudia.js): «El día de Shiruna» en «Actividad» — de qué hora a qué hora, tests, pausas largas y sus commits.
  * BL-105 MAP-1 (js/mapa.js): «El mapa de las dos» en la pestaña Mapa. Lee mapa/*.json una vez y, al terminar, vuelve a dibujar.
+ * BL-105 MAP-2: sus estados en vivo con el modelo de esta lectura y las corridas de GitHub Actions (mismo cliente y caché).
  */
 
 import { CONFIG } from './config.js';
@@ -75,7 +76,7 @@ function render() {
     case 'riesgos': html = V.renderRisks(m); break;
     case 'actividad': html = V.renderActivity(m, r.arg); break;
     case 'salud': html = V.renderHealth(m); break;
-    case 'mapa': html = renderMapa(estadoMapa()); break;
+    case 'mapa': html = renderMapa(estadoMapa(m)); break;
     case 'item': html = V.renderItem(m, decodeURIComponent(r.arg || '')); break;
     default: html = V.renderHome(m);
   }
@@ -88,7 +89,7 @@ function render() {
   vestirTablero($main, m.tablero); // su tablero en «Trabajo», debajo del mío (SH-4b)
   vestirAlertas($main, m.alertas); // su salud en «Salud» (SH-4c)
   vestirDia($main, m.dia, HIJA_REPO); // «El día de Shiruna» en «Actividad» (SH-4d)
-  if (r.name === 'mapa') montarMapa($main, { alTerminar: render }); // el mapa de las dos (BL-105 MAP-1)
+  if (r.name === 'mapa') montarMapa($main, { alTerminar: render, gh, model: m }); // el mapa de las dos, en vivo (BL-105)
   const pending = m.human.length;
   document.title = `${pending ? `(${pending}) ` : ''}${V.verdict(m).text} · Gato Negro Factory`;
 }

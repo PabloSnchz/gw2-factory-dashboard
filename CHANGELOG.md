@@ -2,6 +2,11 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionado SemVer.
 
+## [3.5.0] — 2026-11-25
+
+### Added
+- **El mapa, en vivo** (BL-105 MAP-2; Pablo validó MAP-1 y pidió avanzar). Cada automatización toma el estado de su última corrida en GitHub Actions (falló → «Con problemas», con enlace a la corrida; sin corridas entre las últimas 100 → queda como la declaré y la ficha lo dice). Pablo, yo, Shiruna, su ciclo y la PC SHIRUVANA salen de lo que el panel ya leyó de las dos memorias, sin gastar cuota: lo que te espera en «Hoy», mi estado, su salud y su pulso (si Shiruna está quieta con trabajo en cola, la PC pasa a «Para revisar»). Un repo toma el peor estado de sus automatizaciones. La ficha dice «Ahora:» y de dónde sale el dato. Estado nuevo «Para revisar» (ámbar); «Esperando a Pablo» pasa a azul porque no es un problema. Cifra nueva: «para mirar». Las corridas se leen una vez por lectura del panel: 4 llamadas (DEV, panel, sitio y producción) en casilleros fijos `mapa:runs:*`. `js/mapa.js` y `css/mapa.css` 1.1.0, `mapa/shiruvana.json` 1.1.0 (campo `repo`). Tests: `tests/mapa-vivo.test.mjs`.
+
 ## [3.4.1] — 2026-11-25
 
 ### Fixed

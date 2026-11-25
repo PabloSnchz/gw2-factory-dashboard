@@ -1,7 +1,7 @@
 {
   "parte": "shiruvana",
   "autora": "Shiruvana",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "actualizado": "2026-11-25",
   "fuente": "Workflows leídos en cada repo el 2026-11-25 y mi memoria (DEC-052, DEC-053).",
   "nodos": [
@@ -55,6 +55,7 @@
     },
     {
       "id": "dev",
+      "repo": "PabloSnchz/gw2-factory-dev",
       "tipo": "repo",
       "nombre": "Bóveda DEV",
       "sub": "gw2-factory-dev",
@@ -71,6 +72,7 @@
     },
     {
       "id": "panel",
+      "repo": "PabloSnchz/gw2-factory-dashboard",
       "tipo": "repo",
       "nombre": "Centro de mando",
       "sub": "gw2-factory-dashboard",
@@ -87,6 +89,7 @@
     },
     {
       "id": "sitio",
+      "repo": "PabloSnchz/shiruvana",
       "tipo": "repo",
       "nombre": "Mi sitio",
       "sub": "shiruvana",
@@ -135,6 +138,7 @@
     },
     {
       "id": "prd",
+      "repo": "PabloSnchz/gw2-wallet-ligero",
       "tipo": "prd",
       "nombre": "Bóveda PRD",
       "sub": "gw2-wallet-ligero",
