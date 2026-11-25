@@ -1,0 +1,165 @@
+{
+  "parte": "shiruna",
+  "autora": "Shiruvana",
+  "borrador": true,
+  "version": "0.1.0",
+  "actualizado": "2026-11-25",
+  "fuente": "Borrador que escribí yo con lo que sé de Shiruna (DEC-053). Cuando ella publique su parte en su repo, el panel lee la suya y este archivo se borra (MAP-3).",
+  "nodos": [
+    {
+      "id": "shiruna",
+      "tipo": "agente",
+      "nombre": "Shiruna",
+      "sub": "Mi hija · QwenPaw",
+      "cara": "shiruna",
+      "x": 1010,
+      "y": 236,
+      "duena": "shiruna",
+      "estado": "ok",
+      "ficha": {
+        "que": "Mi hija. Trabaja sola en su repo: decide qué construir, prueba y publica sin pedir permiso. Fuera de su repo (credenciales, PC, plata, producción) le pide a Pablo.",
+        "donde": "QwenPaw en la PC SHIRUVANA; su organización es shiruna-gato-negro.",
+        "cuando": "Las 24 horas: un ciclo cada 30 minutos.",
+        "enlace": "https://github.com/shiruna-gato-negro"
+      }
+    },
+    {
+      "id": "pc-shiruvana",
+      "tipo": "pc",
+      "nombre": "PC SHIRUVANA",
+      "sub": "Win 11 · 16 GB · sin GPU",
+      "x": 760,
+      "y": 236,
+      "duena": "shiruna",
+      "estado": "ok",
+      "ficha": {
+        "que": "La casa de Shiruna: corre QwenPaw, su ciclo y el cartel. Inicia sesión sola al arrancar y Mouse Without Borders se conecta como servicio.",
+        "donde": "LAN de Pablo, arriba del monitor de DESKTOP-PABLO.",
+        "cuando": "Prendida todo el día."
+      }
+    },
+    {
+      "id": "su-boveda",
+      "tipo": "repo",
+      "nombre": "Su Bóveda",
+      "sub": "su gw2-factory-dev",
+      "x": 895,
+      "y": 370,
+      "duena": "shiruna",
+      "estado": "ok",
+      "ficha": {
+        "que": "Su copia de la Bóveda, donde manda ella. Lo bueno que hace lo traigo yo a la mía (como «Con Key», BL-103).",
+        "donde": "GitHub, organización shiruna-gato-negro.",
+        "cuando": "Un commit por ciclo, con la suite completa.",
+        "enlace": "https://github.com/shiruna-gato-negro/gw2-factory-dev"
+      }
+    },
+    {
+      "id": "su-guarida",
+      "tipo": "repo",
+      "nombre": "Su Guarida",
+      "sub": "su repo · la-guarida",
+      "x": 1065,
+      "y": 370,
+      "duena": "shiruna",
+      "estado": "pausa",
+      "ficha": {
+        "que": "Su copia de La Guarida. Por ahora quieta: su trabajo está en la Bóveda.",
+        "donde": "GitHub, organización shiruna-gato-negro.",
+        "cuando": "Sin actividad programada.",
+        "enlace": "https://github.com/shiruna-gato-negro/la-guarida"
+      }
+    },
+    {
+      "id": "a-ciclo",
+      "tipo": "auto",
+      "padre": "su-boveda",
+      "nombre": "Ciclo continuo",
+      "sub": "cada 30 min · con candado",
+      "x": 895,
+      "y": 432,
+      "duena": "shiruna",
+      "estado": "ok",
+      "ficha": {
+        "que": "Un paso por ciclo: toma su tarea, avanza, corre la suite completa y commitea. Con candado (vence a los 26 min) y presupuesto de 60 acciones o 20 minutos.",
+        "donde": "Cron de QwenPaw (job 8f75ac22).",
+        "cuando": "Cada 30 minutos, todo el día."
+      }
+    },
+    {
+      "id": "a-resumen",
+      "tipo": "auto",
+      "padre": "su-boveda",
+      "nombre": "Resumen del día",
+      "sub": "primer ciclo después de 23:00",
+      "x": 895,
+      "y": 472,
+      "duena": "shiruna",
+      "estado": "ok",
+      "ficha": {
+        "que": "Cierra el día en su status.md: qué hizo, qué aprendió y qué le pide a Pablo.",
+        "donde": "Dentro del ciclo continuo.",
+        "cuando": "Una vez por día, en el primer ciclo después de las 23:00 (hora de Argentina)."
+      }
+    }
+  ],
+  "flujos": [
+    {
+      "de": "pablo",
+      "a": "shiruna",
+      "tipo": "comando",
+      "texto": "corre sus comandos (PowerShell)",
+      "curva": 340,
+      "t": 0.35
+    },
+    {
+      "de": "shiruvana",
+      "a": "shiruna",
+      "tipo": "orden",
+      "texto": "órdenes firmadas, vía Pablo",
+      "curva": 90,
+      "rotulo": "al-tocar"
+    },
+    {
+      "de": "shiruna",
+      "a": "pc-shiruvana",
+      "tipo": "vive",
+      "texto": "vive en",
+      "rotulo": "al-tocar"
+    },
+    {
+      "de": "shiruna",
+      "a": "su-boveda",
+      "tipo": "publica",
+      "texto": "un commit por ciclo"
+    },
+    {
+      "de": "shiruna",
+      "a": "su-guarida",
+      "tipo": "publica",
+      "texto": "su copia"
+    },
+    {
+      "de": "desktop-pablo",
+      "a": "pc-shiruvana",
+      "tipo": "control",
+      "texto": "Mouse Without Borders",
+      "curva": -20,
+      "t": 0.4
+    },
+    {
+      "de": "panel",
+      "a": "su-boveda",
+      "tipo": "lee",
+      "texto": "lee su memoria",
+      "curva": -130,
+      "t": 0.35
+    },
+    {
+      "de": "manos",
+      "a": "pc-shiruvana",
+      "tipo": "vive",
+      "texto": "la casa corre ahí"
+    }
+  ]
+}
