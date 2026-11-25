@@ -1,10 +1,18 @@
 /**
- * js/mapa.js — «El mapa de las dos» (BL-105 MAP-1): cómo estamos armadas Shiruvana y Shiruna. v1.0.1
+ * js/mapa.js — «El mapa de las dos» (BL-105): cómo estamos armadas Shiruvana y Shiruna. v1.1.0
  *
  * Fuente de datos: una parte por agente (mapa/shiruvana.json, mapa/shiruna-borrador.json). Cada nodo es una
  * persona, una agente, una PC, un repo, producción, otro dominio o una automatización; cada flujo une dos nodos.
- * MAP-1 es una maqueta navegable: los estados salen del archivo (MAP-2 los calcula en vivo) y la parte de
- * Shiruna es un borrador mío hasta que ella publique la suya en su repo (MAP-3).
+ * La parte de Shiruna es un borrador mío hasta que ella publique la suya en su repo (MAP-3).
+ *
+ * MAP-2 (1.1.0): estados en vivo. aplicarVivo() (pura) toma el mapa declarado y lo corrige con lo medido:
+ * - Automatizaciones: la última corrida de su workflow en GitHub Actions. Los repos que se pueden leer llevan
+ *   `repo` en el JSON; una llamada por repo (las últimas 100 corridas), solo al abrir el Mapa, cacheada 10 min
+ *   en un casillero fijo como el resto del panel. Falló → «Con problemas»; sin corridas → queda lo declarado.
+ * - Pablo, yo, Shiruna, su ciclo y la PC SHIRUVANA: con lo que el panel ya leyó de las dos memorias (sin cuota):
+ *   lo que te espera en «Hoy», mi estado, su salud (alertas.js) y su pulso (pulso.js).
+ * - Un repo toma el peor estado medido de sus automatizaciones.
+ * Cada ficha dice «Ahora:» y de dónde sale el dato (medido en GitHub, leído de una memoria o declarado).
  *
  * - SVG propio, sin librerías. Funciones puras (datos → HTML) para poder testearlas; montarMapa() solo
  *   lee los archivos y conecta clics y teclado.
@@ -34,6 +42,7 @@ export const TIPOS = {
 export const ESTADOS = {
   ok: { simbolo: '✓', texto: 'Funcionando' },
   espera: { simbolo: '…', texto: 'Esperando a Pablo' },
+  revisar: { simbolo: '?', texto: 'Para revisar' },
   alerta: { simbolo: '!', texto: 'Con problemas' },
   pausa: { simbolo: '‖', texto: 'En pausa' },
   externo: { simbolo: '↗', texto: 'Fuera de mi dominio' },
@@ -155,7 +164,119 @@ export function cajaRotulo(texto, rc) {
 
 export function cifrasMapa(m) {
   const cuenta = t => m.nodos.filter(n => n.tipo === t).length;
-  return [[cuenta('agente'), 'agentes'], [cuenta('repo') + cuenta('prd'), 'repositorios'], [cuenta('auto'), 'automatizaciones'], [m.flujos.length, 'flujos']];
+  const problemas = m.nodos.filter(n => n.estado === 'alerta' || n.estado === 'revisar').length;
+  return [[cuenta('agente'), 'agentes'], [cuenta('repo') + cuenta('prd'), 'repositorios'], [cuenta('auto'), 'automatizaciones'],
+    [m.flujos.length, 'flujos'], [problemas, 'para mirar']];
+}
+
+/* ------------------------------------------------------------ en vivo (MAP-2) */
+
+export const FUENTES = {
+  github: 'Medido en GitHub Actions',
+  memoria: 'Leído de nuestras memorias en esta lectura',
+  declarado: 'Como lo declaré en el mapa (no se puede medir desde el panel)',
+};
+const MALO = new Set(['failure', 'timed_out', 'startup_failure']);
+const BUENO = new Set(['success']);
+const PEOR = ['alerta', 'revisar', 'espera', 'ok'];
+
+/** Solo lo que uso de cada corrida (lo que se guarda en la caché). */
+export function formaRuns(full) {
+  const l = full && Array.isArray(full.workflow_runs) ? full.workflow_runs : [];
+  return l.slice(0, 100).map(r => ({
+    f: String((r && r.path) || '').replace(/@.*$/, '').split('/').pop(),
+    s: r && r.status, c: r && r.conclusion, t: r && (r.updated_at || r.created_at), u: r && r.html_url,
+  })).filter(r => r.f);
+}
+
+/** La última corrida terminada (bien o mal) de un workflow, y si hay una corriendo ahora. Las corridas vienen de la más nueva a la más vieja. */
+export function ultimaCorrida(runs, archivo) {
+  let corriendo = false;
+  for (const r of runs || []) {
+    if (r.f !== archivo) continue;
+    if (r.s && r.s !== 'completed') { corriendo = true; continue; }
+    if (MALO.has(r.c) || BUENO.has(r.c)) return { corriendo, ultima: r };
+  }
+  return { corriendo, ultima: null };
+}
+
+const punto = s => (/[.!?…]$/.test(String(s || '').trim()) ? String(s).trim() : `${String(s || '').trim()}.`);
+
+export function hace(now, t) {
+  const ms = now - Date.parse(t);
+  if (!Number.isFinite(ms)) return 'sin fecha';
+  const min = Math.round(ms / 60000);
+  if (min < 1) return 'recién';
+  if (min < 60) return `hace ${min} min`;
+  const h = Math.round(min / 60);
+  return h < 48 ? `hace ${h} h` : `hace ${Math.round(h / 24)} días`;
+}
+
+/**
+ * El mapa con los estados de ahora. Pura: no toca el mapa que recibe.
+ * @param runs  { 'Owner/repo': [corridas de formaRuns] } — solo los repos que se pudieron leer.
+ * @param model el modelo del panel (human, statusInfo, health, alertas, pulso), o null.
+ */
+export function aplicarVivo(m, { runs = {}, model = null, now = Date.now() } = {}) {
+  const nodos = m.nodos.map(n => ({ ...n, declarado: n.estado, vivo: null }));
+  const ids = new Map(nodos.map(n => [n.id, n]));
+  const marcar = (n, estado, nota, fuente, enlace) => { if (n) { n.estado = estado; n.vivo = { nota, fuente, enlace: enlace || null }; } };
+
+  for (const n of nodos) {
+    if (n.tipo !== 'auto') continue;
+    const padre = ids.get(n.padre);
+    const lista = padre && padre.repo ? runs[padre.repo] : null;
+    const archivos = String((n.ficha && n.ficha.workflow) || '').split('·').map(s => s.trim()).filter(Boolean);
+    if (!Array.isArray(lista) || !archivos.length) continue;
+    const res = archivos.map(f => ({ f, ...ultimaCorrida(lista, f) }));
+    const mal = res.find(x => x.ultima && MALO.has(x.ultima.c));
+    const vistas = res.filter(x => x.ultima).sort((a, b) => Date.parse(b.ultima.t) - Date.parse(a.ultima.t));
+    const ahora = res.some(x => x.corriendo) ? 'Corriendo ahora. ' : '';
+    if (mal) marcar(n, 'alerta', `${ahora}Falló la última corrida de ${mal.f} (${hace(now, mal.ultima.t)}).`, 'github', mal.ultima.u);
+    else if (vistas.length) marcar(n, 'ok', `${ahora}Última corrida bien: ${vistas[0].f}, ${hace(now, vistas[0].ultima.t)}.`, 'github', vistas[0].ultima.u);
+    else if (ahora) marcar(n, 'ok', 'Corriendo ahora.', 'github');
+    else n.vivo = { nota: 'Sin corridas entre las últimas 100 del repo: queda como lo declaré.', fuente: 'declarado', enlace: null };
+  }
+
+  if (model) {
+    const pendientes = (model.human || []).length;
+    const pablo = ids.get('pablo');
+    if (pendientes) marcar(pablo, 'espera', `Te ${pendientes === 1 ? 'espera 1 cosa' : `esperan ${pendientes} cosas`} en «Hoy».`, 'memoria');
+    else marcar(pablo, 'ok', 'Nada te espera en «Hoy».', 'memoria');
+
+    const code = String((model.statusInfo && model.statusInfo.code) || '');
+    const yo = ids.get('shiruvana');
+    if (/BLOQUEAD/i.test(code)) marcar(yo, 'alerta', 'Estoy bloqueada: lo explico en «Hoy».', 'memoria');
+    else if (model.health && model.health.level === 'critical') marcar(yo, 'alerta', 'Mi salud tiene algo crítico: está en «Salud».', 'memoria');
+    else if (/ESPERANDO/i.test(code)) marcar(yo, 'espera', 'Terminé algo y espero tu validación.', 'memoria');
+    else marcar(yo, 'ok', code ? `Mi estado: ${code.replace(/_/g, ' ').toLowerCase()}.` : 'Sin dato de mi estado.', 'memoria');
+
+    const a = model.alertas, p = model.pulso;
+    const hija = ids.get('shiruna');
+    if (a) {
+      const c = a.checks && a.checks[0];
+      if (a.nivel === 'critical') marcar(hija, 'alerta', punto(c.title), 'memoria');
+      else if (a.nivel === 'warn') marcar(hija, 'revisar', punto(c.title), 'memoria');
+      else marcar(hija, 'ok', c ? punto(c.title) : 'Se mueve, sus tests están en verde y no está trabada.', 'memoria');
+    }
+    if (p && p.vida) {
+      const v = p.vida;
+      const ciclo = ids.get('a-ciclo');
+      marcar(ciclo, v.level === 'critical' ? 'alerta' : v.level === 'warn' ? 'revisar' : 'ok', punto(v.text), 'memoria');
+      if (v.level === 'critical') marcar(ids.get('pc-shiruvana'), 'revisar', 'Shiruna no se mueve hace más de 2 h con trabajo en cola: ¿la PC está apagada o suspendida?', 'memoria');
+    }
+  }
+
+  // Un repo (o producción) toma el peor estado medido de sus automatizaciones.
+  for (const n of nodos) {
+    const hijos = nodos.filter(x => x.padre === n.id && x.vivo && x.vivo.fuente !== 'declarado');
+    if (!hijos.length || n.declarado === 'pausa') continue;
+    const peor = hijos.map(x => x.estado).sort((x, y) => PEOR.indexOf(x) - PEOR.indexOf(y))[0];
+    const malos = hijos.filter(x => x.estado === 'alerta' || x.estado === 'revisar');
+    if (malos.length) marcar(n, peor, `${malos.length === 1 ? 'Una de sus automatizaciones' : `${malos.length} de sus automatizaciones`} pide atención: ${malos.map(x => x.nombre).join(', ')}.`, hijos[0].vivo.fuente);
+    else marcar(n, 'ok', `Sus automatizaciones medidas andan bien (${hijos.length}).`, hijos[0].vivo.fuente);
+  }
+  return { ...m, nodos, vivo: { repos: Object.keys(runs), leido: !!model } };
 }
 
 /* ------------------------------------------------------------ dibujo */
@@ -239,6 +360,8 @@ export function fichaHtml(n, m) {
   return `<h2 class="gds-title-1" id="mp-ficha-titulo">${esc(n.nombre)}</h2>
     <p class="gds-cluster"><span class="mp-chip mp-chip--${n.estado}"><span aria-hidden="true">${e.simbolo}</span> ${e.texto}</span>
       <span class="gds-caption gds-text-muted">${esc(TIPOS[n.tipo].rotulo)} · de ${esc(DUENAS[n.duena])}${n.borrador ? ' · borrador' : ''}</span></p>
+    ${n.vivo ? `<div class="mp-ahora mp-ahora--${n.estado}"><p class="gds-body-2"><strong>Ahora:</strong> ${esc(n.vivo.nota)}</p>
+      <p class="gds-caption gds-text-muted">${esc(FUENTES[n.vivo.fuente] || '')}${n.vivo.enlace && /^https:\/\//.test(n.vivo.enlace) ? ` · <a href="${esc(n.vivo.enlace)}" target="_blank" rel="noopener">ver la corrida</a>` : ''}</p></div>` : ''}
     <p class="gds-body-2">${esc(f.que)}</p>
     <dl class="facts mp-facts">${dato('Dónde', f.donde)}${dato('Cuándo', f.cuando)}${dato('Workflow', f.workflow)}</dl>
     ${hijos.length ? `<h3 class="gds-label-1">Sus automatizaciones</h3><ul class="mp-lista-corta gds-body-2">${hijos.join('')}</ul>` : ''}
@@ -267,7 +390,7 @@ function leyendaHtml() {
  */
 export function renderMapa(estado) {
   const m = estado && estado.datos;
-  const sub = 'Quién es quién, dónde corre cada cosa y qué se mueve sola. Maqueta: los estados todavía no son en vivo y la parte de Shiruna es un borrador mío.';
+  const sub = 'Quién es quién, dónde corre cada cosa y qué se mueve sola. Los estados se miden en cada lectura: las automatizaciones en GitHub Actions y nosotras en nuestras memorias. La parte de Shiruna es un borrador mío.';
   if (!m) {
     const cuerpo = estado && estado.error
       ? `<div class="gds-callout gds-callout--warning"><p class="gds-callout__title">No pude leer el mapa.</p><p class="gds-body-2">${esc(estado.error)}</p></div>`
@@ -290,6 +413,8 @@ export function renderMapa(estado) {
       <aside class="gds-card mp-ficha" aria-labelledby="mp-ficha-titulo" aria-live="polite">${fichaHtml(null, m)}</aside>
     </div>
     ${listaHtml(m)}
+    <p class="gds-caption gds-text-muted mp-medicion">${!m.vivo ? 'Estados: como los declaré (todavía no medí nada).'
+      : `Estados en vivo: ${m.vivo.repos.length ? `corridas de ${m.vivo.repos.map(r => esc(r.split('/').pop())).join(', ')}` : 'sin corridas de GitHub todavía (midiendo o sin cuota)'}${m.vivo.leido ? ' y nuestras memorias' : ''}. Lo que no se puede medir queda como lo declaré.`}</p>
     <p class="gds-caption gds-text-muted">${m.fuentes.map(f => `${esc(f.autora)} · parte «${esc(f.parte)}» v${esc(f.version)} · ${esc(f.actualizado)}${f.borrador ? ' · borrador' : ''}`).join(' — ')}</p>
   </div>`;
 }
@@ -298,8 +423,39 @@ export function renderMapa(estado) {
 
 let cache = null; // { datos } | { error }
 let leyendo = false;
+let vivo = { runs: {}, leidoCon: null, leyendo: false }; // MAP-2: corridas por repo, de qué lectura del panel
 
-export function estadoMapa() { return cache; }
+/** Lo que dibuja la vista: el mapa declarado con los estados de ahora (si ya hay modelo del panel). */
+export function estadoMapa(model = null, now = Date.now()) {
+  if (!cache || !cache.datos) return cache;
+  return { datos: aplicarVivo(cache.datos, { runs: vivo.runs, model, now }) };
+}
+
+/** Repos con corridas para leer (los que tienen `repo` en el JSON). */
+export function reposVivos(datos) {
+  return [...new Set((datos ? datos.nodos : []).map(n => n.repo).filter(r => /^[\w.-]+\/[\w.-]+$/.test(String(r || ''))))];
+}
+
+/**
+ * Lee las corridas de cada repo una vez por lectura del panel (model.generatedAt) y pide redibujar.
+ * gh.api ya cachea 10 min en un casillero fijo por repo y, si la API falla, devuelve la última buena.
+ */
+export async function cargarVivo({ gh, model, alTerminar } = {}) {
+  if (!cache || !cache.datos || !gh || !model) return false;
+  if (vivo.leyendo || vivo.leidoCon === model.generatedAt) return false;
+  vivo.leyendo = true;
+  const runs = {};
+  try {
+    await Promise.all(reposVivos(cache.datos).map(async (r) => {
+      const d = await gh.api(`/repos/${r}/actions/runs?per_page=100&exclude_pull_requests=true`,
+        { label: `corridas de ${r.split('/').pop()}`, slot: `mapa:runs:${r.split('/').pop()}`, shape: formaRuns });
+      if (Array.isArray(d)) runs[r] = d;
+    }));
+  } catch { /* sin corridas: queda lo declarado */ }
+  vivo = { runs, leidoCon: model.generatedAt, leyendo: false };
+  if (alTerminar) alTerminar();
+  return true;
+}
 
 /** Lee los archivos una vez por visita al panel; al terminar pide redibujar. */
 export async function cargarMapa({ fetchImpl = globalThis.fetch, base = import.meta.url, alTerminar } = {}) {
@@ -325,11 +481,12 @@ export async function cargarMapa({ fetchImpl = globalThis.fetch, base = import.m
 }
 
 /** Conecta filtros, selección y resaltado. Se llama después de cada dibujo de la vista. */
-export function montarMapa($main, { alTerminar } = {}) {
+export function montarMapa($main, { alTerminar, gh, model } = {}) {
   if (!cache) { cargarMapa({ alTerminar }); return; }
   const raiz = $main.querySelector('#mapa-raiz');
   if (!raiz || !cache.datos) return;
-  const m = cache.datos;
+  cargarVivo({ gh, model, alTerminar }); // MAP-2: una vez por lectura; al terminar, se vuelve a dibujar
+  const m = estadoMapa(model).datos;
   const ficha = raiz.querySelector('.mp-ficha');
   const nodos = [...raiz.querySelectorAll('.mp-n')];
 
@@ -377,4 +534,7 @@ export function montarMapa($main, { alTerminar } = {}) {
 }
 
 /** Solo para tests: vuelve a empezar sin datos leídos. */
-export function _reiniciarMapa() { cache = null; leyendo = false; }
+export function _reiniciarMapa() { cache = null; leyendo = false; vivo = { runs: {}, leidoCon: null, leyendo: false }; }
+
+/** Solo para tests: carga un mapa ya leído sin pasar por fetch. */
+export function _ponerMapa(datos) { cache = { datos }; }
