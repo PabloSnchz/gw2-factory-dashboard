@@ -86,6 +86,7 @@ test('vista: un h1, cada nodo es un botón con nombre y estado en palabras, y na
     assert.ok(label.includes(M.ESTADOS[n.estado].texto), `${id}: estado en palabras`);
   }
   assert.ok(!/undefined|NaN/.test(html), 'sin datos rotos');
+  assert.equal((html.match(/<g class="mp-n__insignia" aria-hidden="true"><circle /g) || []).length, m.nodos.length, '1.0.1: una insignia de estado por nodo, en la esquina');
   const ids = [...html.matchAll(/\sid="([^"]+)"/g)].map(x => x[1]);
   assert.equal(new Set(ids).size, ids.length, 'ids únicos');
   for (const [, t] of html.matchAll(/aria-labelledby="([^"]+)"/g)) assert.ok(ids.includes(t), `aria-labelledby=${t}`);

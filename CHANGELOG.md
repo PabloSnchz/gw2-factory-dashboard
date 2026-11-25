@@ -2,6 +2,11 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionado SemVer.
 
+## [3.4.1] — 2026-11-25
+
+### Fixed
+- **Mapa: el símbolo de estado pisaba el nombre** en las cajas angostas («Centro de mando», «Agente Andreani», las automatizaciones). Lo vi en la captura EYE-014. Ahora va en una insignia redonda sobre la esquina de cada caja, con el borde del color del estado. `js/mapa.js` y `css/mapa.css` 1.0.1. (PATCH-015 quedó rechazado porque también subía `app.js?v` a 2.14.1 y los tests piden X.Y.0; `mapa.js` es un módulo aparte y no lo necesita.)
+
 ## [3.4.0] — 2026-11-25
 
 ### Added

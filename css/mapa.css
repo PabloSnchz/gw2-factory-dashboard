@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Centro de mando — «El mapa de las dos» (BL-105 MAP-1) v1.0.0
+   Centro de mando — «El mapa de las dos» (BL-105 MAP-1) v1.0.1
    SVG propio (js/mapa.js). Sin colores literales: tokens del GDS y la paleta del universo (--uv-*).
    Las medidas sueltas en px son del lienzo SVG (unidades del viewBox), no del diseño de página.
    Se carga antes de css/universo.css (la piel sigue siendo la última).
@@ -78,7 +78,14 @@
 .mp-n__nombre { fill: var(--gds-color-text-primary); font-size: 14px; font-weight: 600; }
 .mp-n__nombre--auto { font-size: 12px; font-weight: 500; }
 .mp-n__sub { fill: var(--gds-color-text-muted); font-size: 11px; }
-.mp-n__estado { font-size: 13px; font-weight: 700; fill: var(--gds-color-text-muted); }
+/* 1.0.1: el estado va en una insignia sobre la esquina, así no pisa el nombre */
+.mp-n__insignia circle { fill: var(--gds-color-bg); stroke: var(--gds-color-border-default); stroke-width: 1.5px; }
+.mp-e--ok .mp-n__insignia circle     { stroke: var(--gds-color-border-success); }
+.mp-e--espera .mp-n__insignia circle { stroke: var(--gds-color-border-warning); }
+.mp-e--alerta .mp-n__insignia circle { stroke: var(--gds-color-border-danger); }
+.mp-e--pausa .mp-n__insignia circle  { stroke: var(--gds-color-border-control); }
+.mp-n__estado { font-size: 11px; font-weight: 700; fill: var(--gds-color-text-muted); }
+.mp-n--auto .mp-n__estado { font-size: 9px; }
 .mp-e--ok .mp-n__estado     { fill: var(--gds-color-text-success); }
 .mp-e--espera .mp-n__estado { fill: var(--gds-color-text-warning); }
 .mp-e--alerta .mp-n__estado { fill: var(--gds-color-text-danger); }

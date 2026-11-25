@@ -1,5 +1,5 @@
 /**
- * js/mapa.js — «El mapa de las dos» (BL-105 MAP-1): cómo estamos armadas Shiruvana y Shiruna.
+ * js/mapa.js — «El mapa de las dos» (BL-105 MAP-1): cómo estamos armadas Shiruvana y Shiruna. v1.0.1
  *
  * Fuente de datos: una parte por agente (mapa/shiruvana.json, mapa/shiruna-borrador.json). Cada nodo es una
  * persona, una agente, una PC, un repo, producción, otro dominio o una automatización; cada flujo une dos nodos.
@@ -178,7 +178,7 @@ function nodoSvg(n) {
     <rect class="mp-n__caja" x="${r(c.x0)}" y="${r(c.y0)}" width="${c.w}" height="${c.h}" rx="${n.tipo === 'auto' ? 15 : 12}"/>
     ${cara ? `<image class="mp-n__cara" href="${esc(cara)}" x="${r(c.x0 + 12)}" y="${r(n.y - 22)}" width="44" height="44" clip-path="url(#mp-redondo)" preserveAspectRatio="xMidYMid slice"/>` : ''}
     ${texto}
-    <text class="mp-n__estado" x="${r(c.x1 - 12)}" y="${r(c.y0 + (n.tipo === 'auto' ? 19 : 18))}" text-anchor="middle" aria-hidden="true">${e.simbolo}</text>
+    <g class="mp-n__insignia" aria-hidden="true"><circle cx="${r(c.x1 - 4)}" cy="${r(c.y0 + 2)}" r="${n.tipo === 'auto' ? 7 : 9}"/><text class="mp-n__estado" x="${r(c.x1 - 4)}" y="${r(c.y0 + 6)}" text-anchor="middle">${e.simbolo}</text></g>
   </g>`;
 }
 
