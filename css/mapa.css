@@ -1,0 +1,103 @@
+/* ==========================================================================
+   Centro de mando — «El mapa de las dos» (BL-105 MAP-1) v1.0.0
+   SVG propio (js/mapa.js). Sin colores literales: tokens del GDS y la paleta del universo (--uv-*).
+   Las medidas sueltas en px son del lienzo SVG (unidades del viewBox), no del diseño de página.
+   Se carga antes de css/universo.css (la piel sigue siendo la última).
+   ========================================================================== */
+
+/* ------------------------------------------------------------ barra: filtros y referencias */
+.mp-barra { display: flex; flex-wrap: wrap; gap: var(--gds-space-3); align-items: center; justify-content: space-between; margin-block: var(--gds-space-4); }
+.mp-filtros { display: flex; flex-wrap: wrap; gap: var(--gds-space-2); }
+.gds .mp-filtros .gds-button[aria-pressed="true"] { background: var(--uv-amber); border-color: var(--uv-amber); color: var(--uv-ink); }
+.mp-leyenda { display: flex; flex-wrap: wrap; gap: var(--gds-space-2); margin: 0; padding: 0; list-style: none; }
+
+.mp-chip {
+  display: inline-flex; align-items: center; gap: var(--gds-space-1);
+  padding: var(--gds-space-optical) var(--gds-space-2); border-radius: var(--gds-radius-full);
+  border: var(--gds-border-width) solid var(--gds-color-border-default); color: var(--gds-color-text-secondary);
+  font: var(--gds-font-caption);
+}
+.mp-chip--ok      { border-color: var(--gds-color-border-success); color: var(--gds-color-text-success); }
+.mp-chip--espera  { border-color: var(--gds-color-border-warning); color: var(--gds-color-text-warning); }
+.mp-chip--alerta  { border-color: var(--gds-color-border-danger);  color: var(--gds-color-text-danger); }
+.mp-chip--pausa   { border-color: var(--gds-color-border-control); color: var(--gds-color-text-secondary); }
+.mp-chip--externo { border-color: var(--gds-color-border-default); color: var(--gds-color-text-secondary); }
+.mp-chip--borrador { border-style: dashed; }
+
+/* ------------------------------------------------------------ cuerpo: lienzo + ficha */
+.mp-cuerpo { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, 320px); gap: var(--gds-space-4); align-items: start; }
+.mp-lienzo { padding: var(--gds-space-3); }
+.mp-scroll { overflow-x: auto; }
+.mp-svg { display: block; width: 100%; min-width: 860px; height: auto; }
+.mp-ficha .gds-cluster { margin-block: var(--gds-space-2); }
+.mp-ficha h3 { margin-top: var(--gds-space-4); }
+.mp-facts { margin-block: var(--gds-space-3); }
+.mp-lista-corta { margin: var(--gds-space-2) 0 0; padding-left: var(--gds-space-5); }
+.mp-lista { margin-top: var(--gds-space-4); }
+.mp-lista summary { min-height: var(--gds-target-min); display: flex; align-items: center; cursor: pointer; }
+.mp-lista h3 { margin-top: var(--gds-space-4); }
+
+@media (max-width: 1080px) {
+  .mp-cuerpo { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ------------------------------------------------------------ dibujo */
+.mp-zona { fill: var(--uv-amber); font: var(--gds-font-label-2); letter-spacing: var(--gds-tracking-label-2); text-transform: uppercase; }
+.mp-riel { stroke: var(--gds-color-border-default); stroke-width: 2px; }
+
+.mp-f, .mp-n, .mp-riel { transition: opacity var(--gds-motion-base); }
+.mp-f__linea { fill: none; stroke: var(--gds-color-border-control); stroke-width: 1.6px; }
+.mp-f--orden .mp-f__linea   { stroke: var(--uv-amber); }
+.mp-f--comando .mp-f__linea,
+.mp-f--control .mp-f__linea { stroke: var(--uv-violet); }
+.mp-f--publica .mp-f__linea { stroke: var(--gds-color-border-success); }
+.mp-f--lee .mp-f__linea     { stroke: var(--gds-color-border-info); }
+.mp-f--decide .mp-f__linea  { stroke: var(--gds-color-border-danger); }
+.mp-f--externo .mp-f__linea { stroke: var(--gds-color-border-default); stroke-dasharray: 4 4; }
+.mp-f--borrador .mp-f__linea { stroke-dasharray: 6 4; }
+.mp-punta { fill: var(--gds-color-border-control); }
+.mp-f__texto {
+  fill: var(--gds-color-text-secondary); font-size: 11px;
+  paint-order: stroke; stroke: var(--gds-color-bg); stroke-width: 4px; stroke-linejoin: round;
+}
+.mp-f__texto--tocar { opacity: 0; }
+
+.mp-n { cursor: pointer; outline: none; }
+.mp-n__caja { fill: var(--gds-color-surface-1); stroke: var(--gds-color-border-default); stroke-width: 1.5px; transition: fill var(--gds-motion-fast), stroke var(--gds-motion-fast); }
+.mp-n--agente .mp-n__caja, .mp-n--persona .mp-n__caja { stroke-width: 2px; }
+.mp-n--auto .mp-n__caja { fill: var(--gds-color-surface-2); }
+.mp-n--externo .mp-n__caja { fill: var(--gds-color-bg); }
+.mp-e--ok .mp-n__caja      { stroke: var(--gds-color-border-success); }
+.mp-e--espera .mp-n__caja  { stroke: var(--gds-color-border-warning); }
+.mp-e--alerta .mp-n__caja  { stroke: var(--gds-color-border-danger); }
+.mp-e--pausa .mp-n__caja   { stroke: var(--gds-color-border-control); }
+.mp-e--externo .mp-n__caja { stroke: var(--gds-color-border-default); }
+.mp-n--prd .mp-n__caja { stroke-dasharray: 8 4; }
+.mp-n--borrador .mp-n__caja { stroke-dasharray: 6 4; }
+
+.mp-n__nombre { fill: var(--gds-color-text-primary); font-size: 14px; font-weight: 600; }
+.mp-n__nombre--auto { font-size: 12px; font-weight: 500; }
+.mp-n__sub { fill: var(--gds-color-text-muted); font-size: 11px; }
+.mp-n__estado { font-size: 13px; font-weight: 700; fill: var(--gds-color-text-muted); }
+.mp-e--ok .mp-n__estado     { fill: var(--gds-color-text-success); }
+.mp-e--espera .mp-n__estado { fill: var(--gds-color-text-warning); }
+.mp-e--alerta .mp-n__estado { fill: var(--gds-color-text-danger); }
+
+/* foco, selección y vecinos */
+.mp-n:focus-visible .mp-n__caja { stroke: var(--gds-color-focus); stroke-width: 3px; }
+.mp-n[aria-pressed="true"] .mp-n__caja { stroke: var(--uv-amber); stroke-width: 3px; fill: var(--gds-color-surface-2); }
+.mp-n.is-cerca .mp-n__caja, .mp-n.is-sel .mp-n__caja { fill: var(--gds-color-surface-2); }
+.mp-f.is-cerca .mp-f__linea, .mp-f.is-sel .mp-f__linea { stroke-width: 3px; }
+.mp-f.is-cerca .mp-f__texto--tocar, .mp-f.is-sel .mp-f__texto--tocar { opacity: 1; }
+.mp[data-sel]:not([data-sel=""]) .mp-n:not([aria-pressed="true"]):not(.is-sel) { opacity: 0.35; }
+.mp[data-sel]:not([data-sel=""]) .mp-f:not(.is-sel) { opacity: 0.15; }
+
+/* filtros */
+.mp[data-filtro="flujos"] .mp-n--auto, .mp[data-filtro="flujos"] .mp-riel { opacity: 0.2; }
+.mp[data-filtro="flujos"] .mp-f__texto--tocar { opacity: 1; }
+.mp[data-filtro="auto"] .mp-n:not(.mp-n--auto):not(.mp-n--repo):not(.mp-n--prd) { opacity: 0.25; }
+.mp[data-filtro="auto"] .mp-f { opacity: 0.1; }
+.mp[data-filtro="shiruvana"] .mp-n:not([data-de-quien="shiruvana"]):not([data-de-quien="pablo"]) { opacity: 0.2; }
+.mp[data-filtro="shiruvana"] .mp-f--borrador { opacity: 0.1; }
+.mp[data-filtro="shiruna"] .mp-n:not([data-de-quien="shiruna"]):not([data-de-quien="pablo"]) { opacity: 0.2; }
+.mp[data-filtro="shiruna"] .mp-f:not(.mp-f--borrador) { opacity: 0.1; }
