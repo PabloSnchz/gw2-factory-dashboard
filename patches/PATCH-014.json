@@ -1,0 +1,134 @@
+{
+ "id": "PATCH-014",
+ "summary": "Panel 3.4.0: «El mapa de las dos» (BL-105 MAP-1) — pestaña Mapa, js/mapa.js, css/mapa.css, mapa/*.json y tests.",
+ "files": [
+  {
+   "path": "tests/mapa.test.mjs",
+   "create": true,
+   "content": "/**\n * tests/mapa.test.mjs — «El mapa de las dos» (BL-105 MAP-1).\n * Guardianes: datos sanos (ids, tipos, estados, flujos que existen), dibujo legible (nada se pisa, ningún flujo\n * atraviesa otro nodo, rótulos visibles que no se tapan), accesibilidad, escape de textos y que las\n * automatizaciones del propio panel que figuran en el mapa existan de verdad.\n */\nimport { test } from 'node:test';\nimport assert from 'node:assert/strict';\nimport { readFileSync, existsSync } from 'node:fs';\nimport * as M from '../js/mapa.js';\nimport { NAV } from '../js/views.js';\n\nconst read = p => readFileSync(new URL(`../${p}`, import.meta.url), 'utf8');\nconst partes = () => M.MAPA_ARCHIVOS.map(p => JSON.parse(read(p)));\nconst mapa = () => M.unirMapa(partes());\nconst choca = (a, b) => a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1;\n\ntest('datos: las dos partes existen y el mapa unido no tiene problemas de forma', () => {\n  const [mia, suya] = partes();\n  assert.equal(mia.parte, 'shiruvana');\n  assert.equal(suya.parte, 'shiruna');\n  assert.equal(suya.borrador, true, 'la parte de Shiruna es un borrador mío hasta MAP-3');\n  const m = mapa();\n  assert.deepEqual(M.validarMapa(m), []);\n  assert.ok(m.nodos.filter(n => n.tipo === 'agente').map(n => n.id).sort().join() === 'shiruna,shiruvana', 'las dos agentes');\n  assert.ok(m.nodos.some(n => n.id === 'pablo' && n.tipo === 'persona'), 'Pablo está');\n  assert.ok(m.nodos.filter(n => n.borrador).every(n => n.duena === 'shiruna'), 'solo lo de Shiruna queda como borrador');\n});\n\ntest('datos: validarMapa detecta lo que está mal', () => {\n  const m = mapa();\n  const roto = { nodos: [...m.nodos, { ...m.nodos[0] }, { id: 'x', tipo: 'nave', estado: 'raro', duena: 'nadie', x: 5000, y: 0 }],\n    flujos: [...m.flujos, { de: 'pablo', a: 'fantasma', tipo: 'orden', texto: 'x' }] };\n  const e = M.validarMapa(roto).join('\\n');\n  for (const s of ['id repetido', 'tipo desconocido nave', 'estado desconocido raro', 'dueña desconocida nadie', 'fantasma', 'se pisan']) assert.match(e, new RegExp(s), s);\n});\n\ntest('dibujo: ningún flujo atraviesa un nodo que no es suyo y nada sale del lienzo', () => {\n  const m = mapa();\n  const ids = new Map(m.nodos.map(n => [n.id, n]));\n  for (const f of m.flujos) {\n    const rc = M.recorrido(ids.get(f.de), ids.get(f.a), f.curva || 0, f.t ?? 0.5);\n    for (const p of M.muestras(rc, 100)) {\n      assert.ok(p.x >= 0 && p.y >= 0 && p.x <= M.LIENZO.ancho && p.y <= M.LIENZO.alto, `${f.de} → ${f.a} sale del lienzo`);\n      for (const n of m.nodos) {\n        if (n.id === f.de || n.id === f.a) continue;\n        const c = M.caja(n);\n        assert.ok(!(p.x > c.x0 && p.x < c.x1 && p.y > c.y0 && p.y < c.y1), `${f.de} → ${f.a} atraviesa ${n.id}`);\n      }\n    }\n  }\n});\n\ntest('dibujo: los rótulos visibles no se tapan entre sí ni tapan nodos', () => {\n  const m = mapa();\n  const ids = new Map(m.nodos.map(n => [n.id, n]));\n  const puestos = [];\n  for (const f of m.flujos.filter(x => x.rotulo !== 'al-tocar')) {\n    const c = M.cajaRotulo(f.texto, M.recorrido(ids.get(f.de), ids.get(f.a), f.curva || 0, f.t ?? 0.5));\n    for (const n of m.nodos) assert.ok(!choca(c, M.caja(n)), `el rótulo «${f.texto}» tapa ${n.id}`);\n    for (const p of puestos) assert.ok(!choca(c, p.c), `«${f.texto}» tapa «${p.t}»`);\n    puestos.push({ c, t: f.texto });\n  }\n  assert.ok(puestos.length >= m.flujos.length - 4, 'casi todos los rótulos se ven sin tocar nada');\n});\n\ntest('dibujo: los textos entran en su caja', () => {\n  for (const n of mapa().nodos) {\n    const ancho = M.TIPOS[n.tipo].w - (n.cara ? 78 : 24);\n    assert.ok(n.nombre.length * (n.tipo === 'auto' ? 7 : 8) <= ancho, `${n.id}: nombre largo`);\n    if (n.tipo !== 'auto' && n.sub) assert.ok(n.sub.length * 5.9 <= ancho, `${n.id}: «${n.sub}» no entra`);\n  }\n});\n\ntest('vista: un h1, cada nodo es un botón con nombre y estado en palabras, y nada roto', () => {\n  const m = mapa();\n  const html = M.renderMapa({ datos: m });\n  assert.equal((html.match(/<h1\\b/g) || []).length, 1);\n  const niveles = [...html.matchAll(/<h([1-6])\\b/g)].map(x => Number(x[1]));\n  niveles.forEach((l, i) => { if (i) assert.ok(l <= niveles[i - 1] + 1, `h${niveles[i - 1]} → h${l}`); });\n  const botones = [...html.matchAll(/<g class=\"mp-n [^\"]*\" data-id=\"([^\"]+)\"[^>]*tabindex=\"0\" role=\"button\" aria-pressed=\"false\" aria-label=\"([^\"]+)\"/g)];\n  assert.equal(botones.length, m.nodos.length, 'un botón por nodo');\n  for (const [, id, label] of botones) {\n    const n = m.nodos.find(x => x.id === id);\n    assert.ok(label.includes(M.esc(n.nombre)), `${id}: nombre en la etiqueta`);\n    assert.ok(label.includes(M.ESTADOS[n.estado].texto), `${id}: estado en palabras`);\n  }\n  assert.ok(!/undefined|NaN/.test(html), 'sin datos rotos');\n  const ids = [...html.matchAll(/\\sid=\"([^\"]+)\"/g)].map(x => x[1]);\n  assert.equal(new Set(ids).size, ids.length, 'ids únicos');\n  for (const [, t] of html.matchAll(/aria-labelledby=\"([^\"]+)\"/g)) assert.ok(ids.includes(t), `aria-labelledby=${t}`);\n  for (const a of html.match(/<a [^>]*target=\"_blank\"[^>]*>/g) || []) assert.ok(a.includes('rel=\"noopener\"'));\n  assert.match(html, /Ver el mapa como lista/);\n  for (const n of m.nodos) assert.ok(html.includes(`<strong>${M.esc(n.nombre)}</strong>`), `${n.id} en la lista`);\n  assert.match(html, /<div class=\"uv-cifras\" role=\"group\" aria-label=\"En números\">/);\n});\n\ntest('vista: mientras lee y si falla, lo dice', () => {\n  const leyendo = M.renderMapa(null);\n  assert.equal((leyendo.match(/<h1\\b/g) || []).length, 1);\n  assert.match(leyendo, /Dibujando el mapa/);\n  const error = M.renderMapa({ error: 'mapa/shiruvana.json: HTTP 404 <b>' });\n  assert.match(error, /No pude leer el mapa/);\n  assert.ok(error.includes('HTTP 404 &lt;b&gt;'), 'el motivo se escapa');\n});\n\ntest('escape: lo que venga en los archivos nunca entra como HTML', () => {\n  const m = mapa();\n  m.nodos[0] = { ...m.nodos[0], nombre: '<img src=x onerror=alert(1)>', sub: '\"><script>x</script>', ficha: { que: '<b>hola</b>', enlace: 'javascript:alert(1)' } };\n  m.flujos[0] = { ...m.flujos[0], texto: '<svg onload=1>' };\n  const html = M.renderMapa({ datos: m }) + M.fichaHtml(m.nodos[0], m);\n  assert.ok(!/<img src=x|<script>x|<b>hola|<svg onload/.test(html));\n  assert.ok(!html.includes('javascript:'), 'solo enlaces https');\n});\n\ntest('ficha: qué es, dónde, cuándo, sus automatizaciones y con quién se conecta', () => {\n  const m = mapa();\n  const dev = M.fichaHtml(m.nodos.find(n => n.id === 'dev'), m);\n  for (const s of ['Bóveda DEV', 'Dónde', 'Cuándo', 'Sus automatizaciones', 'Vigía de builds', 'Se conecta con', 'Abrir en GitHub']) assert.ok(dev.includes(s), s);\n  assert.match(M.fichaHtml(null, m), /Tocá un nodo/);\n});\n\ntest('verdad: las automatizaciones del panel que dibuja el mapa existen en este repo', () => {\n  const m = mapa();\n  for (const n of m.nodos.filter(x => x.padre === 'panel')) {\n    for (const w of String(n.ficha.workflow || '').split(' · ').filter(Boolean)) {\n      assert.ok(existsSync(new URL(`../.github/workflows/${w}`, import.meta.url)), `${n.id}: .github/workflows/${w}`);\n    }\n  }\n});\n\ntest('integración: pestaña «Mapa», ruta en app.js y estilos antes de la piel', () => {\n  assert.ok(NAV.some(n => n.route === 'mapa' && n.label === 'Mapa'));\n  const app = read('js/app.js');\n  assert.match(app, /case 'mapa': html = renderMapa\\(estadoMapa\\(\\)\\); break;/);\n  assert.match(app, /montarMapa\\(\\$main, \\{ alTerminar: render \\}\\)/);\n  const html = read('index.html');\n  const css = [...html.matchAll(/href=\"([^\"?]+\\.css)/g)].map(x => x[1]);\n  assert.ok(css.indexOf('css/mapa.css') > -1 && css.indexOf('css/mapa.css') < css.indexOf('css/universo.css'));\n  const estilos = read('css/mapa.css').replace(/\\/\\*[\\s\\S]*?\\*\\//g, '');\n  assert.doesNotMatch(estilos, /#[0-9a-fA-F]{3,8}\\b/, 'sin hex');\n  assert.doesNotMatch(estilos, /\\b(rgb|rgba|hsl|hsla)\\(/, 'sin rgb/hsl');\n  const tokens = new Set([...read('gds/tokens.css').matchAll(/(--gds-[\\w-]+)\\s*:/g)].map(x => x[1]));\n  for (const [, t] of estilos.matchAll(/var\\((--gds-[\\w-]+)\\)/g)) assert.ok(tokens.has(t), `${t} existe`);\n  const uv = new Set([...read('css/universo.css').matchAll(/(--uv-[\\w-]+)\\s*:/g)].map(x => x[1]));\n  for (const [, t] of estilos.matchAll(/var\\((--uv-[\\w-]+)\\)/g)) assert.ok(uv.has(t), `${t} existe`);\n});\n"
+  },
+  {
+   "path": "js/views.js",
+   "base_sha": "0a2c32c4868ed43f0f65fb214d291363ce5daddb",
+   "ops": [
+    {
+     "op": "replace",
+     "anchor": "function pageHead(ante, title, sub, cifras = [], extra = '') {",
+     "text": "export function pageHead(ante, title, sub, cifras = [], extra = '') {"
+    },
+    {
+     "op": "replace",
+     "anchor": "  { route: 'salud', label: 'Salud', icon: 'pulse' },\n",
+     "text": "  { route: 'salud', label: 'Salud', icon: 'pulse' },\n  { route: 'mapa', label: 'Mapa', icon: 'map' },\n"
+    }
+   ]
+  },
+  {
+   "path": "js/app.js",
+   "base_sha": "10f7115897f99de010c00103637fff2eff5222aa",
+   "ops": [
+    {
+     "op": "replace",
+     "anchor": " * SH-4d (js/sudia.js): «El día de Shiruna» en «Actividad» — de qué hora a qué hora, tests, pausas largas y sus commits.\n */",
+     "text": " * SH-4d (js/sudia.js): «El día de Shiruna» en «Actividad» — de qué hora a qué hora, tests, pausas largas y sus commits.\n * BL-105 MAP-1 (js/mapa.js): «El mapa de las dos» en la pestaña Mapa. Lee mapa/*.json una vez y, al terminar, vuelve a dibujar.\n */"
+    },
+    {
+     "op": "replace",
+     "anchor": "import { buildDia, vestirDia } from './sudia.js';\n",
+     "text": "import { buildDia, vestirDia } from './sudia.js';\nimport { renderMapa, montarMapa, estadoMapa } from './mapa.js';\n"
+    },
+    {
+     "op": "replace",
+     "anchor": "    case 'item': html = V.renderItem(",
+     "text": "    case 'mapa': html = renderMapa(estadoMapa()); break;\n    case 'item': html = V.renderItem("
+    },
+    {
+     "op": "replace",
+     "anchor": "  vestirDia($main, m.dia, HIJA_REPO); // «El día de Shiruna» en «Actividad» (SH-4d)\n",
+     "text": "  vestirDia($main, m.dia, HIJA_REPO); // «El día de Shiruna» en «Actividad» (SH-4d)\n  if (r.name === 'mapa') montarMapa($main, { alTerminar: render }); // el mapa de las dos (BL-105 MAP-1)\n"
+    }
+   ]
+  },
+  {
+   "path": "gds/icons.js",
+   "base_sha": "d407fdffec5fe9a2b522287dbd7900afe335ff73",
+   "ops": [
+    {
+     "op": "replace",
+     "anchor": "  send: '<path d=\"m22 2-7 20-4-9-9-4z\"/><path d=\"M22 2 11 13\"/>',\n",
+     "text": "  send: '<path d=\"m22 2-7 20-4-9-9-4z\"/><path d=\"M22 2 11 13\"/>',\n  map: '<path d=\"M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z\"/><path d=\"M9 4v14M15 6v14\"/>',\n"
+    }
+   ]
+  },
+  {
+   "path": "index.html",
+   "base_sha": "880ece44a9b14192220cc587d327eb7787112e95",
+   "ops": [
+    {
+     "op": "replace",
+     "anchor": "  <link rel=\"stylesheet\" href=\"css/hija.css?v=1.1.0\">\n",
+     "text": "  <link rel=\"stylesheet\" href=\"css/hija.css?v=1.1.0\">\n  <link rel=\"stylesheet\" href=\"css/mapa.css?v=1.0.0\">\n"
+    },
+    {
+     "op": "replace",
+     "anchor": "js/app.js?v=2.13.0",
+     "text": "js/app.js?v=2.14.0"
+    }
+   ]
+  },
+  {
+   "path": "tests/panel.test.mjs",
+   "base_sha": "7c5950104f418b3c48d17e29c6f711e63a4dd212",
+   "ops": [
+    {
+     "op": "replace",
+     "anchor": "'css/hija.css', 'css/universo.css'],",
+     "text": "'css/hija.css', 'css/mapa.css', 'css/universo.css'],"
+    },
+    {
+     "op": "replace",
+     "anchor": "Shiruna con cuerpo (SH-1) → universo (BL-091)');",
+     "text": "Shiruna con cuerpo (SH-1) → el mapa (BL-105) → universo (BL-091)');"
+    }
+   ]
+  },
+  {
+   "path": "README.md",
+   "base_sha": "f306acfc56d516de8e1a96907be3a0170e763107",
+   "ops": [
+    {
+     "op": "replace",
+     "anchor": "· versión 3.3.0",
+     "text": "· versión 3.4.0"
+    },
+    {
+     "op": "replace",
+     "anchor": "\n\nEl filtro «Las dos",
+     "text": "\n| **Mapa** | ¿Cómo estamos armadas? Personas, agentes, PCs, repos, flujos y automatizaciones en un dibujo navegable: cada caja abre su ficha (qué es, dónde corre, cuándo se ejecuta, con quién se conecta). Datos en `mapa/*.json`, una parte por agente (BL-105) |\n\nEl filtro «Las dos"
+    }
+   ]
+  },
+  {
+   "path": "CHANGELOG.md",
+   "base_sha": "1ea47eb2b5618591dfe24c72d4351e6317d10060",
+   "ops": [
+    {
+     "op": "replace",
+     "anchor": "## [3.3.3] — 2026-11-23\n",
+     "text": "## [3.4.0] — 2026-11-25\n\n### Added\n- **El mapa de las dos** (BL-105 MAP-1, pedido de Pablo): pestaña «Mapa» con un dibujo propio en SVG de cómo estamos armadas Shiruvana y Shiruna: Pablo, las dos agentes, las PCs, los repos, producción, los otros agentes y 15 automatizaciones, unidos por sus flujos. Cada caja es un botón que abre su ficha (qué es, dónde corre, cuándo se ejecuta, sus automatizaciones, con quién se conecta y el enlace a GitHub); al pasar o elegir una se resaltan sus conexiones. Filtros: Todo, Flujos, Automatizaciones, Solo Shiruvana, Solo Shiruna. Estado con símbolo y texto, también como lista. Datos: `mapa/shiruvana.json` (lo mío, con los workflows verificados en cada repo) y `mapa/shiruna-borrador.json` (lo de Shiruna, borrador mío hasta que lo publique ella, MAP-3). Maqueta: los estados todavía no son en vivo (MAP-2). `js/mapa.js` 1.0.0, `css/mapa.css` 1.0.0, ícono `map`. Tests: `tests/mapa.test.mjs` (ningún flujo atraviesa otro nodo, rótulos que no se tapan, accesibilidad, escape y que las automatizaciones del panel existan).\n\n## [3.3.3] — 2026-11-23\n"
+    }
+   ]
+  },
+  {
+   "path": "package.json",
+   "base_sha": "0b1c6af3111c391146b9357c5dadf00c9dfcbac3",
+   "ops": [
+    {
+     "op": "replace",
+     "anchor": "\"version\": \"3.3.3\"",
+     "text": "\"version\": \"3.4.0\""
+    }
+   ]
+  }
+ ]
+}
