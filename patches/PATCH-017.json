@@ -1,0 +1,133 @@
+{
+ "id": "PATCH-017",
+ "summary": "Panel 3.5.0: el mapa de las dos, en vivo (BL-105 MAP-2) — estados medidos en GitHub Actions y en nuestras memorias.",
+ "files": [
+  {
+   "path": "mapa/shiruvana.json",
+   "base_sha": "4cd3ec30561bc01abf920d4cc9aadf85a26d0f98",
+   "ops": [
+    {
+     "op": "replace",
+     "anchor": "      \"id\": \"dev\",\n",
+     "text": "      \"id\": \"dev\",\n      \"repo\": \"PabloSnchz/gw2-factory-dev\",\n"
+    },
+    {
+     "op": "replace",
+     "anchor": "      \"id\": \"panel\",\n",
+     "text": "      \"id\": \"panel\",\n      \"repo\": \"PabloSnchz/gw2-factory-dashboard\",\n"
+    },
+    {
+     "op": "replace",
+     "anchor": "      \"id\": \"sitio\",\n",
+     "text": "      \"id\": \"sitio\",\n      \"repo\": \"PabloSnchz/shiruvana\",\n"
+    },
+    {
+     "op": "replace",
+     "anchor": "      \"id\": \"prd\",\n",
+     "text": "      \"id\": \"prd\",\n      \"repo\": \"PabloSnchz/gw2-wallet-ligero\",\n"
+    },
+    {
+     "op": "replace",
+     "anchor": "  \"version\": \"1.0.0\",\n",
+     "text": "  \"version\": \"1.1.0\",\n"
+    }
+   ]
+  },
+  {
+   "path": "tests/mapa.test.mjs",
+   "base_sha": "cfbb5005be3fce3e640a44276debe85652762734",
+   "ops": [
+    {
+     "op": "replace",
+     "anchor": "  assert.match(app, /case 'mapa': html = renderMapa\\(estadoMapa\\(\\)\\); break;/);\n  assert.match(app, /montarMapa\\(\\$main, \\{ alTerminar: render \\}\\)/);\n",
+     "text": "  assert.match(app, /case 'mapa': html = renderMapa\\(estadoMapa\\(m\\)\\); break;/, 'MAP-2: la vista recibe el modelo para los estados en vivo');\n  assert.match(app, /montarMapa\\(\\$main, \\{ alTerminar: render, gh, model: m \\}\\)/, 'MAP-2: el mapa lee las corridas con el mismo cliente (y la misma caché)');\n"
+    }
+   ]
+  },
+  {
+   "path": "tests/mapa-vivo.test.mjs",
+   "create": true,
+   "content": "/**\n * tests/mapa-vivo.test.mjs — «El mapa de las dos», estados en vivo (BL-105 MAP-2).\n * Guardianes: lo medido corrige lo declarado (corridas de GitHub Actions y nuestras memorias), lo que no se\n * puede medir queda como lo declaré y lo dice, un repo toma el peor estado de sus automatizaciones, la caché\n * guarda solo lo que uso y el mapa pide las corridas una sola vez por lectura del panel.\n */\nimport { test } from 'node:test';\nimport assert from 'node:assert/strict';\nimport { readFileSync } from 'node:fs';\nimport * as M from '../js/mapa.js';\n\nconst read = p => readFileSync(new URL(`../${p}`, import.meta.url), 'utf8');\nconst mapa = () => M.unirMapa(M.MAPA_ARCHIVOS.map(p => JSON.parse(read(p))));\nconst NOW = Date.parse('2026-11-25T04:00:00Z');\nconst hora = h => new Date(NOW - h * 3600000).toISOString();\nconst run = (f, c, h, s = 'completed') => ({ f, s, c, t: hora(h), u: `https://github.com/x/y/actions/runs/${f}-${h}` });\nconst nodo = (m, id) => m.nodos.find(n => n.id === id);\nconst DEV = 'PabloSnchz/gw2-factory-dev';\n\ntest('datos: los repos que se pueden medir declaran su `repo` y son públicos de Pablo', () => {\n  const m = mapa();\n  assert.deepEqual(M.reposVivos(m).sort(), ['PabloSnchz/gw2-factory-dashboard', 'PabloSnchz/gw2-factory-dev', 'PabloSnchz/gw2-wallet-ligero', 'PabloSnchz/shiruvana']);\n  assert.ok(!nodo(m, 'manos').repo, 'shiruvana-manos es privado: no se puede leer sin token');\n  for (const r of M.reposVivos(m)) {\n    const n = m.nodos.find(x => x.repo === r);\n    assert.ok(['repo', 'prd'].includes(n.tipo), `${r} está en un repo`);\n    assert.ok(m.nodos.some(x => x.padre === n.id), `${n.id} tiene automatizaciones que medir`);\n  }\n});\n\ntest('caché: formaRuns guarda solo lo que uso y aguanta respuestas rotas', () => {\n  const full = { workflow_runs: [\n    { path: '.github/workflows/builds-watch.yml', status: 'completed', conclusion: 'success', updated_at: hora(1), html_url: 'https://github.com/a', name: 'x', head_commit: { message: 'grande' } },\n    { path: 'dynamic/pages/pages-build-deployment', status: 'in_progress', conclusion: null, created_at: hora(0) },\n    { path: '.github/workflows/test.yml@refs/heads/main', status: 'completed', conclusion: 'failure', updated_at: hora(2) },\n    null, { nada: 1 },\n  ] };\n  const r = M.formaRuns(full);\n  assert.deepEqual(r.map(x => x.f), ['builds-watch.yml', 'pages-build-deployment', 'test.yml']);\n  assert.deepEqual(Object.keys(r[0]).sort(), ['c', 'f', 's', 't', 'u']);\n  assert.deepEqual(M.formaRuns(null), []);\n  assert.deepEqual(M.formaRuns({ workflow_runs: 'x' }), []);\n});\n\ntest('corridas: la última terminada manda; una en curso se avisa; skipped y cancelled no cuentan', () => {\n  const runs = [run('a.yml', null, 0, 'in_progress'), run('a.yml', 'cancelled', 1), run('a.yml', 'skipped', 2), run('a.yml', 'failure', 3), run('a.yml', 'success', 4)];\n  const u = M.ultimaCorrida(runs, 'a.yml');\n  assert.equal(u.corriendo, true);\n  assert.equal(u.ultima.c, 'failure', 'la más nueva que terminó bien o mal');\n  assert.deepEqual(M.ultimaCorrida(runs, 'b.yml'), { corriendo: false, ultima: null });\n});\n\ntest('vivo: una automatización que falló queda «Con problemas» y su repo también, con el enlace a la corrida', () => {\n  const m = M.aplicarVivo(mapa(), { now: NOW, runs: { [DEV]: [run('builds-watch.yml', 'failure', 3), run('app-checks.yml', 'success', 1), run('dev-pages.yml', 'success', 1)] } });\n  const b = nodo(m, 'a-builds-dev');\n  assert.equal(b.estado, 'alerta');\n  assert.match(b.vivo.nota, /Falló la última corrida de builds-watch\\.yml \\(hace 3 h\\)/);\n  assert.equal(b.vivo.fuente, 'github');\n  assert.match(b.vivo.enlace, /^https:\\/\\/github\\.com\\//);\n  assert.equal(nodo(m, 'a-tests-dev').estado, 'ok');\n  assert.match(nodo(m, 'a-tests-dev').vivo.nota, /Última corrida bien: app-checks\\.yml, hace 1 h/);\n  const dev = nodo(m, 'dev');\n  assert.equal(dev.estado, 'alerta', 'el repo toma el peor estado de sus automatizaciones');\n  assert.match(dev.vivo.nota, /Vigía de builds/);\n  assert.equal(nodo(m, 'a-decisiones').vivo.fuente, 'declarado', 'sin corridas: queda lo declarado y lo dice');\n  assert.equal(nodo(m, 'a-decisiones').estado, nodo(m, 'a-decisiones').declarado);\n});\n\ntest('vivo: sin corridas leídas ni modelo, todo queda como lo declaré y el mapa original no cambia', () => {\n  const base = mapa();\n  const antes = JSON.stringify(base);\n  const m = M.aplicarVivo(base, { now: NOW });\n  assert.equal(JSON.stringify(base), antes, 'pura');\n  for (const n of m.nodos) assert.equal(n.estado, n.declarado, n.id);\n  assert.deepEqual(m.vivo, { repos: [], leido: false });\n});\n\ntest('vivo: Pablo, yo, Shiruna, su ciclo y la PC salen de lo que el panel ya leyó', () => {\n  const model = {\n    human: [{}, {}], statusInfo: { code: 'ESPERANDO_VALIDACIÓN' }, health: { level: 'ok' },\n    alertas: { nivel: 'critical', checks: [{ level: 'critical', title: 'Shiruna no se mueve con trabajo en cola' }] },\n    pulso: { vida: { level: 'critical', text: 'Sin actividad con trabajo en cola: ¿la PC está apagada o suspendida?' } },\n  };\n  const m = M.aplicarVivo(mapa(), { now: NOW, model });\n  assert.equal(nodo(m, 'pablo').estado, 'espera');\n  assert.match(nodo(m, 'pablo').vivo.nota, /Te esperan 2 cosas en «Hoy»/);\n  assert.equal(nodo(m, 'shiruvana').estado, 'espera');\n  assert.equal(nodo(m, 'shiruna').estado, 'alerta');\n  assert.equal(nodo(m, 'shiruna').vivo.nota, 'Shiruna no se mueve con trabajo en cola.');\n  assert.equal(nodo(m, 'a-ciclo').estado, 'alerta');\n  assert.ok(!/\\?\\.$/.test(nodo(m, 'a-ciclo').vivo.nota), 'sin «?.»');\n  assert.equal(nodo(m, 'pc-shiruvana').estado, 'revisar');\n  assert.equal(nodo(m, 'su-boveda').estado, 'alerta', 'su Bóveda toma el estado de su ciclo');\n  assert.equal(nodo(m, 'a-resumen').estado, 'ok', 'lo que no se mide queda como estaba');\n\n  const tranquila = M.aplicarVivo(mapa(), { now: NOW, model: { human: [], statusInfo: { code: 'EN_CURSO' }, health: { level: 'ok' },\n    alertas: { nivel: 'ok', checks: [] }, pulso: { vida: { level: 'ok', text: 'Activa' } } } });\n  assert.equal(nodo(tranquila, 'pablo').estado, 'ok');\n  assert.equal(nodo(tranquila, 'shiruvana').vivo.nota, 'Mi estado: en curso.');\n  assert.equal(nodo(tranquila, 'a-ciclo').vivo.nota, 'Activa.');\n  assert.equal(nodo(tranquila, 'pc-shiruvana').estado, 'ok');\n  assert.equal(M.aplicarVivo(mapa(), { now: NOW, model: { statusInfo: { code: 'BLOQUEADA' } } }).nodos.find(n => n.id === 'shiruvana').estado, 'alerta');\n});\n\ntest('vivo: un repo en pausa sigue en pausa aunque se mida algo de adentro', () => {\n  const base = mapa();\n  base.nodos = base.nodos.map(n => (n.id === 'manos' ? { ...n, repo: 'PabloSnchz/shiruvana-manos' } : n));\n  const m = M.aplicarVivo(base, { now: NOW, runs: { 'PabloSnchz/shiruvana-manos': [run('hola-shiruvana.yml', 'failure', 1)] } });\n  assert.equal(nodo(m, 'a-runner').estado, 'alerta');\n  assert.equal(nodo(m, 'manos').estado, 'pausa');\n});\n\ntest('vista: «Ahora:» con su fuente en la ficha, «Para revisar» en las referencias y la cifra de lo que hay que mirar', () => {\n  const m = M.aplicarVivo(mapa(), { now: NOW, runs: { [DEV]: [run('builds-watch.yml', 'failure', 3)] } });\n  const f = M.fichaHtml(nodo(m, 'a-builds-dev'), m);\n  assert.match(f, /<div class=\"mp-ahora mp-ahora--alerta\"><p class=\"gds-body-2\"><strong>Ahora:<\\/strong> Falló/);\n  assert.match(f, /Medido en GitHub Actions · <a href=\"https:\\/\\/github\\.com\\/[^\"]+\" target=\"_blank\" rel=\"noopener\">ver la corrida<\\/a>/);\n  const html = M.renderMapa({ datos: m });\n  assert.match(html, /mp-chip--revisar/);\n  assert.match(html, /<b>2<\\/b><span>para mirar<\\/span>/, 'la automatización y su repo');\n  assert.match(html, /Estados en vivo: corridas de gw2-factory-dev\\. Lo que no se puede medir/);\n  assert.ok(!/undefined|NaN/.test(html));\n  assert.match(M.renderMapa({ datos: mapa() }), /Estados: como los declaré/);\n});\n\ntest('escape: lo que venga de las memorias o de GitHub nunca entra como HTML', () => {\n  const m = M.aplicarVivo(mapa(), { now: NOW, model: { alertas: { nivel: 'warn', checks: [{ title: '<img src=x onerror=1>' }] } },\n    runs: { [DEV]: [{ f: 'builds-watch.yml', s: 'completed', c: 'failure', t: hora(1), u: 'javascript:alert(1)' }] } });\n  const html = M.fichaHtml(nodo(m, 'shiruna'), m) + M.fichaHtml(nodo(m, 'a-builds-dev'), m);\n  assert.ok(!html.includes('<img src=x'));\n  assert.ok(!html.includes('javascript:'), 'solo enlaces https');\n});\n\ntest('carga: las corridas se piden una sola vez por lectura del panel, con un casillero fijo por repo', async () => {\n  M._reiniciarMapa();\n  M._ponerMapa(mapa());\n  const pedidos = [];\n  const gh = { api: async (path, opts) => { pedidos.push([path, opts.slot]); return opts.shape({ workflow_runs: [{ path: '.github/workflows/test.yml', status: 'completed', conclusion: 'success', updated_at: hora(1) }] }); } };\n  let dibujos = 0;\n  const model = { generatedAt: 1, human: [] };\n  assert.equal(await M.cargarVivo({ gh, model, alTerminar: () => dibujos++ }), true);\n  assert.equal(await M.cargarVivo({ gh, model, alTerminar: () => dibujos++ }), false, 'misma lectura: no vuelve a pedir');\n  assert.equal(pedidos.length, 4, 'una llamada por repo');\n  assert.equal(dibujos, 1);\n  for (const [p, slot] of pedidos) {\n    assert.match(p, /^\\/repos\\/PabloSnchz\\/[\\w.-]+\\/actions\\/runs\\?per_page=100&exclude_pull_requests=true$/);\n    assert.match(slot, /^mapa:runs:[\\w.-]+$/);\n  }\n  assert.equal(M.estadoMapa(model, NOW).datos.nodos.find(n => n.id === 'a-ci-panel').estado, 'ok');\n  assert.equal(await M.cargarVivo({ gh, model: { generatedAt: 2 }, alTerminar: () => dibujos++ }), true, 'lectura nueva: vuelve a pedir');\n  assert.equal(pedidos.length, 8);\n  M._reiniciarMapa();\n  assert.equal(await M.cargarVivo({ gh, model }), false, 'sin mapa leído no pide nada');\n});\n"
+  },
+  {
+   "path": "js/app.js",
+   "base_sha": "2ebcc4ce6285b33b69554af007fafc9f244a6ac8",
+   "ops": [
+    {
+     "op": "replace",
+     "anchor": " * BL-105 MAP-1 (js/mapa.js): «El mapa de las dos» en la pestaña Mapa. Lee mapa/*.json una vez y, al terminar, vuelve a dibujar.\n",
+     "text": " * BL-105 MAP-1 (js/mapa.js): «El mapa de las dos» en la pestaña Mapa. Lee mapa/*.json una vez y, al terminar, vuelve a dibujar.\n * BL-105 MAP-2: sus estados en vivo con el modelo de esta lectura y las corridas de GitHub Actions (mismo cliente y caché).\n"
+    },
+    {
+     "op": "replace",
+     "anchor": "    case 'mapa': html = renderMapa(estadoMapa()); break;\n",
+     "text": "    case 'mapa': html = renderMapa(estadoMapa(m)); break;\n"
+    },
+    {
+     "op": "replace",
+     "anchor": "  if (r.name === 'mapa') montarMapa($main, { alTerminar: render }); // el mapa de las dos (BL-105 MAP-1)\n",
+     "text": "  if (r.name === 'mapa') montarMapa($main, { alTerminar: render, gh, model: m }); // el mapa de las dos, en vivo (BL-105)\n"
+    }
+   ]
+  },
+  {
+   "path": "index.html",
+   "base_sha": "16133c840ac87d4d2cbccdd7c569fec247996961",
+   "ops": [
+    {
+     "op": "replace",
+     "anchor": "css/mapa.css?v=1.0.1",
+     "text": "css/mapa.css?v=1.1.0"
+    },
+    {
+     "op": "replace",
+     "anchor": "js/app.js?v=2.14.0",
+     "text": "js/app.js?v=2.15.0"
+    }
+   ]
+  },
+  {
+   "path": "README.md",
+   "base_sha": "a390df1fd0a31b0d14a9e99419440945a9221c76",
+   "ops": [
+    {
+     "op": "replace",
+     "anchor": "· versión 3.4.0",
+     "text": "· versión 3.5.0"
+    },
+    {
+     "op": "replace",
+     "anchor": "Datos en `mapa/*.json`, una parte por agente (BL-105) |",
+     "text": "Datos en `mapa/*.json`, una parte por agente (BL-105). Los estados son en vivo: cada automatización según su última corrida en GitHub Actions y nosotras según nuestras memorias; lo que no se puede medir queda como lo declaré y la ficha lo dice |"
+    },
+    {
+     "op": "replace",
+     "anchor": "con caché de 10 minutos en casilleros fijos.",
+     "text": "con caché de 10 minutos en casilleros fijos. Al abrir el **Mapa** se suman 4 (las corridas de DEV, el panel, mi sitio y producción), una vez por lectura y en sus propios casilleros."
+    }
+   ]
+  },
+  {
+   "path": "CHANGELOG.md",
+   "base_sha": "c52712f609324230cc118cb5da36ecd4edb3210c",
+   "ops": [
+    {
+     "op": "replace",
+     "anchor": "## [3.4.1] — 2026-11-25\n",
+     "text": "## [3.5.0] — 2026-11-25\n\n### Added\n- **El mapa, en vivo** (BL-105 MAP-2; Pablo validó MAP-1 y pidió avanzar). Cada automatización toma el estado de su última corrida en GitHub Actions (falló → «Con problemas», con enlace a la corrida; sin corridas entre las últimas 100 → queda como la declaré y la ficha lo dice). Pablo, yo, Shiruna, su ciclo y la PC SHIRUVANA salen de lo que el panel ya leyó de las dos memorias, sin gastar cuota: lo que te espera en «Hoy», mi estado, su salud y su pulso (si Shiruna está quieta con trabajo en cola, la PC pasa a «Para revisar»). Un repo toma el peor estado de sus automatizaciones. La ficha dice «Ahora:» y de dónde sale el dato. Estado nuevo «Para revisar» (ámbar); «Esperando a Pablo» pasa a azul porque no es un problema. Cifra nueva: «para mirar». Las corridas se leen una vez por lectura del panel: 4 llamadas (DEV, panel, sitio y producción) en casilleros fijos `mapa:runs:*`. `js/mapa.js` y `css/mapa.css` 1.1.0, `mapa/shiruvana.json` 1.1.0 (campo `repo`). Tests: `tests/mapa-vivo.test.mjs`.\n\n## [3.4.1] — 2026-11-25\n"
+    }
+   ]
+  },
+  {
+   "path": "package.json",
+   "base_sha": "c405c5646855ebdf83e4684c66f964dfbf244190",
+   "ops": [
+    {
+     "op": "replace",
+     "anchor": "\"version\": \"3.4.1\"",
+     "text": "\"version\": \"3.5.0\""
+    }
+   ]
+  }
+ ]
+}
