@@ -19,7 +19,7 @@ test('datos: las dos partes existen y el mapa unido no tiene problemas de forma'
   const [mia, suya] = partes();
   assert.equal(mia.parte, 'shiruvana');
   assert.equal(suya.parte, 'shiruna');
-  assert.equal(suya.borrador, true, 'la parte de Shiruna es un borrador mío hasta MAP-3');
+  assert.equal(suya.borrador, true, 'MAP-3: mi plano de su zona sigue siendo borrador (respaldo); lo firme lo escribe ella');
   const m = mapa();
   assert.deepEqual(M.validarMapa(m), []);
   assert.ok(m.nodos.filter(n => n.tipo === 'agente').map(n => n.id).sort().join() === 'shiruna,shiruvana', 'las dos agentes');

@@ -2,6 +2,11 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionado SemVer.
 
+## [3.6.0] — 2026-11-25
+
+### Added
+- **La parte de Shiruna la escribe ella** (BL-105 MAP-3; Pablo validó MAP-2: «pasa a map 3»). El mapa lee `ai-memory/mapa.json` de su repo por raw, sin cuota y una vez por visita. Su contrato: ella dice nombre, subtítulo, estado y ficha de sus cajas y puede sumar automatizaciones a sus repos (hasta 5 por repo, en la columna del repo y sin pisar cajas, flujos ni rótulos); nunca posiciones, tipos, dueñas ni nada mío. Lo que no confirma queda punteado; lo que no entra (nombre que no cabe, estado desconocido, enlace sin https, ids míos) se avisa debajo del mapa, escapado, con el enlace a su archivo. Si su archivo falta, está roto o no se puede leer, queda mi borrador y el mapa dice por qué. `mapa/shiruna-borrador.json` 0.2.0 pasa a ser el plano de su zona y el respaldo. `js/mapa.js` y `css/mapa.css` 1.2.0. Tests: `tests/mapa-shiruna.test.mjs` (8) con el archivo inicial que le doy en la orden (`tests/mapa-shiruna-inicial.json`); su repo tiene el mismo contrato en `tests/mapa-parte.test.cjs`.
+
 ## [3.5.0] — 2026-11-25
 
 ### Added

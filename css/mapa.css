@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Centro de mando — «El mapa de las dos» (BL-105 MAP-1 y MAP-2) v1.1.0
+   Centro de mando — «El mapa de las dos» (BL-105 MAP-1, MAP-2 y MAP-3) v1.2.0
    SVG propio (js/mapa.js). Sin colores literales: tokens del GDS y la paleta del universo (--uv-*).
    Las medidas sueltas en px son del lienzo SVG (unidades del viewBox), no del diseño de página.
    Se carga antes de css/universo.css (la piel sigue siendo la última).
@@ -38,6 +38,8 @@
 .mp-lista { margin-top: var(--gds-space-4); }
 .mp-lista summary { min-height: var(--gds-target-min); display: flex; align-items: center; cursor: pointer; }
 .mp-lista h3 { margin-top: var(--gds-space-4); }
+/* 1.2.0: de dónde sale la parte de Shiruna y qué no entró */
+.mp-parte { margin-top: var(--gds-space-4); }
 
 @media (max-width: 1080px) {
   .mp-cuerpo { grid-template-columns: minmax(0, 1fr); }

@@ -2,9 +2,9 @@
   "parte": "shiruna",
   "autora": "Shiruvana",
   "borrador": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "actualizado": "2026-11-25",
-  "fuente": "Borrador que escribí yo con lo que sé de Shiruna (DEC-053). Cuando ella publique su parte en su repo, el panel lee la suya y este archivo se borra (MAP-3).",
+  "fuente": "Plano de la zona de Shiruna y respaldo (MAP-3). Acá están las posiciones, los tipos y los flujos. Lo que dice cada caja lo escribe ella en su memoria (ai-memory/mapa.json de su repo); si su archivo falta o no se puede leer, el panel muestra este borrador mío.",
   "nodos": [
     {
       "id": "shiruna",

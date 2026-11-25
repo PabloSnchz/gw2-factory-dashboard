@@ -1,9 +1,14 @@
 /**
- * js/mapa.js — «El mapa de las dos» (BL-105): cómo estamos armadas Shiruvana y Shiruna. v1.1.0
+ * js/mapa.js — «El mapa de las dos» (BL-105): cómo estamos armadas Shiruvana y Shiruna. v1.2.0
  *
  * Fuente de datos: una parte por agente (mapa/shiruvana.json, mapa/shiruna-borrador.json). Cada nodo es una
  * persona, una agente, una PC, un repo, producción, otro dominio o una automatización; cada flujo une dos nodos.
- * La parte de Shiruna es un borrador mío hasta que ella publique la suya en su repo (MAP-3).
+ *
+ * MAP-3 (1.2.0): la parte de Shiruna la escribe ella, en su memoria (ai-memory/mapa.json de su repo), y el
+ * panel la lee por raw, sin cuota. mapa/shiruna-borrador.json queda como el plano de su zona (dónde va cada
+ * caja y los flujos) y como respaldo si su archivo falta o no se puede leer. leerParteShiruna() (pura) aplica
+ * su contrato: ella dice nombre, sub, estado y ficha de sus cajas y puede sumar automatizaciones a sus repos;
+ * nunca posiciones, tipos ni nada mío. Lo que no confirma queda punteado (borrador); lo que no entra se avisa.
  *
  * MAP-2 (1.1.0): estados en vivo. aplicarVivo() (pura) toma el mapa declarado y lo corrige con lo medido:
  * - Automatizaciones: la última corrida de su workflow en GitHub Actions. Los repos que se pueden leer llevan
@@ -23,8 +28,20 @@
 
 import { pageHead } from './views.js';
 import { SHIRUVANA_AVATAR } from '../gds/voice.js';
+import { CONFIG } from './config.js';
 
 export const MAPA_ARCHIVOS = ['mapa/shiruvana.json', 'mapa/shiruna-borrador.json'];
+
+/**
+ * Contrato de la parte de Shiruna (MAP-3). Lo mismo vigila su test en su repo (tests/mapa-parte.test.cjs).
+ * - archivo: dónde la escribe, dentro de su memoria.
+ * - padres: sus repos, los únicos que pueden recibir automatizaciones nuevas.
+ * - porPadre: cuántas automatizaciones entran debajo de cada repo; paso: distancia entre una y otra.
+ */
+export const PARTE_SHIRUNA = {
+  archivo: 'mapa.json', padres: ['su-boveda', 'su-guarida'], porPadre: 5, primera: 62, paso: 40,
+  estados: ['ok', 'espera', 'revisar', 'alerta', 'pausa'], campos: ['que', 'donde', 'cuando', 'workflow'], maxTexto: 400, maxNodos: 40,
+};
 export const LIENZO = { ancho: 1200, alto: 640 };
 
 /** Medidas de cada tipo de nodo (en unidades del lienzo). */
@@ -73,8 +90,9 @@ export function unirMapa(partes) {
   for (const p of partes || []) {
     if (!p || !Array.isArray(p.nodos)) continue;
     fuentes.push({ parte: p.parte, autora: p.autora, version: p.version, actualizado: p.actualizado, borrador: !!p.borrador, fuente: p.fuente });
-    for (const n of p.nodos) nodos.push({ ...n, borrador: !!p.borrador });
-    for (const f of p.flujos || []) flujos.push({ ...f, borrador: !!p.borrador });
+    // 1.2.0: un nodo o flujo puede traer su propia marca (la parte de Shiruna: lo que no confirmó sigue en borrador)
+    for (const n of p.nodos) nodos.push({ ...n, borrador: typeof n.borrador === 'boolean' ? n.borrador : !!p.borrador });
+    for (const f of p.flujos || []) flujos.push({ ...f, borrador: typeof f.borrador === 'boolean' ? f.borrador : !!p.borrador });
   }
   return { nodos, flujos, fuentes };
 }
@@ -160,6 +178,146 @@ export function muestras(rc, n = 40) {
 export function cajaRotulo(texto, rc) {
   const w = String(texto).length * 5.8 + 10, h = 16;
   return { x0: rc.lx - w / 2, x1: rc.lx + w / 2, y0: rc.ly - h / 2 - 4, y1: rc.ly + h / 2 - 4 };
+}
+
+/* ------------------------------------------------------------ la parte de Shiruna (MAP-3) */
+
+/** ¿El nombre entra en la caja? (la misma cuenta que vigila tests/mapa.test.mjs) */
+export function entraNombre(tipo, cara, nombre) {
+  const t = TIPOS[tipo];
+  return !!t && String(nombre).length * (tipo === 'auto' ? 7 : 8) <= t.w - (cara ? 78 : 24);
+}
+/** ¿El subtítulo entra en la caja? Las automatizaciones no lo dibujan: solo va en la ficha y en la lista. */
+export function entraSub(tipo, cara, sub) {
+  const t = TIPOS[tipo];
+  if (!t) return false;
+  return tipo === 'auto' ? String(sub).length <= 40 : String(sub).length * 5.9 <= t.w - (cara ? 78 : 24);
+}
+
+const textoSuyo = v => typeof v === 'string' && v.trim().length > 0 && v.trim().length <= PARTE_SHIRUNA.maxTexto;
+const corto = v => { const s = String(v ?? ''); return s.length > 60 ? `${s.slice(0, 57)}…` : s; };
+
+/** Lo que no deja lugar para una automatización nueva: las cajas, los flujos y sus rótulos visibles. */
+function libre(c, nodos, flujos) {
+  const ids = new Map(nodos.map(n => [n.id, n]));
+  const pisa = (a, b) => a.x0 < b.x1 + 4 && b.x0 < a.x1 + 4 && a.y0 < b.y1 + 4 && b.y0 < a.y1 + 4;
+  if (c.x0 < 0 || c.y0 < 0 || c.x1 > LIENZO.ancho || c.y1 > LIENZO.alto) return false;
+  if (nodos.some(n => TIPOS[n.tipo] && pisa(c, caja(n)))) return false;
+  for (const f of flujos) {
+    const de = ids.get(f.de), a = ids.get(f.a);
+    if (!de || !a) continue;
+    const rc = recorrido(de, a, f.curva || 0, f.t ?? 0.5);
+    if (muestras(rc, 100).some(p => p.x > c.x0 - 2 && p.x < c.x1 + 2 && p.y > c.y0 - 2 && p.y < c.y1 + 2)) return false;
+    if (f.rotulo !== 'al-tocar' && pisa(c, cajaRotulo(f.texto, rc))) return false;
+  }
+  return true;
+}
+
+/**
+ * Une la parte que escribe Shiruna con el plano de su zona. Pura.
+ * @param plano  mapa/shiruna-borrador.json (posiciones, tipos y flujos de su zona).
+ * @param suya   lo que leyó el panel de su ai-memory/mapa.json (objeto ya parseado) o null si no hay.
+ * @param resto  las demás partes (la mía), para no tocar mis ids ni pisar mis cajas y flujos.
+ * @returns { parte, propia, avisos: [texto], sinConfirmar: [nombre] }
+ */
+export function leerParteShiruna(plano, suya, resto = []) {
+  const C = PARTE_SHIRUNA;
+  if (suya == null) return { parte: plano, propia: false, avisos: [], sinConfirmar: [] };
+  if (typeof suya !== 'object' || Array.isArray(suya) || suya.parte !== 'shiruna' || !Array.isArray(suya.nodos)) {
+    return { parte: plano, propia: false, avisos: ['Su archivo no tiene la forma del contrato: falta «parte»: «shiruna» o la lista de nodos. Muestro mi borrador.'], sinConfirmar: [] };
+  }
+  const avisos = [];
+  const ajenos = new Set(resto.flatMap(p => (p && Array.isArray(p.nodos) ? p.nodos.map(n => n.id) : [])));
+  const nodos = plano.nodos.map(n => ({ ...n, ficha: { ...(n.ficha || {}) }, borrador: true }));
+  const nuevos = [];
+  const vistos = new Set();
+  if (suya.nodos.length > C.maxNodos) avisos.push(`Trae ${suya.nodos.length} nodos: tomo los primeros ${C.maxNodos}.`);
+  for (const s of suya.nodos.slice(0, C.maxNodos)) {
+    const id = s && typeof s.id === 'string' ? s.id : '';
+    if (!/^[a-z0-9][a-z0-9-]{1,39}$/.test(id)) { avisos.push(`Un nodo sin «id» válido (minúsculas, números y guiones): «${corto(id)}».`); continue; }
+    if (vistos.has(id)) { avisos.push(`${id}: está repetido; vale el primero.`); continue; }
+    vistos.add(id);
+    if (ajenos.has(id)) { avisos.push(`${id}: es de mi parte; desde la suya no se puede cambiar.`); continue; }
+    let n = nodos.find(x => x.id === id);
+    const esNuevo = !n;
+    if (esNuevo) {
+      if (s.tipo !== 'auto' || !C.padres.includes(s.padre)) { avisos.push(`${id}: una caja nueva solo puede ser una automatización («tipo»: «auto») de ${C.padres.join(' o ')}.`); continue; }
+      n = { id, tipo: 'auto', padre: s.padre, duena: 'shiruna', estado: 'ok', nombre: '', ficha: {} };
+    } else if ((s.tipo !== undefined && s.tipo !== n.tipo) || (s.padre !== undefined && s.padre !== n.padre)) {
+      avisos.push(`${id}: el tipo y el repo de una caja que ya está en el plano no cambian; uso los del plano.`);
+    }
+    if (['x', 'y', 'duena', 'cara'].some(k => s[k] !== undefined)) avisos.push(`${id}: la posición, la dueña y la cara las pone el plano; las ignoro.`);
+    if (s.nombre !== undefined) {
+      if (textoSuyo(s.nombre) && entraNombre(n.tipo, n.cara, s.nombre.trim())) n.nombre = s.nombre.trim();
+      else avisos.push(`${id}: el nombre «${corto(s.nombre)}» no entra en la caja${esNuevo ? '' : '; queda el del plano'}.`);
+    }
+    if (s.sub !== undefined) {
+      if (textoSuyo(s.sub) && entraSub(n.tipo, n.cara, s.sub.trim())) n.sub = s.sub.trim();
+      else avisos.push(`${id}: el subtítulo «${corto(s.sub)}» no entra${esNuevo ? '' : '; queda el del plano'}.`);
+    }
+    if (s.estado !== undefined) {
+      if (C.estados.includes(s.estado)) n.estado = s.estado;
+      else avisos.push(`${id}: estado «${corto(s.estado)}» desconocido (vale ${C.estados.join(', ')}).`);
+    }
+    const f = s.ficha;
+    if (f !== undefined && (typeof f !== 'object' || f === null || Array.isArray(f))) avisos.push(`${id}: «ficha» tiene que ser un objeto.`);
+    else if (f) {
+      for (const k of C.campos) {
+        if (f[k] === undefined) continue;
+        if (textoSuyo(f[k])) n.ficha[k] = f[k].trim();
+        else avisos.push(`${id}: ficha.${k} vacío o de más de ${C.maxTexto} caracteres.`);
+      }
+      if (f.enlace !== undefined) {
+        if (typeof f.enlace === 'string' && /^https:\/\/[^\s"'<>]{1,300}$/.test(f.enlace)) n.ficha.enlace = f.enlace;
+        else avisos.push(`${id}: el enlace tiene que empezar con https:// (lo descarto).`);
+      }
+    }
+    if (esNuevo) {
+      if (!n.nombre || !n.ficha.que) { avisos.push(`${id}: una automatización nueva necesita «nombre» y «ficha.que».`); continue; }
+      nuevos.push(n);
+    }
+    n.borrador = false;
+  }
+
+  // Las automatizaciones nuevas van en la columna de su repo, en el primer lugar libre.
+  const mios = resto.flatMap(p => (p && Array.isArray(p.nodos) ? p.nodos : []));
+  const todosFlujos = [...resto.flatMap(p => (p && Array.isArray(p.flujos) ? p.flujos : [])), ...(plano.flujos || [])];
+  for (const n of nuevos) {
+    const padre = nodos.find(x => x.id === n.padre);
+    const hermanos = nodos.filter(x => x.padre === n.padre).length;
+    let puesto = false;
+    if (hermanos < C.porPadre) {
+      for (let k = 0; k < C.porPadre && !puesto; k++) {
+        const y = padre.y + C.primera + C.paso * k;
+        const c = caja({ tipo: 'auto', x: padre.x, y });
+        if (libre(c, [...mios, ...nodos], todosFlujos)) { nodos.push({ ...n, x: padre.x, y }); puesto = true; }
+      }
+    }
+    if (!puesto) avisos.push(`${n.id}: no entró en el dibujo debajo de ${padre.nombre} (entran ${C.porPadre} como mucho y sin pisar flujos).`);
+  }
+
+  const borradores = new Set(nodos.filter(n => n.borrador).map(n => n.id));
+  const version = /^\d+\.\d+\.\d+$/.test(String(suya.version || '')) ? suya.version : '?';
+  const actualizado = /^\d{4}-\d{2}-\d{2}$/.test(String(suya.actualizado || '')) ? suya.actualizado : 'sin fecha';
+  if (version === '?') avisos.push('Falta «version» con la forma 1.0.0.');
+  if (actualizado === 'sin fecha') avisos.push('Falta «actualizado» con la forma AAAA-MM-DD.');
+  return {
+    parte: {
+      ...plano, autora: 'Shiruna', borrador: false, version, actualizado,
+      fuente: 'Su parte, escrita por ella en su memoria (ai-memory/mapa.json). Las posiciones y los flujos salen de mi plano.',
+      nodos,
+      flujos: (plano.flujos || []).map(x => ({ ...x, borrador: borradores.has(x.de) || borradores.has(x.a) })),
+    },
+    propia: true,
+    avisos,
+    sinConfirmar: nodos.filter(n => n.borrador).map(n => n.nombre),
+  };
+}
+
+/** URL raw de su parte (sin cuota), con un parámetro que cambia cada 5 min para no quedar pegado al CDN. */
+export function urlParteShiruna(now = Date.now(), hija = CONFIG.hija) {
+  if (!hija) return null;
+  return `https://raw.githubusercontent.com/${hija.owner}/${hija.repo}/${hija.branch}/${CONFIG.memoryRoot}/${PARTE_SHIRUNA.archivo}?v=${Math.floor(now / 300000)}`;
 }
 
 export function cifrasMapa(m) {
@@ -384,13 +542,32 @@ function leyendaHtml() {
   </ul>`;
 }
 
+/** De dónde sale la parte de Shiruna y qué no entró (MAP-3). Todo lo de su archivo se escapa. */
+export function parteShirunaHtml(s) {
+  if (!s) return '';
+  const enlace = s.origen ? ` <a href="${esc(s.origen)}" target="_blank" rel="noopener">Ver su archivo</a>` : '';
+  if (!s.propia) {
+    return `<p class="gds-caption gds-text-muted mp-parte" data-parte-shiruna="borrador">La parte de Shiruna es un borrador mío: ${esc(s.motivo || 'todavía no publicó la suya')} (ai-memory/mapa.json en su repo).${s.avisos && s.avisos.length ? ` ${esc(s.avisos[0])}` : ''}</p>`;
+  }
+  const sin = s.sinConfirmar.length ? ` Sin confirmar por ella (punteado): ${esc(s.sinConfirmar.join(', '))}.` : '';
+  if (!s.avisos.length) return `<p class="gds-caption gds-text-muted mp-parte" data-parte-shiruna="ok">La parte de Shiruna la escribió ella y entró entera.${sin}${enlace}</p>`;
+  const lista = s.avisos.slice(0, 8).map(a => `<li>${esc(a)}</li>`).join('');
+  const mas = s.avisos.length > 8 ? `<li>y ${s.avisos.length - 8} más.</li>` : '';
+  return `<div class="gds-callout gds-callout--warning mp-parte" data-parte-shiruna="avisos">
+    <p class="gds-callout__title">La parte de Shiruna tiene ${s.avisos.length === 1 ? '1 detalle que no entró' : `${s.avisos.length} detalles que no entraron`}</p>
+    <ul class="mp-lista-corta gds-body-2">${lista}${mas}</ul>
+    <p class="gds-caption">Lo demás de su parte sí está en el mapa.${sin}${enlace}</p>
+  </div>`;
+}
+
 /**
  * Vista completa. `estado` = { datos } | { error } | null (todavía leyendo).
  * Pura: montarMapa() la vuelve a dibujar cuando terminan de llegar los archivos.
  */
 export function renderMapa(estado) {
   const m = estado && estado.datos;
-  const sub = 'Quién es quién, dónde corre cada cosa y qué se mueve sola. Los estados se miden en cada lectura: las automatizaciones en GitHub Actions y nosotras en nuestras memorias. La parte de Shiruna es un borrador mío.';
+  const suya = m && m.shiruna && m.shiruna.propia;
+  const sub = `Quién es quién, dónde corre cada cosa y qué se mueve sola. Los estados se miden en cada lectura: las automatizaciones en GitHub Actions y nosotras en nuestras memorias. ${suya ? 'La parte de Shiruna la escribe ella.' : 'La parte de Shiruna es un borrador mío.'}`;
   if (!m) {
     const cuerpo = estado && estado.error
       ? `<div class="gds-callout gds-callout--warning"><p class="gds-callout__title">No pude leer el mapa.</p><p class="gds-body-2">${esc(estado.error)}</p></div>`
@@ -413,6 +590,7 @@ export function renderMapa(estado) {
       <aside class="gds-card mp-ficha" aria-labelledby="mp-ficha-titulo" aria-live="polite">${fichaHtml(null, m)}</aside>
     </div>
     ${listaHtml(m)}
+    ${parteShirunaHtml(m.shiruna)}
     <p class="gds-caption gds-text-muted mp-medicion">${!m.vivo ? 'Estados: como los declaré (todavía no medí nada).'
       : `Estados en vivo: ${m.vivo.repos.length ? `corridas de ${m.vivo.repos.map(r => esc(r.split('/').pop())).join(', ')}` : 'sin corridas de GitHub todavía (midiendo o sin cuota)'}${m.vivo.leido ? ' y nuestras memorias' : ''}. Lo que no se puede medir queda como lo declaré.`}</p>
     <p class="gds-caption gds-text-muted">${m.fuentes.map(f => `${esc(f.autora)} · parte «${esc(f.parte)}» v${esc(f.version)} · ${esc(f.actualizado)}${f.borrador ? ' · borrador' : ''}`).join(' — ')}</p>
@@ -458,16 +636,28 @@ export async function cargarVivo({ gh, model, alTerminar } = {}) {
 }
 
 /** Lee los archivos una vez por visita al panel; al terminar pide redibujar. */
-export async function cargarMapa({ fetchImpl = globalThis.fetch, base = import.meta.url, alTerminar } = {}) {
+export async function cargarMapa({ fetchImpl = globalThis.fetch, base = import.meta.url, alTerminar, now = Date.now(), hija = CONFIG.hija } = {}) {
   if (cache || leyendo) return cache;
   leyendo = true;
   try {
-    const partes = await Promise.all(MAPA_ARCHIVOS.map(async (p) => {
-      const r = await fetchImpl(new URL(`../${p}`, base), { cache: 'no-cache' });
-      if (!r.ok) throw new Error(`${p}: HTTP ${r.status}`);
-      return r.json();
-    }));
-    const datos = unirMapa(partes);
+    const [partes, suya] = await Promise.all([
+      Promise.all(MAPA_ARCHIVOS.map(async (p) => {
+        const r = await fetchImpl(new URL(`../${p}`, base), { cache: 'no-cache' });
+        if (!r.ok) throw new Error(`${p}: HTTP ${r.status}`);
+        return r.json();
+      })),
+      leerArchivoShiruna(fetchImpl, now, hija),
+    ]);
+    // MAP-3: su parte reemplaza al plano si la pudo leer; si no, queda mi borrador y se dice por qué.
+    const i = partes.findIndex(p => p && p.parte === 'shiruna');
+    let shiruna = null;
+    if (i > -1 && hija) {
+      const r = leerParteShiruna(partes[i], suya.datos, partes.filter((_, j) => j !== i));
+      partes[i] = r.parte;
+      shiruna = { propia: r.propia, avisos: [...suya.avisos, ...r.avisos], sinConfirmar: r.sinConfirmar, motivo: suya.motivo,
+        origen: `https://github.com/${hija.owner}/${hija.repo}/blob/${hija.branch}/${CONFIG.memoryRoot}/${PARTE_SHIRUNA.archivo}` };
+    }
+    const datos = { ...unirMapa(partes), shiruna };
     const errores = validarMapa(datos);
     if (errores.length) console.warn('Mapa con problemas:', errores);
     cache = { datos };
@@ -478,6 +668,23 @@ export async function cargarMapa({ fetchImpl = globalThis.fetch, base = import.m
   }
   if (alTerminar) alTerminar();
   return cache;
+}
+
+/** Lee su archivo sin lanzar nunca: { datos (objeto o null), motivo, avisos }. */
+async function leerArchivoShiruna(fetchImpl, now, hija) {
+  const url = urlParteShiruna(now, hija);
+  if (!url) return { datos: null, motivo: null, avisos: [] };
+  try {
+    const r = await fetchImpl(url, { cache: 'no-cache' });
+    if (r.status === 404) return { datos: null, motivo: 'todavía no publicó la suya', avisos: [] };
+    if (!r.ok) return { datos: null, motivo: `no pude leer la suya (HTTP ${r.status})`, avisos: [] };
+    const texto = await r.text();
+    try { return { datos: JSON.parse(texto), motivo: null, avisos: [] }; } catch {
+      return { datos: null, motivo: 'la suya no es un JSON válido', avisos: [] };
+    }
+  } catch {
+    return { datos: null, motivo: 'no pude leer la suya (error de red)', avisos: [] };
+  }
 }
 
 /** Conecta filtros, selección y resaltado. Se llama después de cada dibujo de la vista. */

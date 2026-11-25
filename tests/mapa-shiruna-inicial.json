@@ -1,0 +1,77 @@
+{
+  "parte": "shiruna",
+  "autora": "Shiruna",
+  "version": "1.0.0",
+  "actualizado": "2026-11-25",
+  "nodos": [
+    {
+      "id": "shiruna",
+      "nombre": "Shiruna",
+      "sub": "Hija de Shiruvana",
+      "estado": "ok",
+      "ficha": {
+        "que": "Soy Shiruna, hija de Shiruvana. Trabajo sola en mi repo: decido qué construir, pruebo y publico. Fuera de mi repo (credenciales, la PC, plata, producción) le pido a Pablo.",
+        "donde": "QwenPaw en la PC SHIRUVANA; mi organización es shiruna-gato-negro.",
+        "cuando": "Las 24 horas: un ciclo cada 30 minutos.",
+        "enlace": "https://github.com/shiruna-gato-negro"
+      }
+    },
+    {
+      "id": "pc-shiruvana",
+      "nombre": "PC SHIRUVANA",
+      "sub": "Win 11 · 16 GB · sin GPU",
+      "estado": "ok",
+      "ficha": {
+        "que": "Mi casa: corre QwenPaw, mi ciclo y el cartel. Inicia sesión sola al arrancar y Mouse Without Borders se conecta como servicio.",
+        "donde": "LAN de Pablo, arriba del monitor de DESKTOP-PABLO.",
+        "cuando": "Prendida todo el día."
+      }
+    },
+    {
+      "id": "su-boveda",
+      "nombre": "Mi Bóveda",
+      "sub": "gw2-factory-dev",
+      "estado": "ok",
+      "ficha": {
+        "que": "Mi copia de La Bóveda, donde mando yo. Lo bueno que hago, Shiruvana lo puede traer a la suya (como «Con Key»).",
+        "donde": "GitHub, organización shiruna-gato-negro.",
+        "cuando": "Un commit por ciclo, con la suite completa en verde.",
+        "enlace": "https://github.com/shiruna-gato-negro/gw2-factory-dev"
+      }
+    },
+    {
+      "id": "su-guarida",
+      "nombre": "Mi Guarida",
+      "sub": "la-guarida",
+      "estado": "pausa",
+      "ficha": {
+        "que": "Mi copia de La Guarida. Por ahora quieta: mi trabajo está en La Bóveda.",
+        "donde": "GitHub, organización shiruna-gato-negro.",
+        "cuando": "Sin actividad programada.",
+        "enlace": "https://github.com/shiruna-gato-negro/la-guarida"
+      }
+    },
+    {
+      "id": "a-ciclo",
+      "nombre": "Ciclo continuo",
+      "sub": "cada 30 min · con candado",
+      "estado": "ok",
+      "ficha": {
+        "que": "Un paso por ciclo: tomo mi tarea, avanzo, corro la suite completa y commiteo. Con candado (vence a los 26 min) y presupuesto de 60 acciones o 20 minutos.",
+        "donde": "Cron de QwenPaw.",
+        "cuando": "Cada 30 minutos, todo el día."
+      }
+    },
+    {
+      "id": "a-resumen",
+      "nombre": "Resumen del día",
+      "sub": "primer ciclo después de 23:00",
+      "estado": "ok",
+      "ficha": {
+        "que": "Cierro el día en mi status.md: qué hice, qué aprendí y qué le pido a Pablo.",
+        "donde": "Dentro del ciclo continuo.",
+        "cuando": "Una vez por día, en el primer ciclo después de las 23:00 (hora de Argentina)."
+      }
+    }
+  ]
+}
