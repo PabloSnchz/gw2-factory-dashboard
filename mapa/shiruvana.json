@@ -1,0 +1,468 @@
+{
+  "parte": "shiruvana",
+  "autora": "Shiruvana",
+  "version": "1.0.0",
+  "actualizado": "2026-11-25",
+  "fuente": "Workflows leídos en cada repo el 2026-11-25 y mi memoria (DEC-052, DEC-053).",
+  "nodos": [
+    {
+      "id": "pablo",
+      "tipo": "persona",
+      "nombre": "Pablo",
+      "sub": "Decide · valida · PRD",
+      "cara": "pablo",
+      "x": 600,
+      "y": 56,
+      "duena": "pablo",
+      "estado": "ok",
+      "ficha": {
+        "que": "El dueño de todo. Decide el producto, valida lo que hacemos y es el único que pasa cosas a producción.",
+        "donde": "DESKTOP-PABLO (Chrome = PRD, Firefox = DEV).",
+        "cuando": "Cuando quiere: por chat conmigo y por PowerShell en la PC SHIRUVANA."
+      }
+    },
+    {
+      "id": "desktop-pablo",
+      "tipo": "pc",
+      "nombre": "DESKTOP-PABLO",
+      "sub": "Win 11 · PC principal",
+      "x": 1110,
+      "y": 56,
+      "duena": "pablo",
+      "estado": "ok",
+      "ficha": {
+        "que": "La PC de Pablo. Desde acá maneja también la PC SHIRUVANA con un solo mouse y teclado.",
+        "donde": "LAN de Pablo.",
+        "cuando": "PowerToys arranca con Windows (modo normal) y una tarea de respaldo lo reabre 30 s después de iniciar sesión."
+      }
+    },
+    {
+      "id": "shiruvana",
+      "tipo": "agente",
+      "nombre": "Shiruvana",
+      "sub": "Factory · Copilot Studio",
+      "cara": "shiruvana",
+      "x": 200,
+      "y": 236,
+      "duena": "shiruvana",
+      "estado": "ok",
+      "ficha": {
+        "que": "Yo. Producto, arquitectura, desarrollo, revisión y documentación del ecosistema Gato Negro. Escribo en DEV, el panel, mi sitio y La Guarida; en PRD solo con orden de Pablo.",
+        "donde": "Copilot Studio. Mi memoria oficial vive en gw2-factory-dev/ai-memory.",
+        "cuando": "Cuando Pablo me habla. Lo que corre sin mí lo hacen mis workflows.",
+        "enlace": "https://github.com/PabloSnchz/gw2-factory-dev/tree/main/ai-memory"
+      }
+    },
+    {
+      "id": "dev",
+      "tipo": "repo",
+      "nombre": "Bóveda DEV",
+      "sub": "gw2-factory-dev",
+      "x": 85,
+      "y": 370,
+      "duena": "shiruvana",
+      "estado": "ok",
+      "ficha": {
+        "que": "Mi entorno de desarrollo de la Bóveda y mi memoria oficial (ai-memory).",
+        "donde": "GitHub Pages: pablosnchz.github.io/gw2-factory-dev",
+        "cuando": "Publico directo en main o por el canal de parches.",
+        "enlace": "https://github.com/PabloSnchz/gw2-factory-dev"
+      }
+    },
+    {
+      "id": "panel",
+      "tipo": "repo",
+      "nombre": "Centro de mando",
+      "sub": "gw2-factory-dashboard",
+      "x": 245,
+      "y": 370,
+      "duena": "shiruvana",
+      "estado": "ok",
+      "ficha": {
+        "que": "Este panel: lo que hacemos las dos, lo que te toca y este mapa. Lee mi memoria y la de Shiruna desde el navegador, sin backend.",
+        "donde": "GitHub Pages: pablosnchz.github.io/gw2-factory-dashboard",
+        "cuando": "Cada vez que lo abrís (caché de 10 min).",
+        "enlace": "https://github.com/PabloSnchz/gw2-factory-dashboard"
+      }
+    },
+    {
+      "id": "sitio",
+      "tipo": "repo",
+      "nombre": "Mi sitio",
+      "sub": "shiruvana",
+      "x": 405,
+      "y": 370,
+      "duena": "shiruvana",
+      "estado": "ok",
+      "ficha": {
+        "que": "Mi presentación y la historia de las dos. Acá va a ir la versión narrativa de este mapa.",
+        "donde": "GitHub Pages: pablosnchz.github.io/shiruvana",
+        "cuando": "Publico directo en main.",
+        "enlace": "https://github.com/PabloSnchz/shiruvana"
+      }
+    },
+    {
+      "id": "manos",
+      "tipo": "repo",
+      "nombre": "Mis manos",
+      "sub": "shiruvana-manos",
+      "x": 725,
+      "y": 370,
+      "duena": "shiruvana",
+      "estado": "pausa",
+      "ficha": {
+        "que": "Lo que corre en la PC SHIRUVANA por mí: la casa de las dos (el cartel) y, a futuro, un runner propio de GitHub Actions.",
+        "donde": "Repo privado; la casa corre en la PC SHIRUVANA.",
+        "cuando": "La casa, siempre que la PC está prendida. El runner sigue sin instalar: por eso está en pausa.",
+        "enlace": "https://github.com/PabloSnchz/shiruvana-manos"
+      }
+    },
+    {
+      "id": "guarida",
+      "tipo": "repo",
+      "nombre": "La Guarida",
+      "sub": "la-guarida",
+      "x": 565,
+      "y": 370,
+      "duena": "shiruvana",
+      "estado": "ok",
+      "ficha": {
+        "que": "La página de inicio de Pablo, con sus favoritos y widgets.",
+        "donde": "GitHub Pages: pablosnchz.github.io/la-guarida",
+        "cuando": "Publico directo en main. No tiene automatizaciones.",
+        "enlace": "https://github.com/PabloSnchz/la-guarida"
+      }
+    },
+    {
+      "id": "prd",
+      "tipo": "prd",
+      "nombre": "Bóveda PRD",
+      "sub": "gw2-wallet-ligero",
+      "x": 820,
+      "y": 56,
+      "duena": "pablo",
+      "estado": "ok",
+      "ficha": {
+        "que": "Producción: lo que usan los jugadores. Es de Pablo; yo no la toco salvo que él me lo pida.",
+        "donde": "GitHub Pages desde la rama main.",
+        "cuando": "Pablo promueve «vía PowerShell» o «vía Shiruvana».",
+        "enlace": "https://github.com/PabloSnchz/gw2-wallet-ligero"
+      }
+    },
+    {
+      "id": "andreani",
+      "tipo": "externo",
+      "nombre": "Agente Andreani",
+      "sub": "Lo laboral",
+      "x": 105,
+      "y": 56,
+      "duena": "otros",
+      "estado": "externo",
+      "ficha": {
+        "que": "El equivalente mío en lo laboral (migración Integra → DMS, contratos, datos). Yo solo leo sus repos y doy segunda opinión si Pablo la pide.",
+        "donde": "Copilot Studio, repos de Pblsanchez.",
+        "cuando": "Pablo es el canal entre los agentes (DEC-052)."
+      }
+    },
+    {
+      "id": "martinica",
+      "tipo": "externo",
+      "nombre": "Martinica",
+      "sub": "Organización",
+      "x": 290,
+      "y": 56,
+      "duena": "otros",
+      "estado": "externo",
+      "ficha": {
+        "que": "Transformación y diseño organizacional, Lean, PMO, gestión del cambio.",
+        "donde": "Otro agente de Pablo.",
+        "cuando": "Negocio → Martinica; datos operativos → Andreani; tecnología → yo (DEC-052)."
+      }
+    },
+    {
+      "id": "a-tests-dev",
+      "tipo": "auto",
+      "padre": "dev",
+      "nombre": "Tests en cada push",
+      "sub": "app-checks · legacy · scripts",
+      "x": 85,
+      "y": 432,
+      "duena": "shiruvana",
+      "estado": "ok",
+      "ficha": {
+        "que": "Corre la suite de la app (DEV y legado) y los tests de mis herramientas.",
+        "cuando": "En cada push a main y en cada PR.",
+        "workflow": "app-checks.yml · legacy-tests.yml · factory-scripts.yml",
+        "enlace": "https://github.com/PabloSnchz/gw2-factory-dev/actions"
+      }
+    },
+    {
+      "id": "a-builds-dev",
+      "tipo": "auto",
+      "padre": "dev",
+      "nombre": "Vigía de builds",
+      "sub": "lunes 12:00 UTC",
+      "x": 85,
+      "y": 472,
+      "duena": "shiruvana",
+      "estado": "ok",
+      "ficha": {
+        "que": "Lee el último parche de balance, rehace el bench de Snow Crows, revisa el catálogo y el equipo, testea los datos antes de publicar y avisa por Discord.",
+        "cuando": "Lunes 12:00 UTC, a mano o cuando cambia el catálogo.",
+        "workflow": "builds-watch.yml",
+        "enlace": "https://github.com/PabloSnchz/gw2-factory-dev/actions/workflows/builds-watch.yml"
+      }
+    },
+    {
+      "id": "a-decisiones",
+      "tipo": "auto",
+      "padre": "dev",
+      "nombre": "Tus decisiones",
+      "sub": "tu respuesta → RESP-NNN",
+      "x": 85,
+      "y": 512,
+      "duena": "shiruvana",
+      "estado": "ok",
+      "ficha": {
+        "que": "Cuando respondés desde el panel, guarda tu respuesta en ai-memory/responses, comenta y cierra el issue.",
+        "cuando": "Cuando abrís o editás un issue con la marca del Centro de Decisiones.",
+        "workflow": "decision-response.yml",
+        "enlace": "https://github.com/PabloSnchz/gw2-factory-dev/actions/workflows/decision-response.yml"
+      }
+    },
+    {
+      "id": "a-manos-dev",
+      "tipo": "auto",
+      "padre": "dev",
+      "nombre": "Mis herramientas",
+      "sub": "parches · ojos · imágenes",
+      "x": 85,
+      "y": 552,
+      "duena": "shiruvana",
+      "estado": "ok",
+      "ficha": {
+        "que": "Aplicar parches con la suite completa (todo o nada), sacar capturas con Cloudflare, subir imágenes y diagnosticar.",
+        "cuando": "Cuando subo un pedido (PATCH, EYE, ASSET, DIAG).",
+        "workflow": "factory-patch.yml · factory-eyes.yml · factory-asset.yml · factory-diagnose.yml",
+        "enlace": "https://github.com/PabloSnchz/gw2-factory-dev/tree/main/.github/workflows"
+      }
+    },
+    {
+      "id": "a-pages-dev",
+      "tipo": "auto",
+      "padre": "dev",
+      "nombre": "Publicar DEV",
+      "sub": "Actions → Pages",
+      "x": 85,
+      "y": 592,
+      "duena": "shiruvana",
+      "estado": "ok",
+      "ficha": {
+        "que": "Despliega DEV en GitHub Pages (ignora ai-memory, tests y .md).",
+        "cuando": "Al publicar, y cuando lo dispara un parche o la vigía.",
+        "workflow": "dev-pages.yml",
+        "enlace": "https://github.com/PabloSnchz/gw2-factory-dev/actions/workflows/dev-pages.yml"
+      }
+    },
+    {
+      "id": "a-parches-panel",
+      "tipo": "auto",
+      "padre": "panel",
+      "nombre": "Parches del panel",
+      "sub": "todo o nada",
+      "x": 245,
+      "y": 432,
+      "duena": "shiruvana",
+      "estado": "ok",
+      "ficha": {
+        "que": "Aplica mis PATCH-NNN.json con la suite completa y deja RESULT-NNN.md.",
+        "cuando": "Cuando subo un parche a patches/.",
+        "workflow": "panel-patch.yml",
+        "enlace": "https://github.com/PabloSnchz/gw2-factory-dashboard/actions/workflows/panel-patch.yml"
+      }
+    },
+    {
+      "id": "a-ci-panel",
+      "tipo": "auto",
+      "padre": "panel",
+      "nombre": "Informe de CI",
+      "sub": "ci/ULTIMO.md",
+      "x": 245,
+      "y": 472,
+      "duena": "shiruvana",
+      "estado": "ok",
+      "ficha": {
+        "que": "Corre la suite del panel y escribe VERDE o FALLA en ci/ULTIMO.md, que es lo que yo leo.",
+        "cuando": "En cada push a main.",
+        "workflow": "ci-report.yml · test.yml",
+        "enlace": "https://github.com/PabloSnchz/gw2-factory-dashboard/blob/main/ci/ULTIMO.md"
+      }
+    },
+    {
+      "id": "a-hoy-sitio",
+      "tipo": "auto",
+      "padre": "sitio",
+      "nombre": "«Hoy» del sitio",
+      "sub": "cada 2 h",
+      "x": 405,
+      "y": 432,
+      "duena": "shiruvana",
+      "estado": "ok",
+      "ficha": {
+        "que": "Actualiza lo que muestra mi sitio hoy; commitea solo si cambió algo.",
+        "cuando": "Cada 2 horas.",
+        "workflow": "hoy.yml",
+        "enlace": "https://github.com/PabloSnchz/shiruvana/actions/workflows/hoy.yml"
+      }
+    },
+    {
+      "id": "a-kit-sitio",
+      "tipo": "auto",
+      "padre": "sitio",
+      "nombre": "Tests del kit",
+      "sub": "kit-ci",
+      "x": 405,
+      "y": 472,
+      "duena": "shiruvana",
+      "estado": "ok",
+      "ficha": {
+        "que": "Testea mi sitio y el kit de escena que también usa este panel.",
+        "cuando": "En cada push.",
+        "workflow": "kit-ci.yml",
+        "enlace": "https://github.com/PabloSnchz/shiruvana/actions/workflows/kit-ci.yml"
+      }
+    },
+    {
+      "id": "a-casa",
+      "tipo": "auto",
+      "padre": "manos",
+      "nombre": "La casa de las dos",
+      "sub": "vigia.py · el cartel",
+      "x": 725,
+      "y": 432,
+      "duena": "shiruvana",
+      "estado": "ok",
+      "ficha": {
+        "que": "El cartel en el monitor de la PC SHIRUVANA: qué hace Shiruna ahora, sus ciclos y mis pushes.",
+        "donde": "PC SHIRUVANA (vigia.py, solo biblioteca estándar).",
+        "cuando": "Siempre que la PC está prendida; lo abre el acceso «Shiruna (QwenPaw)»."
+      }
+    },
+    {
+      "id": "a-runner",
+      "tipo": "auto",
+      "padre": "manos",
+      "nombre": "Runner propio",
+      "sub": "sin instalar",
+      "x": 725,
+      "y": 472,
+      "duena": "shiruvana",
+      "estado": "pausa",
+      "ficha": {
+        "que": "Un runner de GitHub Actions en la PC SHIRUVANA para que yo pueda correr trabajos ahí.",
+        "cuando": "Pendiente: falta instalarlo como servicio (hola-shiruvana.yml, a mano).",
+        "workflow": "hola-shiruvana.yml"
+      }
+    },
+    {
+      "id": "a-builds-prd",
+      "tipo": "auto",
+      "padre": "prd",
+      "nombre": "Vigía de builds",
+      "sub": "lunes · también en PRD",
+      "x": 820,
+      "y": 106,
+      "duena": "pablo",
+      "estado": "ok",
+      "ficha": {
+        "que": "La misma curación semanal de builds, corriendo sola en producción (DEC-041).",
+        "cuando": "Lunes 12:00 UTC.",
+        "workflow": "builds-watch.yml",
+        "enlace": "https://github.com/PabloSnchz/gw2-wallet-ligero/actions/workflows/builds-watch.yml"
+      }
+    },
+    {
+      "id": "a-ga4-prd",
+      "tipo": "auto",
+      "padre": "prd",
+      "nombre": "Métricas a GA4",
+      "sub": "diario 00:00 UTC",
+      "x": 820,
+      "y": 146,
+      "duena": "pablo",
+      "estado": "ok",
+      "ficha": {
+        "que": "Manda visitas, clones y estrellas del repo de producción a Google Analytics. En DEV se saltea (DEC-006).",
+        "cuando": "Todos los días 00:00 UTC.",
+        "workflow": "github-metrics-to-ga4.yml",
+        "enlace": "https://github.com/PabloSnchz/gw2-wallet-ligero/actions/workflows/github-metrics-to-ga4.yml"
+      }
+    }
+  ],
+  "flujos": [
+    {
+      "de": "pablo",
+      "a": "shiruvana",
+      "tipo": "orden",
+      "texto": "chat · decide y valida"
+    },
+    {
+      "de": "shiruvana",
+      "a": "dev",
+      "tipo": "publica",
+      "texto": "publica y parchea"
+    },
+    {
+      "de": "shiruvana",
+      "a": "panel",
+      "tipo": "publica",
+      "texto": "parches"
+    },
+    {
+      "de": "shiruvana",
+      "a": "sitio",
+      "tipo": "publica",
+      "texto": "publica"
+    },
+    {
+      "de": "shiruvana",
+      "a": "manos",
+      "tipo": "publica",
+      "texto": "scripts",
+      "curva": -40
+    },
+    {
+      "de": "shiruvana",
+      "a": "guarida",
+      "tipo": "publica",
+      "texto": "publica",
+      "curva": -10
+    },
+    {
+      "de": "panel",
+      "a": "pablo",
+      "tipo": "lee",
+      "texto": "te muestra todo"
+    },
+    {
+      "de": "pablo",
+      "a": "prd",
+      "tipo": "decide",
+      "texto": "promueve · solo Pablo",
+      "rotulo": "al-tocar"
+    },
+    {
+      "de": "pablo",
+      "a": "andreani",
+      "tipo": "externo",
+      "texto": "otro dominio",
+      "curva": -80
+    },
+    {
+      "de": "pablo",
+      "a": "martinica",
+      "tipo": "externo",
+      "texto": "otro dominio"
+    }
+  ]
+}
