@@ -1,0 +1,87 @@
+{
+ "id": "PATCH-015",
+ "summary": "Panel 3.4.1: en el mapa, el estado va en una insignia sobre la esquina y ya no pisa el nombre (mapa.js y mapa.css 1.0.1).",
+ "files": [
+  {
+   "path": "js/mapa.js",
+   "base_sha": "4d36f9816fc307ac819a10dbd5af50af5beabe1e",
+   "ops": [
+    {
+     "op": "replace",
+     "anchor": "    <text class=\"mp-n__estado\" x=\"${r(c.x1 - 12)}\" y=\"${r(c.y0 + (n.tipo === 'auto' ? 19 : 18))}\" text-anchor=\"middle\" aria-hidden=\"true\">${e.simbolo}</text>\n",
+     "text": "    <g class=\"mp-n__insignia\" aria-hidden=\"true\"><circle cx=\"${r(c.x1 - 4)}\" cy=\"${r(c.y0 + 2)}\" r=\"${n.tipo === 'auto' ? 7 : 9}\"/><text class=\"mp-n__estado\" x=\"${r(c.x1 - 4)}\" y=\"${r(c.y0 + 6)}\" text-anchor=\"middle\">${e.simbolo}</text></g>\n"
+    },
+    {
+     "op": "replace",
+     "anchor": " * js/mapa.js — «El mapa de las dos» (BL-105 MAP-1): cómo estamos armadas Shiruvana y Shiruna.\n",
+     "text": " * js/mapa.js — «El mapa de las dos» (BL-105 MAP-1): cómo estamos armadas Shiruvana y Shiruna. v1.0.1\n"
+    }
+   ]
+  },
+  {
+   "path": "css/mapa.css",
+   "base_sha": "9040aa06cbcaf16e7f3a1d3f3f6881827faa4e21",
+   "ops": [
+    {
+     "op": "replace",
+     "anchor": ".mp-n__estado { font-size: 13px; font-weight: 700; fill: var(--gds-color-text-muted); }\n",
+     "text": "/* 1.0.1: el estado va en una insignia sobre la esquina, así no pisa el nombre */\n.mp-n__insignia circle { fill: var(--gds-color-bg); stroke: var(--gds-color-border-default); stroke-width: 1.5px; }\n.mp-e--ok .mp-n__insignia circle     { stroke: var(--gds-color-border-success); }\n.mp-e--espera .mp-n__insignia circle { stroke: var(--gds-color-border-warning); }\n.mp-e--alerta .mp-n__insignia circle { stroke: var(--gds-color-border-danger); }\n.mp-e--pausa .mp-n__insignia circle  { stroke: var(--gds-color-border-control); }\n.mp-n__estado { font-size: 11px; font-weight: 700; fill: var(--gds-color-text-muted); }\n.mp-n--auto .mp-n__estado { font-size: 9px; }\n"
+    },
+    {
+     "op": "replace",
+     "anchor": "(BL-105 MAP-1) v1.0.0",
+     "text": "(BL-105 MAP-1) v1.0.1"
+    }
+   ]
+  },
+  {
+   "path": "index.html",
+   "base_sha": "1b96fe375e533bd4054403d5e1f88b359c17c2e9",
+   "ops": [
+    {
+     "op": "replace",
+     "anchor": "css/mapa.css?v=1.0.0",
+     "text": "css/mapa.css?v=1.0.1"
+    },
+    {
+     "op": "replace",
+     "anchor": "js/app.js?v=2.14.0",
+     "text": "js/app.js?v=2.14.1"
+    }
+   ]
+  },
+  {
+   "path": "tests/mapa.test.mjs",
+   "base_sha": "643cfe4b3aa7a7357a61a940690d3049b6560733",
+   "ops": [
+    {
+     "op": "replace",
+     "anchor": "  assert.ok(!/undefined|NaN/.test(html), 'sin datos rotos');\n",
+     "text": "  assert.ok(!/undefined|NaN/.test(html), 'sin datos rotos');\n  assert.equal((html.match(/<g class=\"mp-n__insignia\" aria-hidden=\"true\"><circle /g) || []).length, m.nodos.length, '1.0.1: una insignia de estado por nodo, en la esquina');\n"
+    }
+   ]
+  },
+  {
+   "path": "CHANGELOG.md",
+   "base_sha": "c97832c99d39893210bfecebb32371c54576d784",
+   "ops": [
+    {
+     "op": "replace",
+     "anchor": "## [3.4.0] — 2026-11-25\n",
+     "text": "## [3.4.1] — 2026-11-25\n\n### Fixed\n- **Mapa: el símbolo de estado pisaba el nombre** en las cajas angostas («Centro de mando», «Agente Andreani», las automatizaciones). Lo vi en la captura EYE-014. Ahora va en una insignia redonda sobre la esquina de cada caja, con el borde del color del estado. `js/mapa.js` y `css/mapa.css` 1.0.1.\n\n## [3.4.0] — 2026-11-25\n"
+    }
+   ]
+  },
+  {
+   "path": "package.json",
+   "base_sha": "3145523e72558f2c860e2462edd409172aec3c41",
+   "ops": [
+    {
+     "op": "replace",
+     "anchor": "\"version\": \"3.4.0\"",
+     "text": "\"version\": \"3.4.1\""
+    }
+   ]
+  }
+ ]
+}
