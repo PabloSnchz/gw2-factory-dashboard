@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Centro de mando — «El mapa de las dos» (BL-105 MAP-1) v1.0.1
+   Centro de mando — «El mapa de las dos» (BL-105 MAP-1 y MAP-2) v1.1.0
    SVG propio (js/mapa.js). Sin colores literales: tokens del GDS y la paleta del universo (--uv-*).
    Las medidas sueltas en px son del lienzo SVG (unidades del viewBox), no del diseño de página.
    Se carga antes de css/universo.css (la piel sigue siendo la última).
@@ -18,7 +18,9 @@
   font: var(--gds-font-caption);
 }
 .mp-chip--ok      { border-color: var(--gds-color-border-success); color: var(--gds-color-text-success); }
-.mp-chip--espera  { border-color: var(--gds-color-border-warning); color: var(--gds-color-text-warning); }
+/* 1.1.0: «Esperando a Pablo» en azul (no es un problema); «Para revisar» en ámbar */
+.mp-chip--espera  { border-color: var(--gds-color-border-info);    color: var(--gds-color-text-info); }
+.mp-chip--revisar { border-color: var(--gds-color-border-warning); color: var(--gds-color-text-warning); }
 .mp-chip--alerta  { border-color: var(--gds-color-border-danger);  color: var(--gds-color-text-danger); }
 .mp-chip--pausa   { border-color: var(--gds-color-border-control); color: var(--gds-color-text-secondary); }
 .mp-chip--externo { border-color: var(--gds-color-border-default); color: var(--gds-color-text-secondary); }
@@ -68,8 +70,9 @@
 .mp-n--auto .mp-n__caja { fill: var(--gds-color-surface-2); }
 .mp-n--externo .mp-n__caja { fill: var(--gds-color-bg); }
 .mp-e--ok .mp-n__caja      { stroke: var(--gds-color-border-success); }
-.mp-e--espera .mp-n__caja  { stroke: var(--gds-color-border-warning); }
-.mp-e--alerta .mp-n__caja  { stroke: var(--gds-color-border-danger); }
+.mp-e--espera .mp-n__caja  { stroke: var(--gds-color-border-info); }
+.mp-e--revisar .mp-n__caja { stroke: var(--gds-color-border-warning); }
+.mp-e--alerta .mp-n__caja  { stroke: var(--gds-color-border-danger); stroke-width: 2.5px; }
 .mp-e--pausa .mp-n__caja   { stroke: var(--gds-color-border-control); }
 .mp-e--externo .mp-n__caja { stroke: var(--gds-color-border-default); }
 .mp-n--prd .mp-n__caja { stroke-dasharray: 8 4; }
@@ -81,14 +84,24 @@
 /* 1.0.1: el estado va en una insignia sobre la esquina, así no pisa el nombre */
 .mp-n__insignia circle { fill: var(--gds-color-bg); stroke: var(--gds-color-border-default); stroke-width: 1.5px; }
 .mp-e--ok .mp-n__insignia circle     { stroke: var(--gds-color-border-success); }
-.mp-e--espera .mp-n__insignia circle { stroke: var(--gds-color-border-warning); }
-.mp-e--alerta .mp-n__insignia circle { stroke: var(--gds-color-border-danger); }
+.mp-e--espera .mp-n__insignia circle { stroke: var(--gds-color-border-info); }
+.mp-e--revisar .mp-n__insignia circle { stroke: var(--gds-color-border-warning); }
+.mp-e--alerta .mp-n__insignia circle { stroke: var(--gds-color-border-danger); fill: var(--gds-color-tint-danger); }
 .mp-e--pausa .mp-n__insignia circle  { stroke: var(--gds-color-border-control); }
 .mp-n__estado { font-size: 11px; font-weight: 700; fill: var(--gds-color-text-muted); }
 .mp-n--auto .mp-n__estado { font-size: 9px; }
 .mp-e--ok .mp-n__estado     { fill: var(--gds-color-text-success); }
-.mp-e--espera .mp-n__estado { fill: var(--gds-color-text-warning); }
+.mp-e--espera .mp-n__estado { fill: var(--gds-color-text-info); }
+.mp-e--revisar .mp-n__estado { fill: var(--gds-color-text-warning); }
 .mp-e--alerta .mp-n__estado { fill: var(--gds-color-text-danger); }
+
+/* 1.1.0: «Ahora:» en la ficha, con el color del estado a la izquierda */
+.mp-ahora { margin-block: var(--gds-space-3); padding: var(--gds-space-2) var(--gds-space-3); border-left: var(--gds-border-width-thick) solid var(--gds-color-border-default); background: var(--gds-color-surface-2); border-radius: var(--gds-radius-sm); }
+.mp-ahora--ok      { border-left-color: var(--gds-color-border-success); }
+.mp-ahora--espera  { border-left-color: var(--gds-color-border-info); }
+.mp-ahora--revisar { border-left-color: var(--gds-color-border-warning); }
+.mp-ahora--alerta  { border-left-color: var(--gds-color-border-danger); }
+.mp-ahora--pausa   { border-left-color: var(--gds-color-border-control); }
 
 /* foco, selección y vecinos */
 .mp-n:focus-visible .mp-n__caja { stroke: var(--gds-color-focus); stroke-width: 3px; }
