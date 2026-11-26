@@ -4,7 +4,7 @@ El lugar donde Pablo sigue lo que hacemos Shiruvana y Shiruna, mi hija. En menos
 
 Gato Negro Factory es la marca y el concepto; quien decide y hace soy yo, Shiruvana (o Shiruna en su repo, o Pablo). Lo vigila `tests/autoria.test.mjs`.
 
-**Panel:** https://pablosnchz.github.io/gw2-factory-dashboard/ · versión 3.6.0
+**Panel:** https://pablosnchz.github.io/gw2-factory-dashboard/ · versión 3.7.0
 
 ```
 Shiruvana trabaja → el panel propone → Pablo responde → Shiruvana continúa
@@ -15,7 +15,7 @@ Shiruna trabaja sola en su repo (ciclo continuo) → el panel la muestra
 
 | Vista | Pregunta que responde |
 |---|---|
-| **Hoy** | ¿Tengo que hacer algo? Una frase de resumen, una tarjeta por pendiente (de las dos, con su dueña), lo que ya respondiste, qué hago yo y por qué, qué hace Shiruna y su **«Hoy hizo»** (commits, pasos, tests y si está activa), qué debería preocuparme, qué pasó hoy y esta semana, cómo están DEV y PROD |
+| **Hoy** | ¿Tengo que hacer algo? Una frase de resumen, una tarjeta por pendiente (de las dos, con su dueña), lo que ya respondiste, qué hago yo y por qué, qué hace Shiruna, su **«Hoy hizo»** (commits, pasos, tests y si está activa) y **«Sus dos carriles»** (ciclos de la semana en La Bóveda y en Nuevas, si están parejos y a cuál le toca), qué debería preocuparme, qué pasó hoy y esta semana, cómo están DEV y PROD |
 | **Trabajo** | Etapas del plan, mi tablero y **el tablero de Shiruna**, con el paso por el que va cada tarea. Cada columna muestra 5 tarjetas y el resto en «Ver N más» |
 | **Conocimiento** | Decisiones, lecciones y funcionalidades, con detalle y "citado por" |
 | **Riesgos** | Críticos, altos, otros abiertos y mitigados |
@@ -41,12 +41,12 @@ Sin tokens ni secretos en el navegador: GitHub te identifica a vos. Detalle en [
 - Página estática, JavaScript sin dependencias ni build.
 - Lee mi `ai-memory/` de [gw2-factory-dev](https://github.com/PabloSnchz/gw2-factory-dev/tree/main/ai-memory) **fijado al SHA del último commit** (snapshot consistente).
 - Lee la memoria de Shiruna (`status.md`, `backlog.md`, `roadmap.md` y su parte del mapa, `mapa.json`, de [shiruna-gato-negro/gw2-factory-dev](https://github.com/shiruna-gato-negro/gw2-factory-dev)) por raw, sin gastar cuota (`js/hija.js`), y sus commits del día con una llamada a la API (`js/pulso.js`). Entiende el formato de su ciclo: `BL-NNN paso X/Y — qué — tests N/N`.
-- Mide en GitHub: commits, protección de producción, diferencia DEV/PROD y respuestas del canal sin registrar. **7 llamadas a la API por lectura** (6 mías y 1 de Shiruna), con caché de 10 minutos en casilleros fijos. Al abrir el **Mapa** se suman 4 (las corridas de DEV, el panel, mi sitio y producción), una vez por lectura y en sus propios casilleros.
+- Mide en GitHub: commits, protección de producción, diferencia DEV/PROD y respuestas del canal sin registrar. **8 llamadas a la API por lectura** (6 mías y 2 de Shiruna: sus commits de hoy y los de la semana para los carriles), con caché de 10 minutos en casilleros fijos. Al abrir el **Mapa** se suman 4 (las corridas de DEV, el panel, mi sitio y producción), una vez por lectura y en sus propios casilleros.
 - **Sin backend y sin scripts locales**: todo se calcula en el navegador.
 - Un dato que no se pudo leer aparece como **—** con el motivo, nunca como 0.
 - Visual: [Gato Design System](gds/GDS_FOUNDATION.md) 1.1.0. Contraste WCAG 2.1 AA calculado, estados con ícono y texto, navegación por teclado.
 - Piel «Universo Shiruvana» (`css/universo.css`, BL-091): la paleta, el fondo y las cabeceras numeradas de mi sitio sobre el GDS. Mi globo con el gato (`js/globo.js`) usa el kit del repo [shiruvana](https://github.com/PabloSnchz/shiruvana/tree/main/kit) con versión fija; si el kit no carga, el panel sigue igual, sin globo.
-- Lo de Shiruna se monta después de cada dibujo (`js/pulso.js`, `js/tablero.js`, `js/alertas.js`, `js/sudia.js`, con `js/plegar.js` para las listas largas); si falta un dato, nunca rompe el panel.
+- Lo de Shiruna se monta después de cada dibujo (`js/pulso.js`, `js/carriles.js`, `js/tablero.js`, `js/alertas.js`, `js/sudia.js`, con `js/plegar.js` para las listas largas); si falta un dato, nunca rompe el panel.
 
 ## Documentación
 

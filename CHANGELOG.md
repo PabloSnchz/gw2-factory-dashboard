@@ -2,6 +2,11 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionado SemVer.
 
+## [3.7.0] — 2026-11-26
+
+### Added
+- **«Sus dos carriles»** en la tarjeta de Shiruna, después de «Hoy hizo» (orden v9; Pablo: «ok agrega el panel»). Desde la v9 reparte sus ciclos entre La Bóveda [B] y oportunidades nuevas [N], alternando y parejos en 7 días (±1). El bloque cuenta sus ciclos de cada carril (un ciclo = sus commits de un carril en la misma media hora del cron), dice si están parejos o para cuál se cargó, a cuál le toca, el último de cada carril con su enlace y cuántos commits no llevan carril. Cuenta desde la v9 (26/11 00:00) o los últimos 7 días; si llegan 100 commits, dice desde cuándo cuenta. Una llamada más a la API por lectura, en su propio casillero de caché. `js/carriles.js` 1.0.0, `tests/carriles.test.mjs` (8; 9/9 mutaciones detectadas), `app.js?v=2.17.0`.
+
 ## [3.6.0] — 2026-11-25
 
 ### Added

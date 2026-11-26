@@ -20,6 +20,8 @@
  * SH-4d (js/sudia.js): «El día de Shiruna» en «Actividad» — de qué hora a qué hora, tests, pausas largas y sus commits.
  * BL-105 MAP-1 (js/mapa.js): «El mapa de las dos» en la pestaña Mapa. Lee mapa/*.json una vez y, al terminar, vuelve a dibujar.
  * BL-105 MAP-2: sus estados en vivo con el modelo de esta lectura y las corridas de GitHub Actions (mismo cliente y caché).
+ * Orden v9 (js/carriles.js): «Sus dos carriles» en su tarjeta — ciclos en La Bóveda [B] y en Nuevas [N] de la semana
+ * (1 llamada más, cacheada en su casillero), si están parejos y a cuál le toca.
  */
 
 import { CONFIG } from './config.js';
@@ -35,6 +37,7 @@ import { loadCommitsHija, buildPulso, vestirPulso } from './pulso.js';
 import { buildTablero, vestirTablero } from './tablero.js';
 import { buildAlertas, vestirAlertas } from './alertas.js';
 import { buildDia, vestirDia } from './sudia.js';
+import { loadCarriles, buildCarriles, vestirCarriles } from './carriles.js';
 import { renderMapa, montarMapa, estadoMapa } from './mapa.js';
 
 const HIJA_REPO = `https://github.com/${CONFIG.hija.owner}/${CONFIG.hija.repo}`;
@@ -89,6 +92,7 @@ function render() {
   vestirTablero($main, m.tablero); // su tablero en «Trabajo», debajo del mío (SH-4b)
   vestirAlertas($main, m.alertas); // su salud en «Salud» (SH-4c)
   vestirDia($main, m.dia, HIJA_REPO); // «El día de Shiruna» en «Actividad» (SH-4d)
+  vestirCarriles($main, m.carriles, HIJA_REPO); // «Sus dos carriles» en su tarjeta, después de «Hoy hizo» (orden v9)
   if (r.name === 'mapa') montarMapa($main, { alTerminar: render, gh, model: m }); // el mapa de las dos, en vivo (BL-105)
   const pending = m.human.length;
   document.title = `${pending ? `(${pending}) ` : ''}${V.verdict(m).text} · Gato Negro Factory`;
@@ -109,12 +113,14 @@ async function refresh(force) {
     const now = Date.now();
     const [raw, hija] = await Promise.all([loadAll(gh, now), loadHija({ now })]);
     const commitsHija = await loadCommitsHija({ gh, now }); // SH-4a: después de loadAll (que reinicia los errores de API)
+    const semanaHija = await loadCarriles({ gh, now }); // orden v9: su semana, para los dos carriles
     state.model = unirHija(buildModel(raw), buildHija(hija, now));
     marcarLogro(state.model.hija, hija, safeStorage()); // ¿cerró algo desde tu última visita? (SH-1: festeja)
     state.model.pulso = buildPulso({ commits: commitsHija, raw: hija, h: state.model.hija, now });
     state.model.tablero = buildTablero({ raw: hija, h: state.model.hija, pulso: state.model.pulso });
     state.model.alertas = buildAlertas({ pulso: state.model.pulso, h: state.model.hija, tablero: state.model.tablero });
     state.model.dia = buildDia({ pulso: state.model.pulso, now, nombre: CONFIG.hija.nombre, key: String(CONFIG.hija.nombre).toLowerCase() });
+    state.model.carriles = buildCarriles({ commits: semanaHija, now });
     state.error = null;
     announce(`Datos actualizados. ${V.verdict(state.model).text}.`);
   } catch (e) {
